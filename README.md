@@ -61,10 +61,20 @@ The built files will be in the `dist` directory.
 Edit the `SITE` object in `src/RichNickLanding.jsx` to customize:
 
 - Brand name and messaging
-- Video URLs
+- Video URLs (currently using placeholder - replace with actual Rich Nick YouTube video)
 - Pricing information
 - Calendly and Stripe links
 - Lead capture webhook URL
+
+### Rich Nick's Social Media Links (Already Added):
+- YouTube: https://www.youtube.com/@richhnick
+- Instagram: https://www.instagram.com/richhnick  
+- Facebook: https://www.facebook.com/nick.burks.3
+
+### To Add Rich Nick's Logo:
+1. Save Rich Nick's logo as `public/rich-nick-logo.png`
+2. Uncomment the logo line in `src/RichNickLanding.jsx` (around line 85)
+3. Adjust size classes if needed
 
 ## Deployment
 

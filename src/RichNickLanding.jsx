@@ -38,6 +38,10 @@ const SITE = {
   leadWebhook: "/api/lead", // Make an API route in Next.js or serverless function
   privacyUrl: "#",
   termsUrl: "#",
+  // Social Media Links
+  youtubeUrl: "https://www.youtube.com/@richhnick",
+  instagramUrl: "https://www.instagram.com/richhnick",
+  facebookUrl: "https://www.facebook.com/nick.burks.3",
 };
 
 // ============================
@@ -99,6 +103,8 @@ function Hero() {
         <div className="grid lg:grid-cols-2 gap-10 items-center">
           <div>
             <div className="inline-flex items-center gap-2 text-xs uppercase tracking-widest text-white/70 mb-4">
+              {/* TODO: Add Rich Nick's logo here */}
+              {/* <img src="/rich-nick-logo.png" alt="Rich Nick" className="h-8 w-auto" /> */}
               <Sparkles className="w-4 h-4" /> {SITE.brand}
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight">
@@ -131,9 +137,15 @@ function Hero() {
               <div className="pointer-events-none absolute inset-0 ring-1 ring-white/10"/>
             </div>
             <div className="mt-4 grid grid-cols-3 gap-3 text-white/75 text-sm">
-              <div className="flex items-center gap-2"><Youtube className="w-4 h-4"/> 1M+ / mo</div>
-              <div className="flex items-center gap-2"><Instagram className="w-4 h-4"/> 500k+ / mo</div>
-              <div className="flex items-center gap-2"><Facebook className="w-4 h-4"/> 1M+ / mo</div>
+              <a href={SITE.youtubeUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-white transition">
+                <Youtube className="w-4 h-4"/> @richhnick
+              </a>
+              <a href={SITE.instagramUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-white transition">
+                <Instagram className="w-4 h-4"/> @richhnick
+              </a>
+              <a href={SITE.facebookUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-white transition">
+                <Facebook className="w-4 h-4"/> Nick Burks
+              </a>
             </div>
           </div>
         </div>
@@ -416,11 +428,27 @@ function StickyBar() {
 function Footer() {
   return (
     <footer className="py-12 bg-black border-t border-white/10">
-      <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="text-white/70 text-sm">© {new Date().getFullYear()} Rich Nick Growth LLC. All rights reserved.</div>
-        <div className="flex items-center gap-4 text-sm">
-          <a href={SITE.privacyUrl} className="text-white/70 hover:text-white">Privacy</a>
-          <a href={SITE.termsUrl} className="text-white/70 hover:text-white">Terms</a>
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
+          <div className="text-white/70 text-sm">© {new Date().getFullYear()} Rich Nick Growth LLC. All rights reserved.</div>
+          <div className="flex items-center gap-4 text-sm">
+            <a href={SITE.privacyUrl} className="text-white/70 hover:text-white">Privacy</a>
+            <a href={SITE.termsUrl} className="text-white/70 hover:text-white">Terms</a>
+          </div>
+        </div>
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t border-white/10">
+          <div className="text-white/50 text-sm">Follow Rich Nick</div>
+          <div className="flex items-center gap-6 text-sm">
+            <a href={SITE.youtubeUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-white/70 hover:text-white transition">
+              <Youtube className="w-4 h-4"/> YouTube
+            </a>
+            <a href={SITE.instagramUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-white/70 hover:text-white transition">
+              <Instagram className="w-4 h-4"/> Instagram
+            </a>
+            <a href={SITE.facebookUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-white/70 hover:text-white transition">
+              <Facebook className="w-4 h-4"/> Facebook
+            </a>
+          </div>
         </div>
       </div>
     </footer>
