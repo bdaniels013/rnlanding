@@ -492,35 +492,7 @@ function ViralStats() {
           </p>
         </div>
 
-        {/* Platform Stats */}
-        <div className="grid md:grid-cols-3 gap-8 mb-12">
-          <div className="text-center">
-            <div className="bg-gradient-to-br from-red-600/20 to-red-800/20 rounded-2xl p-6 border border-red-500/20">
-              <Youtube className="w-12 h-12 mx-auto mb-4 text-red-400" />
-              <div className="text-3xl font-bold text-white mb-2">12+</div>
-              <div className="text-lg text-white/80 mb-2">YouTube Shorts</div>
-              <div className="text-sm text-white/60">2.1M+ highest views</div>
-            </div>
-          </div>
-          
-          <div className="text-center">
-            <div className="bg-gradient-to-br from-pink-600/20 to-purple-800/20 rounded-2xl p-6 border border-pink-500/20">
-              <Instagram className="w-12 h-12 mx-auto mb-4 text-pink-400" />
-              <div className="text-3xl font-bold text-white mb-2">14+</div>
-              <div className="text-lg text-white/80 mb-2">Instagram Reels</div>
-              <div className="text-sm text-white/60">1.8M+ highest views</div>
-            </div>
-          </div>
-          
-          <div className="text-center">
-            <div className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 rounded-2xl p-6 border border-blue-500/20">
-              <Facebook className="w-12 h-12 mx-auto mb-4 text-blue-400" />
-              <div className="text-3xl font-bold text-white mb-2">10+</div>
-              <div className="text-lg text-white/80 mb-2">Facebook Reels</div>
-              <div className="text-sm text-white/60">1.5M+ highest views</div>
-            </div>
-          </div>
-        </div>
+
 
         {/* View Count Image */}
         <div className="text-center">
