@@ -25,7 +25,7 @@ const SITE = {
   headline: "He cracked the code to going viral.",
   subhead:
     "Learn Rich Nick’s exact system to grow fast across YouTube, Instagram, and Facebook — then turn views into income.",
-  heroVideoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=0&mute=1&controls=1", // replace
+  heroVideoUrl: "https://www.youtube.com/embed/0UBnHDSiNJQ?autoplay=0&mute=1&controls=1", // Rich Nick's YouTube Shorts video
   location: "In‑Person Monthly Intensive",
   nextEventDateLabel: "Monthly (Limited Seats)",
   eventPrice: 750,

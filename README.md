@@ -76,6 +76,13 @@ Edit the `SITE` object in `src/RichNickLanding.jsx` to customize:
 2. Uncomment the logo line in `src/RichNickLanding.jsx` (around line 85)
 3. Adjust size classes if needed
 
+### To Add Rich Nick's YouTube Video:
+1. Go to [Rich Nick's YouTube channel](https://www.youtube.com/@richhnick)
+2. Choose a compelling video that showcases his content
+3. Copy the video ID from the URL (e.g., from `https://www.youtube.com/watch?v=ABC123`, the ID is `ABC123`)
+4. Replace `VIDEO_ID_HERE` in line 28 of `src/RichNickLanding.jsx` with the actual video ID
+5. The final URL should look like: `https://www.youtube.com/embed/ABC123?autoplay=0&mute=1&controls=1`
+
 ## Deployment
 
 This project is optimized for Vercel deployment. Simply connect your GitHub repository to Vercel and it will automatically build and deploy.
