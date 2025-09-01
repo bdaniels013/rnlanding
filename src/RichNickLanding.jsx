@@ -459,21 +459,7 @@ function Hero() {
                 ))}
               </div>
 
-              {/* Stats Summary */}
-              <div className="mt-4 grid grid-cols-3 gap-4 text-center">
-                <div className="bg-white/5 rounded-xl p-3 border border-white/10">
-                  <div className="text-lg font-bold text-white">12+</div>
-                  <div className="text-xs text-white/70">YouTube Shorts</div>
-                </div>
-                <div className="bg-white/5 rounded-xl p-3 border border-white/10">
-                  <div className="text-lg font-bold text-white">14+</div>
-                  <div className="text-xs text-white/70">Instagram Reels</div>
-                </div>
-                <div className="bg-white/5 rounded-xl p-3 border border-white/10">
-                  <div className="text-lg font-bold text-white">10+</div>
-                  <div className="text-xs text-white/70">Facebook Reels</div>
-                </div>
-              </div>
+
             </div>
 
             {/* Social Media Links */}
