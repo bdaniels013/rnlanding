@@ -25,7 +25,7 @@ const SITE = {
   headline: "He cracked the code to going viral.",
   subhead:
     "Learn Rich Nick’s exact system to grow fast across YouTube, Instagram, and Facebook — then turn views into income.",
-  heroVideoUrl: "https://www.youtube.com/embed/0UBnHDSiNJQ?autoplay=0&mute=1&controls=1", // Rich Nick's YouTube Shorts video
+  heroVideoUrl: "https://www.youtube.com/embed/0UBnHDSiNJQ?autoplay=1&mute=1&controls=1&loop=1&playlist=0UBnHDSiNJQ", // Rich Nick's YouTube Shorts video - autoplay, loop
   location: "In‑Person Monthly Intensive",
   nextEventDateLabel: "Monthly (Limited Seats)",
   eventPrice: 750,
@@ -42,6 +42,32 @@ const SITE = {
   youtubeUrl: "https://www.youtube.com/@richhnick",
   instagramUrl: "https://www.instagram.com/richhnick",
   facebookUrl: "https://www.facebook.com/nick.burks.3",
+  // Social Media Videos (Add your video links here)
+  socialVideos: [
+    {
+      platform: "YouTube",
+      url: "https://youtube.com/shorts/0UBnHDSiNJQ",
+      embedUrl: "https://www.youtube.com/embed/0UBnHDSiNJQ?autoplay=1&mute=1&controls=1&loop=1&playlist=0UBnHDSiNJQ",
+      views: "50K+", // TODO: Update with actual view count
+      icon: Youtube
+    },
+    // TODO: Add Instagram Reels
+    // {
+    //   platform: "Instagram",
+    //   url: "https://www.instagram.com/reel/YOUR_REEL_ID/",
+    //   embedUrl: "https://www.instagram.com/reel/YOUR_REEL_ID/embed/",
+    //   views: "25K+",
+    //   icon: Instagram
+    // },
+    // TODO: Add Facebook Videos
+    // {
+    //   platform: "Facebook",
+    //   url: "https://www.facebook.com/nick.burks.3/videos/YOUR_VIDEO_ID",
+    //   embedUrl: "https://www.facebook.com/plugins/video.php?href=https://www.facebook.com/nick.burks.3/videos/YOUR_VIDEO_ID",
+    //   views: "30K+",
+    //   icon: Facebook
+    // }
+  ],
 };
 
 // ============================
@@ -126,17 +152,56 @@ function Hero() {
             </div>
           </div>
           <div>
-            <div className="relative rounded-3xl overflow-hidden border border-white/15 shadow-2xl aspect-video bg-black">
-              <iframe
-                title="Rich Nick — Reel"
-                className="w-full h-full"
-                src={SITE.heroVideoUrl}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-              />
+            {/* Main Hero Video - Portrait Layout */}
+            <div className="relative rounded-3xl overflow-hidden border border-white/15 shadow-2xl bg-black mx-auto max-w-sm">
+              <div className="aspect-[9/16] w-full"> {/* Portrait aspect ratio for Shorts */}
+                <iframe
+                  title="Rich Nick — Viral Content"
+                  className="w-full h-full"
+                  src={SITE.heroVideoUrl}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              </div>
               <div className="pointer-events-none absolute inset-0 ring-1 ring-white/10"/>
             </div>
-            <div className="mt-4 grid grid-cols-3 gap-3 text-white/75 text-sm">
+            
+            {/* Multi-Platform Video Showcase */}
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold text-white/90 mb-4 text-center">Viral across all platforms</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {SITE.socialVideos.map((video, index) => (
+                  <div key={index} className="group">
+                    <a 
+                      href={video.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="block rounded-2xl overflow-hidden border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-300 hover:scale-105"
+                    >
+                      <div className="aspect-[9/16] relative">
+                        <iframe
+                          title={`Rich Nick — ${video.platform}`}
+                          className="w-full h-full"
+                          src={video.embedUrl}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          allowFullScreen
+                        />
+                        <div className="absolute top-2 left-2 bg-black/70 backdrop-blur rounded-lg px-2 py-1 text-xs font-medium">
+                          <video.icon className="w-3 h-3 inline mr-1" />
+                          {video.platform}
+                        </div>
+                        <div className="absolute bottom-2 right-2 bg-black/70 backdrop-blur rounded-lg px-2 py-1 text-xs font-medium">
+                          {video.views}
+                        </div>
+                      </div>
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Social Media Links */}
+            <div className="mt-6 grid grid-cols-3 gap-3 text-white/75 text-sm">
               <a href={SITE.youtubeUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-white transition">
                 <Youtube className="w-4 h-4"/> @richhnick
               </a>
