@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: richnick-offers-system
+    env: node
+    plan: free
+    buildCommand: npm install && npm run db:generate && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXTAUTH_URL
+        value: https://richnick-offers-system.onrender.com
+      - key: APP_URL
+        value: https://richnick-offers-system.onrender.com
+      - key: FRONTEND_URL
+        value: https://richnick-offers-system.onrender.com
+    healthCheckPath: /
+
+databases:
+  - name: richnick-db
+    plan: free
+    env: postgresql

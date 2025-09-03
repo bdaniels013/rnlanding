@@ -34,30 +34,30 @@ const OffersSection = () => {
     
     if (offer.sku === 'monthly-creator-pass') {
       features.push(
-        'Access to 1 RichhNick Event',
-        'Content shoot at event (3 sets)',
+        '1 Credit to be at the RichhNick Event',
+        'Content shoot at event with 3 different sets',
         'Photos + Video + Launch content',
-        'Collaboration opportunities',
-        'Custom strategy call',
-        'Personal playbook creation'
+        'Collaboration opportunities at the event',
+        'Custom strategy call for personal playbook',
+        'Guaranteed to boost engagement & followers'
       );
     } else if (offer.sku === 'annual-plan') {
       features.push(
-        'Access to 12 RichhNick Events',
-        'OR convert to 6 Platform Features',
+        '12 Credits for 12 Events OR 6 Platform Features',
+        'Platform options: Famous Animal, The Debut, We Go Tampa, Ugly Money Podcast',
         'Content shoots at all events',
         'Priority booking access',
-        'Quarterly strategy sessions',
-        'Advanced collaboration network'
+        'Advanced collaboration network',
+        'Guaranteed to boost engagement & followers'
       );
     } else if (offer.sku === 'content-management') {
       features.push(
         'Weekly scheduled follow-ups',
-        'Ongoing collaboration support',
-        'Product/service promotion',
-        'Marketing strategy guidance',
-        'Content optimization',
-        'Performance tracking'
+        'Ongoing collaboration to market & promote',
+        'Product/service promotion strategies',
+        'Content optimization across all platforms',
+        'Performance tracking & analytics',
+        'Guaranteed to boost engagement & followers'
       );
     }
     
@@ -68,7 +68,7 @@ const OffersSection = () => {
     if (offer.sku === 'annual-plan') {
       return { text: 'BEST VALUE', color: 'bg-green-600' };
     } else if (offer.sku === 'monthly-creator-pass') {
-      return { text: 'MOST POPULAR', color: 'bg-blue-600' };
+      return { text: 'EVENT ACCESS', color: 'bg-blue-600' };
     } else if (offer.sku === 'content-management') {
       return { text: 'ONGOING SUPPORT', color: 'bg-purple-600' };
     }
@@ -92,10 +92,10 @@ const OffersSection = () => {
           {/* Section Header */}
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Choose Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-600">Growth Path</span>
+              Choose Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-600">Viral Growth Path</span>
             </h2>
             <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-              Select the perfect plan to accelerate your viral growth and turn your content into a thriving business
+              Get guaranteed engagement & followers across all platforms with Rich Nick's proven system
             </p>
           </div>
 
@@ -162,7 +162,7 @@ const OffersSection = () => {
                         <div className="text-sm text-blue-400 font-medium mb-1">Credit System:</div>
                         <div className="text-xs text-gray-400">
                           • 1 credit = 1 RichhNick Event access<br/>
-                          • 2 credits = 1 Platform Feature (Famous Animal, The Debut, etc.)
+                          • 2 credits = 1 Platform Feature (Famous Animal, The Debut, We Go Tampa, Ugly Money Podcast)
                         </div>
                       </div>
                     )}
@@ -181,11 +181,11 @@ const OffersSection = () => {
               </div>
               <div className="flex items-center">
                 <Check className="w-5 h-5 text-green-400 mr-2" />
-                <span>Instant Access</span>
+                <span>Guaranteed Engagement Boost</span>
               </div>
               <div className="flex items-center">
                 <Check className="w-5 h-5 text-green-400 mr-2" />
-                <span>Money-Back Guarantee</span>
+                <span>Proven Viral Growth System</span>
               </div>
             </div>
           </div>

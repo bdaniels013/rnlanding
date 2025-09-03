@@ -29,8 +29,8 @@ const SITE = {
   heroVideoUrl: "https://www.youtube.com/embed/MMgbNM7QYdA?autoplay=1&mute=1&controls=1&loop=1&playlist=MMgbNM7QYdA", // Rich Nick's 2.1M+ view YouTube Shorts video
   location: "In‑Person Monthly Intensive",
   nextEventDateLabel: "Monthly (Limited Seats)",
-  eventPrice: 750,
-  annualPrice: 7500,
+  eventPrice: 1000,
+  annualPrice: 10000,
   monthlyInstallments: 12,
   calendlyUrl: "https://calendly.com/PLACEHOLDER/30min", // replace
   stripeEventCheckoutUrl: "https://buy.stripe.com/test_XXXX", // replace
@@ -562,87 +562,7 @@ function ValueBullets() {
   );
 }
 
-function Pricing() {
-  const monthly = Math.ceil(SITE.annualPrice / SITE.monthlyInstallments);
-  return (
-    <section id="pricing" className="relative py-16 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-950 via-slate-900 to-black">
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="text-center max-w-2xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-extrabold">Choose your path</h2>
-          <p className="mt-3 text-white/80">Start with the {currency(SITE.eventPrice)} in‑person intensive, or go all‑in with the annual mentorship. Financing available for qualified creators.</p>
-        </div>
-        <div className="mt-10 grid lg:grid-cols-3 gap-6">
-          {/* Event Pass */}
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-7 backdrop-blur shadow-xl">
-            <div className="text-xs uppercase tracking-widest text-white/60">Monthly Intensive</div>
-            <div className="mt-2 text-3xl font-extrabold">Event Seat</div>
-            <div className="mt-2 text-4xl font-extrabold">{currency(SITE.eventPrice)}</div>
-            <ul className="mt-6 space-y-3 text-sm">
-              {[
-                "Full-day strategy + content sprint",
-                "Hands-on hook, scripting, and filming",
-                "Personal review & feedback",
-                "Private community access",
-              ].map((x) => (
-                <li key={x} className="flex items-center gap-2"><Check className="w-4 h-4"/> {x}</li>
-              ))}
-            </ul>
-            <a href={SITE.stripeEventCheckoutUrl} className="mt-6 w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-fuchsia-600 font-semibold">
-              Reserve my seat <ArrowRight className="w-4 h-4"/>
-            </a>
-          </div>
-
-          {/* Annual Mentorship */}
-          <div className="relative rounded-3xl border border-fuchsia-400/30 bg-gradient-to-b from-fuchsia-600/20 to-indigo-600/10 p-7 backdrop-blur shadow-2xl ring-1 ring-fuchsia-500/20">
-            <div className="absolute -top-3 right-6 text-[11px] bg-fuchsia-600 text-white px-2 py-1 rounded-full">Most Popular</div>
-            <div className="text-xs uppercase tracking-widest text-white/70">1 Year • Ongoing</div>
-            <div className="mt-2 text-3xl font-extrabold">Annual Mentorship</div>
-            <div className="mt-2 text-4xl font-extrabold">{currency(SITE.annualPrice)}</div>
-            <div className="mt-1 text-white/70">or {currency(monthly)}/mo for {SITE.monthlyInstallments} months*</div>
-            <ul className="mt-6 space-y-3 text-sm">
-              {[
-                "Monthly 1:1 deep dives",
-                "Editorial calendar & asset reviews",
-                "Advisory on offers & monetization",
-                "Priority DM/email support",
-              ].map((x) => (
-                <li key={x} className="flex items-center gap-2"><Check className="w-4 h-4"/> {x}</li>
-              ))}
-            </ul>
-            <div className="mt-6 grid gap-3">
-              <a href={SITE.stripeAnnualCheckoutUrl} className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-white text-black font-semibold">
-                Enroll now <ArrowRight className="w-4 h-4"/>
-              </a>
-              <a href={SITE.financingApplyUrl} className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-white/10 border border-white/20">
-                Explore financing <CreditCard className="w-4 h-4"/>
-              </a>
-            </div>
-            <div className="mt-3 text-xs text-white/60">*Financing example for illustration only. Actual terms via provider.</div>
-          </div>
-
-          {/* Consult / Call */}
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-7 backdrop-blur shadow-xl">
-            <div className="text-xs uppercase tracking-widest text-white/60">Not ready yet?</div>
-            <div className="mt-2 text-3xl font-extrabold">Strategy Call</div>
-            <div className="mt-2 text-4xl font-extrabold">Free</div>
-            <ul className="mt-6 space-y-3 text-sm">
-              {[
-                "15–30 min fit check",
-                "Roadmap & next steps",
-                "See if mentorship fits",
-              ].map((x) => (
-                <li key={x} className="flex items-center gap-2"><Check className="w-4 h-4"/> {x}</li>
-              ))}
-            </ul>
-            <a href={SITE.calendlyUrl} className="mt-6 w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-white/10 border border-white/20">
-              Book a call <Calendar className="w-4 h-4"/>
-            </a>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
+// Old Pricing function removed - now using dynamic OffersSection component
 
 function TestimonialCard({ name, handle, quote }) {
   return (
