@@ -11,17 +11,17 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  passwordHash  String
-  role          Role     @default(STAFF)
-  twofaSecret   String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(STAFF)
+  twofaSecret  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // Relations
-  customers     Customer[]
-  auditLogs    AuditLog[]
+  customers Customer[]
+  auditLogs AuditLog[]
 
   @@map("users")
 }
@@ -38,211 +38,212 @@ model Customer {
   updatedAt DateTime @updatedAt
 
   // Relations
-  user           User?
-  orders         Order[]
-  subscriptions  Subscription[]
-  creditsLedger  CreditsLedger[]
-  bookings       Booking[]
+  user          User?           @relation(fields: [userId], references: [id])
+  orders        Order[]
+  subscriptions Subscription[]
+  creditsLedger CreditsLedger[]
+  bookings      Booking[]
 
   @@map("customers")
 }
 
 model Offer {
-  id                String  @id @default(cuid())
-  sku               String  @unique
-  name              String
-  priceCents        Int
-  isSubscription    Boolean @default(false)
-  creditsValue      Int     @default(0)
-  isCreditEligible  Boolean @default(false)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id               String   @id @default(cuid())
+  sku              String   @unique
+  name             String
+  priceCents       Int
+  isSubscription   Boolean  @default(false)
+  creditsValue     Int      @default(0)
+  isCreditEligible Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   // Relations
-  orderItems       OrderItem[]
-  subscriptions    Subscription[]
+  orderItems    OrderItem[]
+  subscriptions Subscription[]
 
   @@map("offers")
 }
 
 model Subscription {
-  id              String    @id @default(cuid())
-  customerId      String
-  offerId         String
-  status          SubscriptionStatus
-  startAt         DateTime
-  renewAt         DateTime?
-  cancelAt        DateTime?
-  paypalSubId     String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id          String             @id @default(cuid())
+  customerId  String
+  offerId     String
+  status      SubscriptionStatus
+  startAt     DateTime
+  renewAt     DateTime?
+  cancelAt    DateTime?
+  paypalSubId String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
 
   // Relations
-  customer        Customer  @relation(fields: [customerId], references: [id])
-  offer           Offer     @relation(fields: [offerId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+  offer    Offer    @relation(fields: [offerId], references: [id])
 
   @@map("subscriptions")
 }
 
 model Order {
-  id              String    @id @default(cuid())
-  customerId      String
-  totalCents      Int
-  currency        String    @default("USD")
-  status          OrderStatus
-  paypalOrderId   String?
-  capturedAt      DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id            String      @id @default(cuid())
+  customerId    String
+  totalCents    Int
+  currency      String      @default("USD")
+  status        OrderStatus
+  paypalOrderId String?
+  capturedAt    DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 
   // Relations
-  customer        Customer    @relation(fields: [customerId], references: [id])
-  orderItems      OrderItem[]
-  payments        Payment[]
-  creditsLedger   CreditsLedger[]
-  contracts       Contract[]
-  invoices        Invoice[]
+  customer      Customer        @relation(fields: [customerId], references: [id])
+  orderItems    OrderItem[]
+  payments      Payment[]
+  creditsLedger CreditsLedger[]
+  contracts     Contract[]
+  invoices      Invoice[]
 
   @@map("orders")
 }
 
 model OrderItem {
-  id              String  @id @default(cuid())
-  orderId         String
-  offerId         String
-  qty             Int     @default(1)
-  unitPriceCents  Int
-  creditsAwarded  Int     @default(0)
-  createdAt       DateTime @default(now())
+  id             String   @id @default(cuid())
+  orderId        String
+  offerId        String
+  qty            Int      @default(1)
+  unitPriceCents Int
+  creditsAwarded Int      @default(0)
+  createdAt      DateTime @default(now())
 
   // Relations
-  order           Order   @relation(fields: [orderId], references: [id])
-  offer           Offer   @relation(fields: [offerId], references: [id])
+  order Order @relation(fields: [orderId], references: [id])
+  offer Offer @relation(fields: [offerId], references: [id])
 
   @@map("order_items")
 }
 
 model Payment {
-  id              String  @id @default(cuid())
-  orderId         String
-  amountCents     Int
-  paypalTxnId     String?
-  status          PaymentStatus
-  rawWebhook      Json?
-  createdAt       DateTime @default(now())
+  id          String        @id @default(cuid())
+  orderId     String
+  amountCents Int
+  paypalTxnId String?
+  status      PaymentStatus
+  rawWebhook  Json?
+  createdAt   DateTime      @default(now())
 
   // Relations
-  order           Order   @relation(fields: [orderId], references: [id])
+  order Order @relation(fields: [orderId], references: [id])
 
   @@map("payments")
 }
 
 model CreditsLedger {
-  id              String  @id @default(cuid())
-  customerId      String
-  delta           Int
-  reason          String
-  refOrderId      String?
-  refBookingId    String?
-  balanceAfter    Int
-  createdAt       DateTime @default(now())
+  id           String   @id @default(cuid())
+  customerId   String
+  delta        Int
+  reason       String
+  refOrderId   String?
+  refBookingId String?
+  balanceAfter Int
+  createdAt    DateTime @default(now())
 
   // Relations
-  customer        Customer @relation(fields: [customerId], references: [id])
-  order           Order?   @relation(fields: [refOrderId], references: [id])
+  customer Customer  @relation(fields: [customerId], references: [id])
+  order    Order?    @relation(fields: [refOrderId], references: [id])
+  bookings Booking[] @relation("BookingCredits")
 
   @@map("credits_ledger")
 }
 
 model Booking {
-  id              String        @id @default(cuid())
-  customerId      String
-  type            BookingType
-  refId           String
-  slotAt          DateTime?
-  creditsSpent    Int
-  status          BookingStatus
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id           String        @id @default(cuid())
+  customerId   String
+  type         BookingType
+  refId        String
+  slotAt       DateTime?
+  creditsSpent Int
+  status       BookingStatus
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 
   // Relations
-  customer        Customer      @relation(fields: [customerId], references: [id])
-  creditsLedger   CreditsLedger[]
+  customer      Customer        @relation(fields: [customerId], references: [id])
+  creditsLedger CreditsLedger[] @relation("BookingCredits")
 
   @@map("bookings")
 }
 
 model PlatformSlot {
-  id              String            @id @default(cuid())
-  name            String
-  partner         String
-  slotAt          DateTime
-  status          PlatformSlotStatus
-  notes           String?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  id        String             @id @default(cuid())
+  name      String
+  partner   String
+  slotAt    DateTime
+  status    PlatformSlotStatus
+  notes     String?
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
 
   @@unique([name, partner])
   @@map("platform_slots")
 }
 
 model Contract {
-  id              String        @id @default(cuid())
-  customerId      String
-  orderId         String
-  templateId      String
-  status          ContractStatus
-  pdfUrl          String?
-  esignProvider   String?
-  esignId         String?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id            String         @id @default(cuid())
+  customerId    String
+  orderId       String
+  templateId    String
+  status        ContractStatus
+  pdfUrl        String?
+  esignProvider String?
+  esignId       String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
   // Relations
-  order           Order         @relation(fields: [orderId], references: [id])
+  order Order @relation(fields: [orderId], references: [id])
 
   @@map("contracts")
 }
 
 model Invoice {
-  id              String    @id @default(cuid())
-  orderId         String
-  number          String    @unique
-  pdfUrl          String?
-  issuedAt        DateTime  @default(now())
-  createdAt       DateTime  @default(now())
+  id        String   @id @default(cuid())
+  orderId   String
+  number    String   @unique
+  pdfUrl    String?
+  issuedAt  DateTime @default(now())
+  createdAt DateTime @default(now())
 
   // Relations
-  order           Order     @relation(fields: [orderId], references: [id])
+  order Order @relation(fields: [orderId], references: [id])
 
   @@map("invoices")
 }
 
 model Notification {
-  id              String            @id @default(cuid())
-  type            NotificationType
-  destination     String
-  subject         String?
-  payload         Json?
-  status          NotificationStatus
-  sentAt          DateTime?
-  createdAt       DateTime          @default(now())
+  id          String             @id @default(cuid())
+  type        NotificationType
+  destination String
+  subject     String?
+  payload     Json?
+  status      NotificationStatus
+  sentAt      DateTime?
+  createdAt   DateTime           @default(now())
 
   @@map("notifications")
 }
 
 model AuditLog {
-  id              String  @id @default(cuid())
-  actorUserId     String
-  action          String
-  targetType      String
-  targetId        String?
-  ip              String?
-  meta            Json?
-  createdAt       DateTime @default(now())
+  id          String   @id @default(cuid())
+  actorUserId String
+  action      String
+  targetType  String
+  targetId    String?
+  ip          String?
+  meta        Json?
+  createdAt   DateTime @default(now())
 
   // Relations
-  actorUser       User    @relation(fields: [actorUserId], references: [id])
+  actorUser User @relation(fields: [actorUserId], references: [id])
 
   @@map("audit_logs")
 }
