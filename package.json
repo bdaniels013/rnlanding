@@ -16,7 +16,7 @@
     "db:seed": "node prisma/seed.js",
     "db:studio": "npx prisma studio",
     "setup": "node scripts/setup.js",
-    "start": "npx vite preview --host 0.0.0.0 --port $PORT"
+    "start": "node server.js"
   },
   "dependencies": {
     "@paypal/paypal-server-sdk": "^0.5.1",
@@ -24,6 +24,7 @@
     "@vitejs/plugin-react": "^4.0.3",
     "autoprefixer": "^10.4.14",
     "bcryptjs": "^2.4.3",
+    "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.263.1",
     "next-auth": "^4.22.1",
