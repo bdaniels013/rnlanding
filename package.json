@@ -8,14 +8,27 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0"
+    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "node prisma/seed.js",
+    "db:studio": "prisma studio",
+    "setup": "node scripts/setup.js"
   },
   "dependencies": {
+    "@paypal/paypal-server-sdk": "^0.5.1",
+    "@prisma/client": "^5.22.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "lucide-react": "^0.263.1",
+    "next-auth": "^4.22.1",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "lucide-react": "^0.263.1"
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",
     "@vitejs/plugin-react": "^4.0.3",
@@ -25,6 +38,7 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.3",
     "postcss": "^8.4.27",
+    "prisma": "^5.22.0",
     "tailwindcss": "^3.3.3",
     "vite": "^4.4.5"
   },

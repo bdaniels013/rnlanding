@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Clock, Zap, ArrowRight, Shield, Calendar, CreditCard, Users, Sparkles, ChevronRight, Star, Youtube, Instagram, Facebook, DollarSign, Play } from "lucide-react";
+import OffersSection from './components/OffersSection';
 
 /**
  * RICHNICK VIRAL GROWTH — LANDING PAGE
@@ -834,7 +835,7 @@ export default function RichNickLanding() {
         </div>
       </section>
 
-      <Pricing />
+              <OffersSection />
       <Testimonials />
 
       <FAQ />
