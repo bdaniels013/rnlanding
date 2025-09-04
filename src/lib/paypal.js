@@ -1,117 +1,139 @@
-import paypal from '@paypal/checkout-server-sdk';
+import { PayPalClient, Environment } from '@paypal/paypal-server-sdk';
 
-class PayPalClient {
+class PayPalService {
   constructor() {
     // Set up the PayPal environment
     const environment = process.env.PAYPAL_ENV === 'live' 
-      ? new paypal.core.LiveEnvironment(
+      ? new Environment.Live(
           process.env.PAYPAL_CLIENT_ID,
           process.env.PAYPAL_CLIENT_SECRET
         )
-      : new paypal.core.SandboxEnvironment(
+      : new Environment.Sandbox(
           process.env.PAYPAL_CLIENT_ID,
           process.env.PAYPAL_CLIENT_SECRET
         );
     
-    this.client = new paypal.core.PayPalHttpClient(environment);
+    this.client = new PayPalClient(environment);
   }
 
   async createOrder(orderData) {
     try {
-      const request = new paypal.orders.OrdersCreateRequest();
-      request.prefer("return=representation");
-      request.requestBody(orderData);
+      const request = {
+        method: 'POST',
+        path: '/v2/checkout/orders',
+        body: orderData,
+        headers: {
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        }
+      };
       
       const response = await this.client.execute(request);
       return response.result;
     } catch (error) {
       console.error('PayPal create order error:', error);
-      throw new Error('Failed to create PayPal order');
+      throw new Error('Failed to create PayPal order: ' + error.message);
     }
   }
 
   async createSubscription(subscriptionData) {
     try {
-      const request = new paypal.subscriptions.SubscriptionsCreateRequest();
-      request.prefer("return=representation");
-      request.requestBody(subscriptionData);
+      const request = {
+        method: 'POST',
+        path: '/v1/billing/subscriptions',
+        body: subscriptionData,
+        headers: {
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        }
+      };
       
       const response = await this.client.execute(request);
       return response.result;
     } catch (error) {
       console.error('PayPal create subscription error:', error);
-      throw new Error('Failed to create PayPal subscription');
+      throw new Error('Failed to create PayPal subscription: ' + error.message);
     }
   }
 
   async captureOrder(orderId) {
     try {
-      const request = new paypal.orders.OrdersCaptureRequest(orderId);
-      request.prefer("return=representation");
+      const request = {
+        method: 'POST',
+        path: `/v2/checkout/orders/${orderId}/capture`,
+        headers: {
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        }
+      };
       
       const response = await this.client.execute(request);
       return response.result;
     } catch (error) {
       console.error('PayPal capture order error:', error);
-      throw new Error('Failed to capture PayPal order');
+      throw new Error('Failed to capture PayPal order: ' + error.message);
     }
   }
 
   async getOrder(orderId) {
     try {
-      const request = new paypal.orders.OrdersGetRequest(orderId);
+      const request = {
+        method: 'GET',
+        path: `/v2/checkout/orders/${orderId}`
+      };
+      
       const response = await this.client.execute(request);
       return response.result;
     } catch (error) {
       console.error('PayPal get order error:', error);
-      throw new Error('Failed to get PayPal order');
+      throw new Error('Failed to get PayPal order: ' + error.message);
     }
   }
 
   async refundPayment(captureId, amount, reason) {
     try {
-      const request = new paypal.payments.CapturesRefundRequest(captureId);
-      request.prefer("return=representation");
-      request.requestBody({
-        amount: {
-          currency_code: 'USD',
-          value: amount
+      const request = {
+        method: 'POST',
+        path: `/v2/payments/captures/${captureId}/refund`,
+        body: {
+          amount: {
+            currency_code: 'USD',
+            value: amount
+          },
+          note_to_payer: reason
         },
-        note_to_payer: reason
-      });
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      };
       
       const response = await this.client.execute(request);
       return response.result;
     } catch (error) {
       console.error('PayPal refund error:', error);
-      throw new Error('Failed to refund PayPal payment');
+      throw new Error('Failed to refund PayPal payment: ' + error.message);
     }
   }
 
   verifyWebhookSignature(headers, body, webhookId) {
-    try {
-      // Verify webhook signature
-      const webhookIdHeader = headers['paypal-webhook-id'];
-      const transmissionId = headers['paypal-transmission-id'];
-      const timestamp = headers['paypal-transmission-time'];
-      const certUrl = headers['paypal-cert-url'];
-      const authAlgo = headers['paypal-auth-algo'];
-      const transmissionSig = headers['paypal-transmission-sig'];
+    // This is a placeholder. Proper webhook verification requires PayPal's SDK utility or manual implementation.
+    // For now, we'll do a basic check.
+    const transmissionId = headers['paypal-transmission-id'];
+    const timestamp = headers['paypal-transmission-time'];
+    const certUrl = headers['paypal-cert-url'];
+    const authAlgo = headers['paypal-auth-algo'];
+    const transmissionSig = headers['paypal-transmission-sig'];
 
-      // Basic validation
-      if (!webhookIdHeader || webhookIdHeader !== webhookId) {
-        return false;
-      }
-
-      // TODO: Implement proper signature verification
-      // For now, return true if webhook ID matches
-      return true;
-    } catch (error) {
-      console.error('PayPal webhook verification error:', error);
+    if (!transmissionId || !timestamp || !certUrl || !authAlgo || !transmissionSig || !webhookId) {
+      console.warn('Missing PayPal webhook verification headers or webhook ID.');
       return false;
     }
+
+    // TODO: Implement proper signature verification using PayPal's SDK or a robust library.
+    // For now, we'll return true to allow processing, but this is INSECURE for production.
+    console.warn('PayPal webhook signature verification is a placeholder and INSECURE for production.');
+    return true;
   }
 }
 
-// Export singleton instance
-export const paypalService = new PayPalClient();
+export const paypalService = new PayPalService();
