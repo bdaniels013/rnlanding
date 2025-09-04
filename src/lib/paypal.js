@@ -1,4 +1,5 @@
-import { paypalClient as PayPalSDKClient, Environment } from '@paypal/paypal-server-sdk';
+import pkg from '@paypal/paypal-server-sdk';
+const { paypalClient: PayPalSDKClient, Environment } = pkg;
 
 class PayPalClient {
   constructor() {
