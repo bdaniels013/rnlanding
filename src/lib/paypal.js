@@ -1,33 +1,26 @@
-import pkg from '@paypal/paypal-server-sdk';
-const { PayPalClient, Environment } = pkg;
+import paypal from '@paypal/checkout-server-sdk';
 
 class PayPalService {
   constructor() {
     // Set up the PayPal environment
     const environment = process.env.PAYPAL_ENV === 'live' 
-      ? new Environment.Live(
+      ? new paypal.core.LiveEnvironment(
           process.env.PAYPAL_CLIENT_ID,
           process.env.PAYPAL_CLIENT_SECRET
         )
-      : new Environment.Sandbox(
+      : new paypal.core.SandboxEnvironment(
           process.env.PAYPAL_CLIENT_ID,
           process.env.PAYPAL_CLIENT_SECRET
         );
     
-    this.client = new PayPalClient(environment);
+    this.client = new paypal.core.PayPalHttpClient(environment);
   }
 
   async createOrder(orderData) {
     try {
-      const request = {
-        method: 'POST',
-        path: '/v2/checkout/orders',
-        body: orderData,
-        headers: {
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation'
-        }
-      };
+      const request = new paypal.orders.OrdersCreateRequest();
+      request.prefer("return=representation");
+      request.requestBody(orderData);
       
       const response = await this.client.execute(request);
       return response.result;
@@ -39,18 +32,24 @@ class PayPalService {
 
   async createSubscription(subscriptionData) {
     try {
-      const request = {
+      // For now, we'll use a simple HTTP request to create subscriptions
+      // since the checkout SDK doesn't support subscriptions
+      const response = await fetch('https://api-m.paypal.com/v1/billing/subscriptions', {
         method: 'POST',
-        path: '/v1/billing/subscriptions',
-        body: subscriptionData,
         headers: {
           'Content-Type': 'application/json',
-          'Prefer': 'return=representation'
-        }
-      };
-      
-      const response = await this.client.execute(request);
-      return response.result;
+          'Authorization': `Basic ${Buffer.from(`${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_CLIENT_SECRET}`).toString('base64')}`,
+          'PayPal-Request-Id': `subscription-${Date.now()}`
+        },
+        body: JSON.stringify(subscriptionData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`PayPal API error: ${response.status} - ${errorData}`);
+      }
+
+      return await response.json();
     } catch (error) {
       console.error('PayPal create subscription error:', error);
       throw new Error('Failed to create PayPal subscription: ' + error.message);
@@ -59,14 +58,8 @@ class PayPalService {
 
   async captureOrder(orderId) {
     try {
-      const request = {
-        method: 'POST',
-        path: `/v2/checkout/orders/${orderId}/capture`,
-        headers: {
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation'
-        }
-      };
+      const request = new paypal.orders.OrdersCaptureRequest(orderId);
+      request.prefer("return=representation");
       
       const response = await this.client.execute(request);
       return response.result;
@@ -78,11 +71,7 @@ class PayPalService {
 
   async getOrder(orderId) {
     try {
-      const request = {
-        method: 'GET',
-        path: `/v2/checkout/orders/${orderId}`
-      };
-      
+      const request = new paypal.orders.OrdersGetRequest(orderId);
       const response = await this.client.execute(request);
       return response.result;
     } catch (error) {
@@ -93,20 +82,14 @@ class PayPalService {
 
   async refundPayment(captureId, amount, reason) {
     try {
-      const request = {
-        method: 'POST',
-        path: `/v2/payments/captures/${captureId}/refund`,
-        body: {
-          amount: {
-            currency_code: 'USD',
-            value: amount
-          },
-          note_to_payer: reason
+      const request = new paypal.payments.CapturesRefundRequest(captureId);
+      request.requestBody({
+        amount: {
+          currency_code: 'USD',
+          value: amount
         },
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      };
+        note_to_payer: reason
+      });
       
       const response = await this.client.execute(request);
       return response.result;
