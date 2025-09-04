@@ -18,6 +18,11 @@ const CheckoutFlow = ({ selectedOffer, onClose }) => {
     if (selectedOffer) {
       setSelectedItems([{ offer_id: selectedOffer.id, qty: 1 }]);
     }
+    // Load saved customer info
+    const savedInfo = localStorage.getItem('richnick_customer_info');
+    if (savedInfo) {
+      setCustomerInfo(JSON.parse(savedInfo));
+    }
   }, [selectedOffer]);
 
   const fetchOffers = async () => {
@@ -30,12 +35,35 @@ const CheckoutFlow = ({ selectedOffer, onClose }) => {
     }
   };
 
-  const handleCustomerInfoSubmit = (e) => {
+  const handleCustomerInfoSubmit = async (e) => {
     e.preventDefault();
     if (!customerInfo.name || !customerInfo.email) {
       setError('Name and email are required');
       return;
     }
+    
+    // Save customer info to localStorage
+    localStorage.setItem('richnick_customer_info', JSON.stringify(customerInfo));
+    
+    // Send customer info to admin dashboard
+    try {
+      await fetch('/api/admin/customer-info', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-auth': 'true'
+        },
+        body: JSON.stringify({
+          ...customerInfo,
+          timestamp: new Date().toISOString(),
+          action: 'checkout_started',
+          selectedOffer: selectedOffer?.name || 'Multiple offers'
+        })
+      });
+    } catch (err) {
+      console.error('Failed to log customer info:', err);
+    }
+    
     setStep(2);
   };
 

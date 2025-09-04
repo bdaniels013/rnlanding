@@ -359,6 +359,34 @@ app.post('/api/admin/credits/deduct', authenticateAdmin, (req, res) => {
   }
 });
 
+// Capture customer info for admin dashboard
+app.post('/api/admin/customer-info', authenticateAdmin, (req, res) => {
+  try {
+    const { name, email, phone, timestamp, action, selectedOffer } = req.body;
+    
+    console.log('Customer info captured:', {
+      name,
+      email,
+      phone,
+      timestamp,
+      action,
+      selectedOffer
+    });
+    
+    // TODO: In production, store this in the database
+    // For now, we'll just log it
+    
+    res.json({
+      success: true,
+      message: 'Customer info captured successfully'
+    });
+    
+  } catch (error) {
+    console.error('Customer info capture error:', error);
+    res.status(500).json({ error: 'Failed to capture customer info' });
+  }
+});
+
 // Get credits history for a customer
 app.get('/api/admin/credits/history/:customerId', authenticateAdmin, (req, res) => {
   try {

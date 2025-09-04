@@ -194,6 +194,21 @@ const AdminDashboard = ({ onLogout }) => {
           </div>
         </div>
 
+        {/* Customer Info Captures */}
+        <div className="bg-gray-800 rounded-lg p-6 mb-8">
+          <h2 className="text-xl font-semibold mb-4">Recent Customer Info Captures</h2>
+          <div className="text-sm text-gray-400 mb-4">
+            Customer information captured when they click "Continue to Review"
+          </div>
+          <div className="bg-gray-700 rounded-lg p-4">
+            <div className="text-gray-300 text-sm">
+              Check your server logs for detailed customer information captures.
+              <br />
+              <span className="text-gray-500">Look for: "Customer info captured:" in the logs</span>
+            </div>
+          </div>
+        </div>
+
         {/* Credits Management */}
         <CreditsManagement />
 
