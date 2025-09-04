@@ -79,7 +79,7 @@ const CheckoutFlow = ({ selectedOffer, onClose }) => {
   const calculateTotal = () => {
     return selectedItems.reduce((total, item) => {
       const offer = offers.find(o => o.id === item.offer_id);
-      return total + (offer ? parseFloat(offer.price) * item.qty : 0);
+      return total + (offer ? (offer.priceCents / 100) * item.qty : 0);
     }, 0);
   };
 

@@ -57,6 +57,49 @@ app.get('/api/offers', (req, res) => {
   ]);
 });
 
+// Checkout endpoint (simplified for now)
+app.post('/api/checkout/create', (req, res) => {
+  try {
+    const { customer_info, items } = req.body;
+    
+    // Validate input
+    if (!customer_info || !items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: 'Invalid input data' });
+    }
+
+    // Calculate total
+    let totalCents = 0;
+    let totalCredits = 0;
+    
+    for (const item of items) {
+      // Find the offer by ID
+      const offer = {
+        'monthly-creator-pass': { priceCents: 100000, creditsValue: 1, isCreditEligible: true },
+        'annual-plan': { priceCents: 1000000, creditsValue: 12, isCreditEligible: true },
+        'content-management': { priceCents: 150000, creditsValue: 0, isCreditEligible: false }
+      }[item.offer_id];
+      
+      if (offer) {
+        totalCents += offer.priceCents * item.qty;
+        totalCredits += offer.isCreditEligible ? offer.creditsValue * item.qty : 0;
+      }
+    }
+
+    // For now, return a mock PayPal approval URL
+    // In production, this would create a real PayPal order
+    res.json({
+      order_id: 'mock-order-' + Date.now(),
+      paypal_approval_url: 'https://www.paypal.com/checkoutnow?token=mock-token',
+      total_cents: totalCents,
+      total_credits: totalCredits
+    });
+    
+  } catch (error) {
+    console.error('Checkout error:', error);
+    res.status(500).json({ error: 'Checkout failed' });
+  }
+});
+
 // Serve the React app for all other routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
