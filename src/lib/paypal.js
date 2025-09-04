@@ -1,26 +1,29 @@
-import pkg from '@paypal/paypal-server-sdk';
-const { paypalClient, Environment } = pkg;
+import paypal from '@paypal/checkout-server-sdk';
 
 class PayPalClient {
   constructor() {
-    this.client = paypalClient({
-      clientCredentialsAuthCredentials: {
-        oAuthClientId: process.env.PAYPAL_CLIENT_ID,
-        oAuthClientSecret: process.env.PAYPAL_CLIENT_SECRET,
-      },
-      environment: process.env.PAYPAL_ENV === 'live' 
-        ? Environment.Live 
-        : Environment.Sandbox,
-    });
+    // Set up the PayPal environment
+    const environment = process.env.PAYPAL_ENV === 'live' 
+      ? new paypal.core.LiveEnvironment(
+          process.env.PAYPAL_CLIENT_ID,
+          process.env.PAYPAL_CLIENT_SECRET
+        )
+      : new paypal.core.SandboxEnvironment(
+          process.env.PAYPAL_CLIENT_ID,
+          process.env.PAYPAL_CLIENT_SECRET
+        );
+    
+    this.client = new paypal.core.PayPalHttpClient(environment);
   }
 
   async createOrder(orderData) {
     try {
-      const { body: order } = await this.client.ordersController.ordersCreate({
-        body: orderData,
-        prefer: 'return=representation'
-      });
-      return order;
+      const request = new paypal.orders.OrdersCreateRequest();
+      request.prefer("return=representation");
+      request.requestBody(orderData);
+      
+      const response = await this.client.execute(request);
+      return response.result;
     } catch (error) {
       console.error('PayPal create order error:', error);
       throw new Error('Failed to create PayPal order');
@@ -29,11 +32,11 @@ class PayPalClient {
 
   async captureOrder(orderId) {
     try {
-      const { body: capture } = await this.client.ordersController.ordersCapture({
-        id: orderId,
-        prefer: 'return=representation'
-      });
-      return capture;
+      const request = new paypal.orders.OrdersCaptureRequest(orderId);
+      request.prefer("return=representation");
+      
+      const response = await this.client.execute(request);
+      return response.result;
     } catch (error) {
       console.error('PayPal capture order error:', error);
       throw new Error('Failed to capture PayPal order');
@@ -42,10 +45,9 @@ class PayPalClient {
 
   async getOrder(orderId) {
     try {
-      const { body: order } = await this.client.ordersController.ordersGet({
-        id: orderId
-      });
-      return order;
+      const request = new paypal.orders.OrdersGetRequest(orderId);
+      const response = await this.client.execute(request);
+      return response.result;
     } catch (error) {
       console.error('PayPal get order error:', error);
       throw new Error('Failed to get PayPal order');
@@ -54,17 +56,18 @@ class PayPalClient {
 
   async refundPayment(captureId, amount, reason) {
     try {
-      const { body: refund } = await this.client.paymentsController.capturesRefund({
-        id: captureId,
-        body: {
-          amount: {
-            currencyCode: 'USD',
-            value: amount
-          },
-          noteToPayer: reason
-        }
+      const request = new paypal.payments.CapturesRefundRequest(captureId);
+      request.prefer("return=representation");
+      request.requestBody({
+        amount: {
+          currency_code: 'USD',
+          value: amount
+        },
+        note_to_payer: reason
       });
-      return refund;
+      
+      const response = await this.client.execute(request);
+      return response.result;
     } catch (error) {
       console.error('PayPal refund error:', error);
       throw new Error('Failed to refund PayPal payment');
@@ -74,7 +77,6 @@ class PayPalClient {
   verifyWebhookSignature(headers, body, webhookId) {
     try {
       // Verify webhook signature
-      // This is a simplified version - implement proper verification
       const webhookIdHeader = headers['paypal-webhook-id'];
       const transmissionId = headers['paypal-transmission-id'];
       const timestamp = headers['paypal-transmission-time'];
