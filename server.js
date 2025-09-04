@@ -51,7 +51,7 @@ app.get('/api/offers', (req, res) => {
       sku: 'content-management',
       name: 'Ongoing Content Management Services',
       priceCents: 150000,
-      isSubscription: true,
+      isSubscription: false,
       creditsValue: 0,
       isCreditEligible: false
     }
@@ -78,7 +78,7 @@ app.post('/api/checkout/create', async (req, res) => {
       const offer = {
         'monthly-creator-pass': { priceCents: 100000, creditsValue: 1, isCreditEligible: true, isSubscription: false, name: 'Sign up for a month' },
         'annual-plan': { priceCents: 1000000, creditsValue: 12, isCreditEligible: true, isSubscription: false, name: '1 year @ $10k' },
-        'content-management': { priceCents: 150000, creditsValue: 0, isCreditEligible: false, isSubscription: true, name: 'Ongoing Content Management Services' }
+        'content-management': { priceCents: 150000, creditsValue: 0, isCreditEligible: false, isSubscription: false, name: 'Ongoing Content Management Services' }
       }[item.offer_id];
       
       if (offer) {
@@ -100,7 +100,7 @@ app.post('/api/checkout/create', async (req, res) => {
       const offer = {
         'monthly-creator-pass': { isSubscription: false },
         'annual-plan': { isSubscription: false },
-        'content-management': { isSubscription: true }
+        'content-management': { isSubscription: false }
       }[item.offer_id];
       return offer && offer.isSubscription;
     });
