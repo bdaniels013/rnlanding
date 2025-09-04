@@ -30,6 +30,20 @@ class PayPalClient {
     }
   }
 
+  async createSubscription(subscriptionData) {
+    try {
+      const request = new paypal.subscriptions.SubscriptionsCreateRequest();
+      request.prefer("return=representation");
+      request.requestBody(subscriptionData);
+      
+      const response = await this.client.execute(request);
+      return response.result;
+    } catch (error) {
+      console.error('PayPal create subscription error:', error);
+      throw new Error('Failed to create PayPal subscription');
+    }
+  }
+
   async captureOrder(orderId) {
     try {
       const request = new paypal.orders.OrdersCaptureRequest(orderId);

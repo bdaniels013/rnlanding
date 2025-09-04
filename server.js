@@ -51,9 +51,10 @@ app.get('/api/offers', (req, res) => {
       sku: 'content-management',
       name: 'Ongoing Content Management Services',
       priceCents: 150000,
-      isSubscription: false,
+      isSubscription: true, // Now using PayPal subscription
       creditsValue: 0,
-      isCreditEligible: false
+      isCreditEligible: false,
+      paypalPlanId: 'P-9A346031N5163840TNC5AE3Q' // Your PayPal subscription plan ID
     }
   ]);
 });
@@ -78,7 +79,7 @@ app.post('/api/checkout/create', async (req, res) => {
       const offer = {
         'monthly-creator-pass': { priceCents: 100000, creditsValue: 1, isCreditEligible: true, isSubscription: false, name: 'Sign up for a month' },
         'annual-plan': { priceCents: 1000000, creditsValue: 12, isCreditEligible: true, isSubscription: false, name: '1 year @ $10k' },
-        'content-management': { priceCents: 150000, creditsValue: 0, isCreditEligible: false, isSubscription: false, name: 'Ongoing Content Management Services' }
+        'content-management': { priceCents: 150000, creditsValue: 0, isCreditEligible: false, isSubscription: true, name: 'Ongoing Content Management Services', paypalPlanId: 'P-9A346031N5163840TNC5AE3Q' }
       }[item.offer_id];
       
       if (offer) {
@@ -100,45 +101,104 @@ app.post('/api/checkout/create', async (req, res) => {
       const offer = {
         'monthly-creator-pass': { isSubscription: false },
         'annual-plan': { isSubscription: false },
-        'content-management': { isSubscription: false }
+        'content-management': { isSubscription: true }
       }[item.offer_id];
       return offer && offer.isSubscription;
     });
 
-    // Create PayPal order
-    const paypalOrderData = {
-      intent: hasSubscriptions ? 'AUTHORIZE' : 'CAPTURE',
-      purchase_units: [{
-        amount: {
-          currency_code: 'USD',
-          value: (totalCents / 100).toFixed(2),
-          breakdown: {
-            item_total: {
-              currency_code: 'USD',
-              value: (totalCents / 100).toFixed(2)
-            }
+    // Handle subscriptions vs one-time payments
+    let paypalOrderData;
+    
+    if (hasSubscriptions) {
+      // For subscriptions, we need to create a subscription order
+      const subscriptionItem = items.find(item => {
+        const offer = {
+          'monthly-creator-pass': { isSubscription: false },
+          'annual-plan': { isSubscription: false },
+          'content-management': { isSubscription: true, paypalPlanId: 'P-9A346031N5163840TNC5AE3Q' }
+        }[item.offer_id];
+        return offer && offer.isSubscription;
+      });
+      
+      if (subscriptionItem) {
+        const offer = {
+          'content-management': { paypalPlanId: 'P-9A346031N5163840TNC5AE3Q' }
+        }[subscriptionItem.offer_id];
+        
+        // Create subscription order
+        paypalOrderData = {
+          plan_id: offer.paypalPlanId,
+          subscriber: {
+            name: {
+              given_name: customer_info.name?.split(' ')[0] || 'Customer',
+              surname: customer_info.name?.split(' ').slice(1).join(' ') || ''
+            },
+            email_address: customer_info.email
+          },
+          application_context: {
+            brand_name: 'Rich Nick',
+            locale: 'en-US',
+            shipping_preference: 'NO_SHIPPING',
+            user_action: 'SUBSCRIBE_NOW',
+            payment_method: {
+              payer_selected: 'PAYPAL',
+              payee_preferred: 'IMMEDIATE_PAYMENT_REQUIRED'
+            },
+            return_url: `${process.env.FRONTEND_URL}/checkout/success`,
+            cancel_url: `${process.env.FRONTEND_URL}/checkout/cancel`
           }
-        },
-        items: orderItems,
-        description: `Rich Nick Offer - ${items.length} item(s)`
-      }],
-      application_context: {
-        brand_name: 'Rich Nick',
-        landing_page: 'NO_PREFERENCE',
-        user_action: hasSubscriptions ? 'SUBSCRIBE' : 'PAY_NOW',
-        return_url: `${process.env.FRONTEND_URL}/checkout/success`,
-        cancel_url: `${process.env.FRONTEND_URL}/checkout/cancel`
+        };
       }
-    };
+    } else {
+      // For one-time payments, use regular order
+      paypalOrderData = {
+        intent: 'CAPTURE',
+        purchase_units: [{
+          amount: {
+            currency_code: 'USD',
+            value: (totalCents / 100).toFixed(2),
+            breakdown: {
+              item_total: {
+                currency_code: 'USD',
+                value: (totalCents / 100).toFixed(2)
+              }
+            }
+          },
+          items: orderItems,
+          description: `Rich Nick Offer - ${items.length} item(s)`
+        }],
+        application_context: {
+          brand_name: 'Rich Nick',
+          landing_page: 'NO_PREFERENCE',
+          user_action: 'PAY_NOW',
+          return_url: `${process.env.FRONTEND_URL}/checkout/success`,
+          cancel_url: `${process.env.FRONTEND_URL}/checkout/cancel`
+        }
+      };
+    }
 
     console.log('Creating PayPal order with data:', JSON.stringify(paypalOrderData, null, 2));
     
-    const paypalOrder = await paypalService.createOrder(paypalOrderData);
+    let paypalOrder;
+    if (hasSubscriptions) {
+      paypalOrder = await paypalService.createSubscription(paypalOrderData);
+    } else {
+      paypalOrder = await paypalService.createOrder(paypalOrderData);
+    }
     
     console.log('PayPal order created:', paypalOrder);
 
-    // Find the approval URL
-    const approvalUrl = paypalOrder.links?.find(link => link.rel === 'approve')?.href;
+    // Find the approval URL (different for subscriptions vs orders)
+    let approvalUrl;
+    if (hasSubscriptions) {
+      // For subscriptions, look for 'approve' or 'edit' link
+      approvalUrl = paypalOrder.links?.find(link => 
+        link.rel === 'approve' || link.rel === 'edit'
+      )?.href;
+    } else {
+      // For orders, look for 'approve' link
+      approvalUrl = paypalOrder.links?.find(link => link.rel === 'approve')?.href;
+    }
     
     if (!approvalUrl) {
       throw new Error('No approval URL received from PayPal');
@@ -148,7 +208,9 @@ app.post('/api/checkout/create', async (req, res) => {
       order_id: paypalOrder.id,
       paypal_approval_url: approvalUrl,
       total_cents: totalCents,
-      total_credits: totalCredits
+      total_credits: totalCredits,
+      is_subscription: hasSubscriptions,
+      subscription_id: hasSubscriptions ? paypalOrder.id : null
     });
     
   } catch (error) {
@@ -384,6 +446,46 @@ app.get('/api/paypal/cancel', (req, res) => {
     success: false,
     message: 'Payment was cancelled'
   });
+});
+
+// PayPal subscription webhook endpoint
+app.post('/api/paypal/subscription-webhook', (req, res) => {
+  try {
+    const webhookData = req.body;
+    console.log('PayPal subscription webhook received:', JSON.stringify(webhookData, null, 2));
+    
+    // Handle different subscription events
+    switch (webhookData.event_type) {
+      case 'BILLING.SUBSCRIPTION.ACTIVATED':
+        console.log('Subscription activated:', webhookData.resource.id);
+        // TODO: Update database with active subscription
+        break;
+        
+      case 'BILLING.SUBSCRIPTION.CANCELLED':
+        console.log('Subscription cancelled:', webhookData.resource.id);
+        // TODO: Update database with cancelled subscription
+        break;
+        
+      case 'PAYMENT.SALE.COMPLETED':
+        console.log('Subscription payment completed:', webhookData.resource.id);
+        // TODO: Process recurring payment
+        break;
+        
+      case 'PAYMENT.SALE.DENIED':
+        console.log('Subscription payment denied:', webhookData.resource.id);
+        // TODO: Handle failed payment
+        break;
+        
+      default:
+        console.log('Unhandled subscription webhook event:', webhookData.event_type);
+    }
+    
+    res.status(200).json({ status: 'success' });
+    
+  } catch (error) {
+    console.error('Subscription webhook error:', error);
+    res.status(500).json({ error: 'Webhook processing failed' });
+  }
 });
 
 // Serve the React app for all other routes
