@@ -763,6 +763,7 @@ export default function RichNickLanding() {
 
       <Ribbon />
       <Hero />
+      <OffersSection />
       <ViralStats />
 
       {/* Lead capture & value props */}
@@ -772,8 +773,6 @@ export default function RichNickLanding() {
           <LeadForm />
         </div>
       </section>
-
-              <OffersSection />
       <Testimonials />
 
       <FAQ />
