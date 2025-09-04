@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Clock, Zap, ArrowRight, Shield, Calendar, CreditCard, Users, Sparkles, ChevronRight, Star, Youtube, Instagram, Facebook, DollarSign, Play } from "lucide-react";
 import OffersSection from './components/OffersSection';
+import AdminDashboard from './components/AdminDashboard';
 
 /**
  * RICHNICK VIRAL GROWTH — LANDING PAGE
@@ -733,6 +734,23 @@ function Footer() {
 }
 
 export default function RichNickLanding() {
+  // Simple client-side routing
+  const [currentPath, setCurrentPath] = useState(window.location.pathname);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Route to admin dashboard
+  if (currentPath === '/admin') {
+    return <AdminDashboard />;
+  }
+
   return (
     <div className="text-white min-h-screen selection:bg-fuchsia-500 selection:text-white">
       {/* Optional Google tag — paste your Measurement ID */}

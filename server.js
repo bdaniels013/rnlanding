@@ -100,6 +100,29 @@ app.post('/api/checkout/create', (req, res) => {
   }
 });
 
+// Admin dashboard endpoint (simplified for now)
+app.get('/api/admin/dashboard', (req, res) => {
+  try {
+    // TODO: Add authentication middleware to verify admin role
+    
+    // Return mock dashboard data for now
+    res.json({
+      revenue_today: 0,
+      orders_today: 0,
+      total_customers: 0,
+      credits_outstanding: 0,
+      active_subscriptions: 0,
+      upcoming_slots: [],
+      recent_orders: [],
+      alerts: []
+    });
+    
+  } catch (error) {
+    console.error('Admin dashboard error:', error);
+    res.status(500).json({ error: 'Failed to fetch dashboard data' });
+  }
+});
+
 // Serve the React app for all other routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
