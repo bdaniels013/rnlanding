@@ -33,7 +33,7 @@ app.get('/api/offers', (req, res) => {
       sku: 'monthly-creator-pass',
       name: 'Sign up for a month',
       priceCents: 100000,
-      isSubscription: true,
+      isSubscription: false,
       creditsValue: 1,
       isCreditEligible: true
     },
@@ -42,7 +42,7 @@ app.get('/api/offers', (req, res) => {
       sku: 'annual-plan',
       name: '1 year @ $10k',
       priceCents: 1000000,
-      isSubscription: true,
+      isSubscription: false,
       creditsValue: 12,
       isCreditEligible: true
     },
@@ -76,9 +76,9 @@ app.post('/api/checkout/create', async (req, res) => {
     for (const item of items) {
       // Find the offer by ID
       const offer = {
-        'monthly-creator-pass': { priceCents: 100000, creditsValue: 1, isCreditEligible: true, name: 'Sign up for a month' },
-        'annual-plan': { priceCents: 1000000, creditsValue: 12, isCreditEligible: true, name: '1 year @ $10k' },
-        'content-management': { priceCents: 150000, creditsValue: 0, isCreditEligible: false, name: 'Ongoing Content Management Services' }
+        'monthly-creator-pass': { priceCents: 100000, creditsValue: 1, isCreditEligible: true, isSubscription: false, name: 'Sign up for a month' },
+        'annual-plan': { priceCents: 1000000, creditsValue: 12, isCreditEligible: true, isSubscription: false, name: '1 year @ $10k' },
+        'content-management': { priceCents: 150000, creditsValue: 0, isCreditEligible: false, isSubscription: true, name: 'Ongoing Content Management Services' }
       }[item.offer_id];
       
       if (offer) {
@@ -95,9 +95,19 @@ app.post('/api/checkout/create', async (req, res) => {
       }
     }
 
+    // Check if any items are subscriptions
+    const hasSubscriptions = items.some(item => {
+      const offer = {
+        'monthly-creator-pass': { isSubscription: false },
+        'annual-plan': { isSubscription: false },
+        'content-management': { isSubscription: true }
+      }[item.offer_id];
+      return offer && offer.isSubscription;
+    });
+
     // Create PayPal order
     const paypalOrderData = {
-      intent: 'CAPTURE',
+      intent: hasSubscriptions ? 'AUTHORIZE' : 'CAPTURE',
       purchase_units: [{
         amount: {
           currency_code: 'USD',
@@ -115,7 +125,7 @@ app.post('/api/checkout/create', async (req, res) => {
       application_context: {
         brand_name: 'Rich Nick',
         landing_page: 'NO_PREFERENCE',
-        user_action: 'PAY_NOW',
+        user_action: hasSubscriptions ? 'SUBSCRIBE' : 'PAY_NOW',
         return_url: `${process.env.FRONTEND_URL}/checkout/success`,
         cancel_url: `${process.env.FRONTEND_URL}/checkout/cancel`
       }
