@@ -1,8 +1,8 @@
-import { paypalClient, Environment } from '@paypal/paypal-server-sdk';
+import { paypalClient as PayPalSDKClient, Environment } from '@paypal/paypal-server-sdk';
 
 class PayPalClient {
   constructor() {
-    this.client = paypalClient({
+    this.client = PayPalSDKClient({
       clientCredentialsAuthCredentials: {
         oAuthClientId: process.env.PAYPAL_CLIENT_ID,
         oAuthClientSecret: process.env.PAYPAL_CLIENT_SECRET,
