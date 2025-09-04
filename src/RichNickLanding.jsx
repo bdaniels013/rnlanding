@@ -3,6 +3,8 @@ import { Check, Clock, Zap, ArrowRight, Shield, Calendar, CreditCard, Users, Spa
 import OffersSection from './components/OffersSection';
 import AdminDashboard from './components/AdminDashboard';
 import AdminLogin from './components/AdminLogin';
+import CheckoutSuccess from './components/CheckoutSuccess';
+import CheckoutCancel from './components/CheckoutCancel';
 
 /**
  * RICHNICK VIRAL GROWTH — LANDING PAGE
@@ -697,19 +699,34 @@ export default function RichNickLanding() {
   useEffect(() => {
     const authStatus = localStorage.getItem('adminAuth') === 'true';
     setIsAuthenticated(authStatus);
+    
+    // Clean up PayPal return URLs
+    if (window.location.href.includes('checkout/success') || window.location.href.includes('checkout/cancel')) {
+      // Remove PayPal tokens and clean the URL
+      const cleanUrl = window.location.origin + window.location.pathname;
+      window.history.replaceState({}, document.title, cleanUrl);
+    }
   }, []);
 
   const handleLogin = (success) => {
     setIsAuthenticated(success);
   };
 
-  // Route to admin dashboard
+  // Route to specific pages
   if (currentPath === '/admin') {
     if (isAuthenticated) {
       return <AdminDashboard onLogout={handleLogin} />;
     } else {
       return <AdminLogin onLogin={handleLogin} />;
     }
+  }
+
+  if (currentPath === '/checkout/success') {
+    return <CheckoutSuccess />;
+  }
+
+  if (currentPath === '/checkout/cancel') {
+    return <CheckoutCancel />;
   }
 
   return (
