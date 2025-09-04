@@ -5,6 +5,7 @@ import AdminDashboard from './components/AdminDashboard';
 import AdminLogin from './components/AdminLogin';
 import CheckoutSuccess from './components/CheckoutSuccess';
 import CheckoutCancel from './components/CheckoutCancel';
+import CheckoutFlow from './components/CheckoutFlow';
 
 /**
  * RICHNICK VIRAL GROWTH — LANDING PAGE
@@ -365,7 +366,7 @@ function Ribbon() {
   );
 }
 
-function Hero() {
+function Hero({ onReserveSeat }) {
   const [activePlatform, setActivePlatform] = useState('All');
   
   return (
@@ -383,9 +384,9 @@ function Hero() {
             </h1>
             <p className="mt-5 text-lg text-white/80 max-w-xl">{SITE.subhead}</p>
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
-              <a href={SITE.stripeEventCheckoutUrl} className="group inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-fuchsia-600 font-semibold shadow-lg shadow-fuchsia-600/20 hover:scale-[1.01] transition">
+              <button onClick={onReserveSeat} className="group inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-fuchsia-600 font-semibold shadow-lg shadow-fuchsia-600/20 hover:scale-[1.01] transition">
                 Reserve Event Seat — {currency(SITE.eventPrice)} <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition"/>
-              </a>
+              </button>
               <a href={SITE.calendlyUrl} className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-white/10 border border-white/20 hover:bg-white/15 transition">
                 Book a Discovery Call <Calendar className="w-4 h-4"/>
               </a>
@@ -627,7 +628,7 @@ function FAQ() {
   );
 }
 
-function StickyBar() {
+function StickyBar({ onReserveSeat }) {
   const { label, remaining } = usePersistentCountdown();
   return (
     <div className="fixed bottom-4 inset-x-0 z-40 px-4">
@@ -638,9 +639,9 @@ function StickyBar() {
             <span>Bonus rate holds for <strong>{label}</strong></span>
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
-            <a href={SITE.stripeEventCheckoutUrl} className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-fuchsia-600 font-semibold">
+            <button onClick={onReserveSeat} className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-fuchsia-600 font-semibold">
               Reserve seat <ArrowRight className="w-4 h-4"/>
-            </a>
+            </button>
             <a href={SITE.calendlyUrl} className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 border border-white/20">
               Talk first <Calendar className="w-4 h-4"/>
             </a>
@@ -685,6 +686,8 @@ export default function RichNickLanding() {
   // Simple client-side routing
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [selectedOffer, setSelectedOffer] = useState(null);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -710,6 +713,22 @@ export default function RichNickLanding() {
 
   const handleLogin = (success) => {
     setIsAuthenticated(success);
+  };
+
+  const handleReserveSeat = () => {
+    // Create the monthly creator pass offer
+    const monthlyCreatorPass = {
+      id: 'monthly-creator-pass',
+      sku: 'monthly-creator-pass',
+      name: 'Sign up for a month',
+      priceCents: 100000, // $1,000
+      isSubscription: false,
+      creditsValue: 1,
+      isCreditEligible: true
+    };
+    
+    setSelectedOffer(monthlyCreatorPass);
+    setShowCheckout(true);
   };
 
   // Route to specific pages
@@ -740,7 +759,7 @@ export default function RichNickLanding() {
       `}</script> */}
 
       <Ribbon />
-      <Hero />
+      <Hero onReserveSeat={handleReserveSeat} />
       <OffersSection />
 
       {/* Lead capture & value props */}
@@ -756,7 +775,15 @@ export default function RichNickLanding() {
 
       <FAQ />
       <Footer />
-      <StickyBar />
+      <StickyBar onReserveSeat={handleReserveSeat} />
+      
+      {/* Checkout Modal */}
+      {showCheckout && (
+        <CheckoutFlow 
+          selectedOffer={selectedOffer} 
+          onClose={() => setShowCheckout(false)} 
+        />
+      )}
     </div>
   );
 }
