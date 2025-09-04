@@ -144,8 +144,8 @@ app.post('/api/checkout/create', async (req, res) => {
               payer_selected: 'PAYPAL',
               payee_preferred: 'IMMEDIATE_PAYMENT_REQUIRED'
             },
-            return_url: `${process.env.FRONTEND_URL}/checkout/success`,
-            cancel_url: `${process.env.FRONTEND_URL}/checkout/cancel`
+            return_url: `https://richhnick.org/checkout/success`,
+            cancel_url: `https://richhnick.org/checkout/cancel`
           }
         };
       }
@@ -171,8 +171,8 @@ app.post('/api/checkout/create', async (req, res) => {
           brand_name: 'Rich Nick',
           landing_page: 'NO_PREFERENCE',
           user_action: 'PAY_NOW',
-          return_url: `${process.env.FRONTEND_URL}/checkout/success`,
-          cancel_url: `${process.env.FRONTEND_URL}/checkout/cancel`
+          return_url: `https://richhnick.org/checkout/success`,
+          cancel_url: `https://richhnick.org/checkout/cancel`
         }
       };
     }

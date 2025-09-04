@@ -41,7 +41,14 @@ class PayPalService {
           'Authorization': `Basic ${Buffer.from(`${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_CLIENT_SECRET}`).toString('base64')}`,
           'PayPal-Request-Id': `subscription-${Date.now()}`
         },
-        body: JSON.stringify(subscriptionData)
+        body: JSON.stringify({
+          ...subscriptionData,
+          application_context: {
+            ...subscriptionData.application_context,
+            return_url: 'https://richhnick.org/checkout/success',
+            cancel_url: 'https://richhnick.org/checkout/cancel'
+          }
+        })
       });
 
       if (!response.ok) {
