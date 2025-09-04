@@ -138,6 +138,42 @@ async function main() {
     console.log(`✅ Created order for ${customer.name}: ${offer.name}`);
   }
 
+  // Create sample customer info captures
+  console.log('📝 Creating sample customer info captures...');
+  const sampleCaptures = [
+    {
+      name: 'Blake Daniels',
+      email: 'bdaniels013@gmail.com',
+      phone: '2283571897',
+      action: 'checkout_started',
+      selectedOffer: 'Sign up for a month',
+      timestamp: new Date().toISOString()
+    },
+    {
+      name: 'John Doe',
+      email: 'john@example.com',
+      phone: '+1-555-0123',
+      action: 'checkout_started',
+      selectedOffer: '1 year @ $10k',
+      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() // 2 hours ago
+    },
+    {
+      name: 'Jane Smith',
+      email: 'jane@example.com',
+      phone: '+1-555-0124',
+      action: 'checkout_started',
+      selectedOffer: 'Ongoing Content Management Services',
+      timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString() // 4 hours ago
+    }
+  ];
+
+  for (const capture of sampleCaptures) {
+    await prisma.customerInfoCapture.create({
+      data: capture
+    });
+    console.log(`✅ Created customer info capture: ${capture.name} - ${capture.selectedOffer}`);
+  }
+
   console.log('🎉 Database seed completed successfully!');
 }
 

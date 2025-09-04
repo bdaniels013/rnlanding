@@ -186,8 +186,20 @@ export class DatabaseService {
   // Customer info captures (for tracking checkout flow)
   async captureCustomerInfo(customerInfo) {
     try {
-      // Store in a simple JSON field for now, or create a separate table
-      const capture = await prisma.customer.upsert({
+      // Store the customer info capture
+      const capture = await prisma.customerInfoCapture.create({
+        data: {
+          name: customerInfo.name,
+          email: customerInfo.email,
+          phone: customerInfo.phone,
+          action: customerInfo.action,
+          selectedOffer: customerInfo.selectedOffer,
+          timestamp: customerInfo.timestamp
+        }
+      });
+
+      // Also create or update the customer record for the credits system
+      await prisma.customer.upsert({
         where: { email: customerInfo.email },
         update: {
           name: customerInfo.name,
@@ -201,21 +213,6 @@ export class DatabaseService {
         }
       });
 
-      // Also store the capture event in audit logs
-      await prisma.auditLog.create({
-        data: {
-          actorUserId: 'system', // TODO: Get from auth context
-          action: 'CUSTOMER_INFO_CAPTURED',
-          targetType: 'CUSTOMER',
-          targetId: capture.id,
-          meta: {
-            action: customerInfo.action,
-            selectedOffer: customerInfo.selectedOffer,
-            timestamp: customerInfo.timestamp
-          }
-        }
-      });
-
       return capture;
     } catch (error) {
       console.error('Error capturing customer info:', error);
@@ -225,26 +222,18 @@ export class DatabaseService {
 
   async getRecentCustomerInfoCaptures() {
     try {
-      const captures = await prisma.auditLog.findMany({
-        where: {
-          action: 'CUSTOMER_INFO_CAPTURED'
-        },
+      const captures = await prisma.customerInfoCapture.findMany({
         orderBy: { createdAt: 'desc' },
-        take: 50,
-        include: {
-          actorUser: {
-            select: { email: true }
-          }
-        }
+        take: 50
       });
 
       return captures.map(capture => ({
         id: capture.id,
-        name: capture.meta?.name || 'Unknown',
-        email: capture.meta?.email || 'Unknown',
-        phone: capture.meta?.phone || 'N/A',
-        selectedOffer: capture.meta?.selectedOffer || 'Unknown',
-        action: capture.meta?.action || 'checkout_started',
+        name: capture.name,
+        email: capture.email,
+        phone: capture.phone || 'N/A',
+        selectedOffer: capture.selectedOffer,
+        action: capture.action,
         createdAt: capture.createdAt
       }));
     } catch (error) {

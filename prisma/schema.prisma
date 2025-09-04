@@ -232,6 +232,19 @@ model Notification {
   @@map("notifications")
 }
 
+model CustomerInfoCapture {
+  id            String   @id @default(cuid())
+  name          String
+  email         String
+  phone         String?
+  action        String
+  selectedOffer String
+  timestamp     String
+  createdAt     DateTime @default(now())
+
+  @@map("customer_info_captures")
+}
+
 model AuditLog {
   id          String   @id @default(cuid())
   actorUserId String
