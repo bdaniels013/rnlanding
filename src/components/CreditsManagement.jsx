@@ -128,21 +128,21 @@ export default function CreditsManagement() {
   }
 
   return (
-    <div className="bg-gray-800 rounded-lg p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-white flex items-center gap-2">
-          <CreditCard className="w-6 h-6" />
+    <div className="bg-gray-800 rounded-lg p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <h2 className="text-lg sm:text-xl font-semibold text-white flex items-center gap-2">
+          <CreditCard className="w-5 h-5 sm:w-6 sm:h-6" />
           Credits Management
         </h2>
         <div className="flex items-center gap-4">
-          <div className="relative">
+          <div className="relative flex-1 sm:flex-none">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
               placeholder="Search customers..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full sm:w-auto pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
             />
           </div>
         </div>
@@ -155,27 +155,28 @@ export default function CreditsManagement() {
       )}
 
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-xs sm:text-sm">
           <thead>
             <tr className="border-b border-gray-700">
-              <th className="text-left py-3 px-2">Customer</th>
-              <th className="text-left py-3 px-2">Email</th>
-              <th className="text-left py-3 px-2">Phone</th>
-              <th className="text-left py-3 px-2">Credits</th>
-              <th className="text-left py-3 px-2">Last Updated</th>
-              <th className="text-left py-3 px-2">Actions</th>
+              <th className="text-left py-2 px-1 sm:px-2">Customer</th>
+              <th className="text-left py-2 px-1 sm:px-2 hidden sm:table-cell">Email</th>
+              <th className="text-left py-2 px-1 sm:px-2 hidden md:table-cell">Phone</th>
+              <th className="text-left py-2 px-1 sm:px-2">Credits</th>
+              <th className="text-left py-2 px-1 sm:px-2 hidden lg:table-cell">Last Updated</th>
+              <th className="text-left py-2 px-1 sm:px-2">Actions</th>
             </tr>
           </thead>
           <tbody>
             {filteredCustomers.map(customer => (
               <tr key={customer.id} className="border-b border-gray-700/50 hover:bg-gray-700/50">
-                <td className="py-3 px-2">
-                  <div className="font-medium text-white">{customer.name || 'N/A'}</div>
+                <td className="py-2 px-1 sm:px-2">
+                  <div className="font-medium text-white text-xs sm:text-sm">{customer.name || 'N/A'}</div>
+                  <div className="text-gray-400 text-xs sm:hidden">{customer.email}</div>
                 </td>
-                <td className="py-3 px-2 text-gray-300">{customer.email}</td>
-                <td className="py-3 px-2 text-gray-300">{customer.phone || 'N/A'}</td>
-                <td className="py-3 px-2">
-                  <span className={`px-2 py-1 rounded text-sm font-medium ${
+                <td className="py-2 px-1 sm:px-2 text-gray-300 text-xs sm:text-sm hidden sm:table-cell">{customer.email}</td>
+                <td className="py-2 px-1 sm:px-2 text-gray-300 text-xs sm:text-sm hidden md:table-cell">{customer.phone || 'N/A'}</td>
+                <td className="py-2 px-1 sm:px-2">
+                  <span className={`px-1 sm:px-2 py-1 rounded text-xs sm:text-sm font-medium ${
                     customer.credits > 0 ? 'bg-green-600 text-white' : 
                     customer.credits === 0 ? 'bg-gray-600 text-white' : 
                     'bg-red-600 text-white'
@@ -183,40 +184,40 @@ export default function CreditsManagement() {
                     {customer.credits || 0}
                   </span>
                 </td>
-                <td className="py-3 px-2 text-gray-400">
+                <td className="py-2 px-1 sm:px-2 text-gray-400 text-xs hidden lg:table-cell">
                   {customer.updatedAt ? new Date(customer.updatedAt).toLocaleDateString() : 'N/A'}
                 </td>
-                <td className="py-3 px-2">
-                  <div className="flex items-center gap-2">
+                <td className="py-2 px-1 sm:px-2">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2">
                     <button
                       onClick={() => {
                         setSelectedCustomer(customer);
                         setShowAddModal(true);
                       }}
-                      className="flex items-center gap-1 px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs transition-colors"
+                      className="flex items-center gap-1 px-1 sm:px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs transition-colors"
                     >
                       <Plus className="w-3 h-3" />
-                      Add
+                      <span className="hidden sm:inline">Add</span>
                     </button>
                     <button
                       onClick={() => {
                         setSelectedCustomer(customer);
                         setShowDeductModal(true);
                       }}
-                      className="flex items-center gap-1 px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs transition-colors"
+                      className="flex items-center gap-1 px-1 sm:px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs transition-colors"
                     >
                       <Minus className="w-3 h-3" />
-                      Deduct
+                      <span className="hidden sm:inline">Deduct</span>
                     </button>
                     <button
                       onClick={() => {
                         setSelectedCustomer(customer);
                         setShowHistoryModal(true);
                       }}
-                      className="flex items-center gap-1 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs transition-colors"
+                      className="flex items-center gap-1 px-1 sm:px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs transition-colors"
                     >
                       <History className="w-3 h-3" />
-                      History
+                      <span className="hidden sm:inline">History</span>
                     </button>
                   </div>
                 </td>
@@ -235,7 +236,7 @@ export default function CreditsManagement() {
       {/* Add Credits Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md">
+          <div className="bg-gray-800 rounded-lg p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-semibold text-white mb-4">
               Add Credits - {selectedCustomer?.name || selectedCustomer?.email}
             </h3>
@@ -293,7 +294,7 @@ export default function CreditsManagement() {
       {/* Deduct Credits Modal */}
       {showDeductModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md">
+          <div className="bg-gray-800 rounded-lg p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-semibold text-white mb-4">
               Deduct Credits - {selectedCustomer?.name || selectedCustomer?.email}
             </h3>
