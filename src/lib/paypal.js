@@ -97,4 +97,4 @@ class PayPalClient {
 }
 
 // Export singleton instance
-export const paypalClient = new PayPalClient();
+export const paypalService = new PayPalClient();

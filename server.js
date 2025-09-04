@@ -2,7 +2,7 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import setupDatabase from './scripts/startup.js';
-import { paypalClient } from './src/lib/paypal.js';
+import { paypalService } from './src/lib/paypal.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -123,7 +123,7 @@ app.post('/api/checkout/create', async (req, res) => {
 
     console.log('Creating PayPal order with data:', JSON.stringify(paypalOrderData, null, 2));
     
-    const paypalOrder = await paypalClient.createOrder(paypalOrderData);
+    const paypalOrder = await paypalService.createOrder(paypalOrderData);
     
     console.log('PayPal order created:', paypalOrder);
 
@@ -180,7 +180,7 @@ app.get('/api/paypal/success', async (req, res) => {
     }
 
     // Capture the PayPal order
-    const captureResult = await paypalClient.captureOrder(token);
+    const captureResult = await paypalService.captureOrder(token);
     
     console.log('PayPal order captured:', captureResult);
     
