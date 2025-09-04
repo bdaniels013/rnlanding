@@ -13,7 +13,7 @@
     "db:generate": "npx prisma generate",
     "db:push": "npx prisma db push",
     "db:migrate": "npx prisma migrate dev",
-    "db:seed": "node prisma/seed.js",
+    "db:seed": "node scripts/seed.js",
     "db:studio": "npx prisma studio",
     "setup": "node scripts/setup.js",
     "start": "node server.js"

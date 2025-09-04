@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import setupDatabase from './scripts/startup.js';
 import { paypalService } from './src/lib/paypal.js';
+import { db } from './src/lib/database.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -232,23 +233,11 @@ const authenticateAdmin = (req, res, next) => {
   }
 };
 
-// Admin dashboard endpoint (simplified for now)
-app.get('/api/admin/dashboard', authenticateAdmin, (req, res) => {
+// Admin dashboard endpoint
+app.get('/api/admin/dashboard', authenticateAdmin, async (req, res) => {
   try {
-    // Return mock dashboard data for now
-    res.json({
-      revenue_today: 0,
-      orders_today: 0,
-      total_customers: 0,
-      credits_outstanding: 0,
-      active_subscriptions: 0,
-      mrr: 0,
-      arr: 0,
-      upcoming_platform_slots: [],
-      recent_orders: [],
-      alerts: []
-    });
-    
+    const dashboardData = await db.getDashboardData();
+    res.json(dashboardData);
   } catch (error) {
     console.error('Admin dashboard error:', error);
     res.status(500).json({ error: 'Failed to fetch dashboard data' });
@@ -256,38 +245,10 @@ app.get('/api/admin/dashboard', authenticateAdmin, (req, res) => {
 });
 
 // Get all customers with credits
-app.get('/api/admin/customers', authenticateAdmin, (req, res) => {
+app.get('/api/admin/customers', authenticateAdmin, async (req, res) => {
   try {
-    // Mock customer data for now - in production this would come from the database
-    const mockCustomers = [
-      {
-        id: '1',
-        name: 'John Doe',
-        email: 'john@example.com',
-        phone: '+1-555-0123',
-        credits: 5,
-        updatedAt: new Date().toISOString()
-      },
-      {
-        id: '2',
-        name: 'Jane Smith',
-        email: 'jane@example.com',
-        phone: '+1-555-0124',
-        credits: 12,
-        updatedAt: new Date().toISOString()
-      },
-      {
-        id: '3',
-        name: 'Mike Johnson',
-        email: 'mike@example.com',
-        phone: '+1-555-0125',
-        credits: 0,
-        updatedAt: new Date().toISOString()
-      }
-    ];
-    
-    res.json(mockCustomers);
-    
+    const customers = await db.getCustomers();
+    res.json(customers);
   } catch (error) {
     console.error('Get customers error:', error);
     res.status(500).json({ error: 'Failed to fetch customers' });
@@ -295,7 +256,7 @@ app.get('/api/admin/customers', authenticateAdmin, (req, res) => {
 });
 
 // Add credits to customer
-app.post('/api/admin/credits/add', authenticateAdmin, (req, res) => {
+app.post('/api/admin/credits/add', authenticateAdmin, async (req, res) => {
   try {
     const { customerId, amount, reason, type } = req.body;
     
@@ -303,13 +264,7 @@ app.post('/api/admin/credits/add', authenticateAdmin, (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
     
-    // TODO: In production, this would:
-    // 1. Validate customer exists
-    // 2. Add credits to customer record
-    // 3. Create audit log entry
-    // 4. Update credits ledger
-    
-    console.log(`Adding ${amount} credits to customer ${customerId}. Reason: ${reason}`);
+    const result = await db.addCredits(customerId, amount, reason, type);
     
     res.json({
       success: true,
@@ -317,17 +272,18 @@ app.post('/api/admin/credits/add', authenticateAdmin, (req, res) => {
       customerId,
       amount,
       reason,
-      type
+      type,
+      newBalance: result.newBalance
     });
     
   } catch (error) {
     console.error('Add credits error:', error);
-    res.status(500).json({ error: 'Failed to add credits' });
+    res.status(500).json({ error: 'Failed to add credits: ' + error.message });
   }
 });
 
 // Deduct credits from customer
-app.post('/api/admin/credits/deduct', authenticateAdmin, (req, res) => {
+app.post('/api/admin/credits/deduct', authenticateAdmin, async (req, res) => {
   try {
     const { customerId, amount, reason, type } = req.body;
     
@@ -335,14 +291,7 @@ app.post('/api/admin/credits/deduct', authenticateAdmin, (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
     
-    // TODO: In production, this would:
-    // 1. Validate customer exists
-    // 2. Check if customer has enough credits
-    // 3. Deduct credits from customer record
-    // 4. Create audit log entry
-    // 5. Update credits ledger
-    
-    console.log(`Deducting ${amount} credits from customer ${customerId}. Reason: ${reason}`);
+    const result = await db.deductCredits(customerId, amount, reason, type);
     
     res.json({
       success: true,
@@ -350,41 +299,31 @@ app.post('/api/admin/credits/deduct', authenticateAdmin, (req, res) => {
       customerId,
       amount,
       reason,
-      type
+      type,
+      newBalance: result.newBalance
     });
     
   } catch (error) {
     console.error('Deduct credits error:', error);
-    res.status(500).json({ error: 'Failed to deduct credits' });
+    res.status(500).json({ error: 'Failed to deduct credits: ' + error.message });
   }
 });
 
-// Store customer info captures (in-memory for now)
-let customerInfoCaptures = [];
-
 // Capture customer info for admin dashboard
-app.post('/api/admin/customer-info', authenticateAdmin, (req, res) => {
+app.post('/api/admin/customer-info', authenticateAdmin, async (req, res) => {
   try {
     const { name, email, phone, timestamp, action, selectedOffer } = req.body;
     
     const customerInfo = {
-      id: Date.now().toString(),
       name,
       email,
       phone,
       timestamp,
       action,
-      selectedOffer,
-      createdAt: new Date().toISOString()
+      selectedOffer
     };
     
-    // Store in memory (in production, this would go to database)
-    customerInfoCaptures.unshift(customerInfo); // Add to beginning
-    
-    // Keep only last 50 captures
-    if (customerInfoCaptures.length > 50) {
-      customerInfoCaptures = customerInfoCaptures.slice(0, 50);
-    }
+    await db.captureCustomerInfo(customerInfo);
     
     console.log('Customer info captured:', customerInfo);
     
@@ -400,9 +339,10 @@ app.post('/api/admin/customer-info', authenticateAdmin, (req, res) => {
 });
 
 // Get customer info captures for admin dashboard
-app.get('/api/admin/customer-info', authenticateAdmin, (req, res) => {
+app.get('/api/admin/customer-info', authenticateAdmin, async (req, res) => {
   try {
-    res.json(customerInfoCaptures);
+    const captures = await db.getRecentCustomerInfoCaptures();
+    res.json(captures);
   } catch (error) {
     console.error('Get customer info error:', error);
     res.status(500).json({ error: 'Failed to fetch customer info' });
@@ -410,48 +350,12 @@ app.get('/api/admin/customer-info', authenticateAdmin, (req, res) => {
 });
 
 // Get credits history for a customer
-app.get('/api/admin/credits/history/:customerId', authenticateAdmin, (req, res) => {
+app.get('/api/admin/credits/history/:customerId', authenticateAdmin, async (req, res) => {
   try {
     const { customerId } = req.params;
     
-    // Mock credits history data for now - in production this would come from the database
-    const mockHistory = [
-      {
-        id: '1',
-        customerId: customerId,
-        delta: 1,
-        reason: 'Monthly Creator Pass - Payment processed',
-        type: 'PAYMENT_CREDITS',
-        balance_after: 5,
-        created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-        admin_user: 'admin',
-        ref_order_id: 'ord_1234567890'
-      },
-      {
-        id: '2',
-        customerId: customerId,
-        delta: -1,
-        reason: 'Event booking - Rich Nick Monthly Intensive',
-        type: 'EVENT_BOOKING',
-        balance_after: 4,
-        created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-        admin_user: 'admin',
-        ref_order_id: null
-      },
-      {
-        id: '3',
-        customerId: customerId,
-        delta: 1,
-        reason: 'Manual credit addition - Offline payment processed',
-        type: 'MANUAL_ADD',
-        balance_after: 5,
-        created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        admin_user: 'admin',
-        ref_order_id: null
-      }
-    ];
-    
-    res.json(mockHistory);
+    const history = await db.getCreditsHistory(customerId);
+    res.json(history);
     
   } catch (error) {
     console.error('Get credits history error:', error);
