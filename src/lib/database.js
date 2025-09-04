@@ -369,6 +369,128 @@ export class DatabaseService {
       throw error;
     }
   }
+
+  async processPaymentSuccess(paypalOrderId, customerEmail, items) {
+    try {
+      // Find or create customer
+      let customer = await this.getCustomerByEmail(customerEmail);
+      if (!customer) {
+        // Create customer if they don't exist
+        customer = await this.createCustomer({
+          name: customerEmail.split('@')[0], // Use email prefix as name
+          email: customerEmail,
+          phone: null
+        });
+      }
+
+      // Calculate total and credits
+      let totalCents = 0;
+      let totalCredits = 0;
+      const orderItems = [];
+
+      // Fetch offers to get current pricing
+      const offers = await prisma.offer.findMany();
+      
+      for (const item of items) {
+        const offer = offers.find(o => o.id === item.offer_id);
+        if (offer) {
+          totalCents += offer.priceCents * item.qty;
+          totalCredits += offer.isCreditEligible ? offer.creditsValue * item.qty : 0;
+          
+          orderItems.push({
+            offerId: offer.id,
+            qty: item.qty,
+            unitPriceCents: offer.priceCents,
+            creditsAwarded: offer.isCreditEligible ? offer.creditsValue * item.qty : 0
+          });
+        }
+      }
+
+      // Create order
+      const order = await this.createOrder({
+        customerId: customer.id,
+        totalCents,
+        currency: 'USD',
+        status: 'PAID',
+        paypalOrderId
+      });
+
+      // Create order items
+      for (const item of orderItems) {
+        await prisma.orderItem.create({
+          data: {
+            orderId: order.id,
+            offerId: item.offerId,
+            qty: item.qty,
+            unitPriceCents: item.unitPriceCents,
+            creditsAwarded: item.creditsAwarded
+          }
+        });
+      }
+
+      // Award credits if any
+      if (totalCredits > 0) {
+        const currentBalance = customer.creditsLedger[0]?.balanceAfter || 0;
+        const newBalance = currentBalance + totalCredits;
+
+        await prisma.creditsLedger.create({
+          data: {
+            customerId: customer.id,
+            delta: totalCredits,
+            reason: `Payment for order ${order.id}`,
+            refOrderId: order.id,
+            balanceAfter: newBalance
+          }
+        });
+
+        console.log(`✅ Awarded ${totalCredits} credits to ${customer.email}. New balance: ${newBalance}`);
+      }
+
+      return {
+        order,
+        customer,
+        creditsAwarded: totalCredits
+      };
+    } catch (error) {
+      console.error('Error processing payment success:', error);
+      throw error;
+    }
+  }
+
+  async processSubscriptionPayment(subscriptionId, customerEmail, amountCents) {
+    try {
+      // Find or create customer
+      let customer = await this.getCustomerByEmail(customerEmail);
+      if (!customer) {
+        customer = await this.createCustomer({
+          name: customerEmail.split('@')[0],
+          email: customerEmail,
+          phone: null
+        });
+      }
+
+      // Create subscription record
+      const subscription = await prisma.subscription.create({
+        data: {
+          customerId: customer.id,
+          offerId: 'content-management', // Default to content management subscription
+          status: 'ACTIVE',
+          startAt: new Date(),
+          paypalSubId: subscriptionId
+        }
+      });
+
+      console.log(`✅ Created subscription for ${customer.email}: ${subscription.id}`);
+
+      return {
+        subscription,
+        customer
+      };
+    } catch (error) {
+      console.error('Error processing subscription payment:', error);
+      throw error;
+    }
+  }
 }
 
 export const db = new DatabaseService();

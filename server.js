@@ -11,6 +11,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Store pending orders in memory (in production, use Redis or database)
+const pendingOrders = new Map();
+
 // Setup database on startup
 setupDatabase();
 
@@ -188,6 +191,16 @@ app.post('/api/checkout/create', async (req, res) => {
     }
     
     console.log('PayPal order created:', paypalOrder);
+
+    // Store order data for later processing
+    pendingOrders.set(paypalOrder.id, {
+      customer_info,
+      items,
+      totalCents,
+      totalCredits,
+      hasSubscriptions,
+      createdAt: new Date()
+    });
 
     // Find the approval URL (different for subscriptions vs orders)
     let approvalUrl;
@@ -372,14 +385,38 @@ app.get('/api/paypal/success', async (req, res) => {
       return res.status(400).json({ error: 'Missing PayPal parameters' });
     }
 
+    // Get the stored order data
+    const orderData = pendingOrders.get(token);
+    if (!orderData) {
+      console.error('No order data found for token:', token);
+      return res.status(400).json({ error: 'Order data not found' });
+    }
+
     // Capture the PayPal order
     const captureResult = await paypalService.captureOrder(token);
-    
     console.log('PayPal order captured:', captureResult);
     
-    // TODO: Update database with successful payment
-    // TODO: Award credits to customer
-    // TODO: Send confirmation emails
+    // Process the payment in the database
+    try {
+      const result = await db.processPaymentSuccess(
+        token,
+        orderData.customer_info.email,
+        orderData.items
+      );
+      
+      console.log('✅ Payment processed successfully:', {
+        orderId: result.order.id,
+        customerEmail: result.customer.email,
+        creditsAwarded: result.creditsAwarded
+      });
+      
+      // Clean up pending order
+      pendingOrders.delete(token);
+      
+    } catch (dbError) {
+      console.error('Database processing error:', dbError);
+      // Don't fail the PayPal response, but log the error
+    }
     
     res.json({
       success: true,
@@ -403,7 +440,7 @@ app.get('/api/paypal/cancel', (req, res) => {
 });
 
 // PayPal subscription webhook endpoint
-app.post('/api/paypal/subscription-webhook', (req, res) => {
+app.post('/api/paypal/subscription-webhook', async (req, res) => {
   try {
     const webhookData = req.body;
     console.log('PayPal subscription webhook received:', JSON.stringify(webhookData, null, 2));
@@ -412,7 +449,18 @@ app.post('/api/paypal/subscription-webhook', (req, res) => {
     switch (webhookData.event_type) {
       case 'BILLING.SUBSCRIPTION.ACTIVATED':
         console.log('Subscription activated:', webhookData.resource.id);
-        // TODO: Update database with active subscription
+        try {
+          const subscriber = webhookData.resource.subscriber;
+          if (subscriber?.email_address) {
+            await db.processSubscriptionPayment(
+              webhookData.resource.id,
+              subscriber.email_address,
+              150000 // $1,500 for content management
+            );
+          }
+        } catch (error) {
+          console.error('Error processing subscription activation:', error);
+        }
         break;
         
       case 'BILLING.SUBSCRIPTION.CANCELLED':
