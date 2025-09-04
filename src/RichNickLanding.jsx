@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Clock, Zap, ArrowRight, Shield, Calendar, CreditCard, Users, Sparkles, ChevronRight, Star, Youtube, Instagram, Facebook, DollarSign, Play } from "lucide-react";
 import OffersSection from './components/OffersSection';
 import AdminDashboard from './components/AdminDashboard';
+import AdminLogin from './components/AdminLogin';
 
 /**
  * RICHNICK VIRAL GROWTH — LANDING PAGE
@@ -681,6 +682,7 @@ function Footer() {
 export default function RichNickLanding() {
   // Simple client-side routing
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -691,9 +693,23 @@ export default function RichNickLanding() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
+  // Check authentication status on mount
+  useEffect(() => {
+    const authStatus = localStorage.getItem('adminAuth') === 'true';
+    setIsAuthenticated(authStatus);
+  }, []);
+
+  const handleLogin = (success) => {
+    setIsAuthenticated(success);
+  };
+
   // Route to admin dashboard
   if (currentPath === '/admin') {
-    return <AdminDashboard />;
+    if (isAuthenticated) {
+      return <AdminDashboard onLogout={handleLogin} />;
+    } else {
+      return <AdminLogin onLogin={handleLogin} />;
+    }
   }
 
   return (

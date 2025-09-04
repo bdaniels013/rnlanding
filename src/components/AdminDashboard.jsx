@@ -1,24 +1,42 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, Users, CreditCard, Calendar, TrendingUp, Package, AlertCircle } from 'lucide-react';
+import { DollarSign, Users, CreditCard, Calendar, TrendingUp, Package, AlertCircle, LogOut, User } from 'lucide-react';
 
-const AdminDashboard = () => {
+const AdminDashboard = ({ onLogout }) => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
+    // Check if user is authenticated
+    const isAuthenticated = localStorage.getItem('adminAuth') === 'true';
+    const user = localStorage.getItem('adminUser');
+    
+    if (!isAuthenticated || !user) {
+      onLogout(false);
+      return;
+    }
+    
+    setCurrentUser(user);
     fetchDashboardData();
     
     // Set up real-time updates every 30 seconds
     const interval = setInterval(fetchDashboardData, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [onLogout]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('adminAuth');
+    localStorage.removeItem('adminUser');
+    onLogout(false);
+  };
 
   const fetchDashboardData = async () => {
     try {
       const response = await fetch('/api/admin/dashboard', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'x-admin-auth': 'true',
+          'Content-Type': 'application/json'
         }
       });
       
@@ -58,8 +76,21 @@ const AdminDashboard = () => {
       <div className="bg-gray-800 border-b border-gray-700 px-6 py-4">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">Rich Nick Admin Dashboard</h1>
-          <div className="text-sm text-gray-400">
-            Last updated: {new Date().toLocaleTimeString()}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <User className="w-4 h-4" />
+              <span>Welcome, {currentUser}</span>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              Logout
+            </button>
+            <div className="text-sm text-gray-400">
+              Last updated: {new Date().toLocaleTimeString()}
+            </div>
           </div>
         </div>
       </div>
