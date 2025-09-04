@@ -122,7 +122,7 @@ const OffersSection = () => {
                     <div className="text-center mb-8">
                       <h3 className="text-2xl font-bold text-white mb-2">{offer.name}</h3>
                       <div className="text-4xl font-bold text-white mb-2">
-                        ${offer.price}
+                        ${(offer.priceCents / 100).toLocaleString()}
                         {offer.isSubscription && <span className="text-lg text-gray-400">/month</span>}
                       </div>
                       {offer.isCreditEligible && (
