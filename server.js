@@ -359,22 +359,34 @@ app.post('/api/admin/credits/deduct', authenticateAdmin, (req, res) => {
   }
 });
 
+// Store customer info captures (in-memory for now)
+let customerInfoCaptures = [];
+
 // Capture customer info for admin dashboard
 app.post('/api/admin/customer-info', authenticateAdmin, (req, res) => {
   try {
     const { name, email, phone, timestamp, action, selectedOffer } = req.body;
     
-    console.log('Customer info captured:', {
+    const customerInfo = {
+      id: Date.now().toString(),
       name,
       email,
       phone,
       timestamp,
       action,
-      selectedOffer
-    });
+      selectedOffer,
+      createdAt: new Date().toISOString()
+    };
     
-    // TODO: In production, store this in the database
-    // For now, we'll just log it
+    // Store in memory (in production, this would go to database)
+    customerInfoCaptures.unshift(customerInfo); // Add to beginning
+    
+    // Keep only last 50 captures
+    if (customerInfoCaptures.length > 50) {
+      customerInfoCaptures = customerInfoCaptures.slice(0, 50);
+    }
+    
+    console.log('Customer info captured:', customerInfo);
     
     res.json({
       success: true,
@@ -384,6 +396,16 @@ app.post('/api/admin/customer-info', authenticateAdmin, (req, res) => {
   } catch (error) {
     console.error('Customer info capture error:', error);
     res.status(500).json({ error: 'Failed to capture customer info' });
+  }
+});
+
+// Get customer info captures for admin dashboard
+app.get('/api/admin/customer-info', authenticateAdmin, (req, res) => {
+  try {
+    res.json(customerInfoCaptures);
+  } catch (error) {
+    console.error('Get customer info error:', error);
+    res.status(500).json({ error: 'Failed to fetch customer info' });
   }
 });
 

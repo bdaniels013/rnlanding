@@ -7,6 +7,7 @@ const AdminDashboard = ({ onLogout }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+  const [customerInfoCaptures, setCustomerInfoCaptures] = useState([]);
 
   useEffect(() => {
     // Check if user is authenticated
@@ -20,9 +21,13 @@ const AdminDashboard = ({ onLogout }) => {
     
     setCurrentUser(user);
     fetchDashboardData();
+    fetchCustomerInfoCaptures();
     
     // Set up real-time updates every 30 seconds
-    const interval = setInterval(fetchDashboardData, 30000);
+    const interval = setInterval(() => {
+      fetchDashboardData();
+      fetchCustomerInfoCaptures();
+    }, 30000);
     return () => clearInterval(interval);
   }, [onLogout]);
 
@@ -52,6 +57,26 @@ const AdminDashboard = ({ onLogout }) => {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCustomerInfoCaptures = async () => {
+    try {
+      const response = await fetch('/api/admin/customer-info', {
+        headers: {
+          'x-admin-auth': 'true',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch customer info captures');
+      }
+      
+      const data = await response.json();
+      setCustomerInfoCaptures(data);
+    } catch (err) {
+      console.error('Failed to fetch customer info captures:', err);
     }
   };
 
@@ -200,13 +225,41 @@ const AdminDashboard = ({ onLogout }) => {
           <div className="text-sm text-gray-400 mb-4">
             Customer information captured when they click "Continue to Review"
           </div>
-          <div className="bg-gray-700 rounded-lg p-4">
-            <div className="text-gray-300 text-sm">
-              Check your server logs for detailed customer information captures.
-              <br />
-              <span className="text-gray-500">Look for: "Customer info captured:" in the logs</span>
+          
+          {customerInfoCaptures.length === 0 ? (
+            <div className="bg-gray-700 rounded-lg p-4">
+              <div className="text-gray-300 text-sm">
+                No customer info captures yet. Try clicking "Continue to Review" on the checkout flow.
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-700">
+                    <th className="text-left py-3 px-2">Name</th>
+                    <th className="text-left py-3 px-2">Email</th>
+                    <th className="text-left py-3 px-2">Phone</th>
+                    <th className="text-left py-3 px-2">Selected Offer</th>
+                    <th className="text-left py-3 px-2">Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {customerInfoCaptures.map(capture => (
+                    <tr key={capture.id} className="border-b border-gray-700/50 hover:bg-gray-700/50">
+                      <td className="py-3 px-2 font-medium text-white">{capture.name}</td>
+                      <td className="py-3 px-2 text-gray-300">{capture.email}</td>
+                      <td className="py-3 px-2 text-gray-300">{capture.phone || 'N/A'}</td>
+                      <td className="py-3 px-2 text-gray-300">{capture.selectedOffer}</td>
+                      <td className="py-3 px-2 text-gray-400">
+                        {new Date(capture.createdAt).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* Credits Management */}
