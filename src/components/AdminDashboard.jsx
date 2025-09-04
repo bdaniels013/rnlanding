@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DollarSign, Users, CreditCard, Calendar, TrendingUp, Package, AlertCircle, LogOut, User } from 'lucide-react';
+import CreditsManagement from './CreditsManagement';
 
 const AdminDashboard = ({ onLogout }) => {
   const [dashboardData, setDashboardData] = useState(null);
@@ -192,6 +193,9 @@ const AdminDashboard = ({ onLogout }) => {
             </table>
           </div>
         </div>
+
+        {/* Credits Management */}
+        <CreditsManagement />
 
         {/* Upcoming Platform Slots */}
         <div className="bg-gray-800 rounded-lg p-6">

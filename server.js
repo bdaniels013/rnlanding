@@ -193,6 +193,160 @@ app.get('/api/admin/dashboard', authenticateAdmin, (req, res) => {
   }
 });
 
+// Get all customers with credits
+app.get('/api/admin/customers', authenticateAdmin, (req, res) => {
+  try {
+    // Mock customer data for now - in production this would come from the database
+    const mockCustomers = [
+      {
+        id: '1',
+        name: 'John Doe',
+        email: 'john@example.com',
+        phone: '+1-555-0123',
+        credits: 5,
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: '2',
+        name: 'Jane Smith',
+        email: 'jane@example.com',
+        phone: '+1-555-0124',
+        credits: 12,
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: '3',
+        name: 'Mike Johnson',
+        email: 'mike@example.com',
+        phone: '+1-555-0125',
+        credits: 0,
+        updatedAt: new Date().toISOString()
+      }
+    ];
+    
+    res.json(mockCustomers);
+    
+  } catch (error) {
+    console.error('Get customers error:', error);
+    res.status(500).json({ error: 'Failed to fetch customers' });
+  }
+});
+
+// Add credits to customer
+app.post('/api/admin/credits/add', authenticateAdmin, (req, res) => {
+  try {
+    const { customerId, amount, reason, type } = req.body;
+    
+    if (!customerId || !amount || !reason) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    
+    // TODO: In production, this would:
+    // 1. Validate customer exists
+    // 2. Add credits to customer record
+    // 3. Create audit log entry
+    // 4. Update credits ledger
+    
+    console.log(`Adding ${amount} credits to customer ${customerId}. Reason: ${reason}`);
+    
+    res.json({
+      success: true,
+      message: `Successfully added ${amount} credits`,
+      customerId,
+      amount,
+      reason,
+      type
+    });
+    
+  } catch (error) {
+    console.error('Add credits error:', error);
+    res.status(500).json({ error: 'Failed to add credits' });
+  }
+});
+
+// Deduct credits from customer
+app.post('/api/admin/credits/deduct', authenticateAdmin, (req, res) => {
+  try {
+    const { customerId, amount, reason, type } = req.body;
+    
+    if (!customerId || !amount || !reason) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    
+    // TODO: In production, this would:
+    // 1. Validate customer exists
+    // 2. Check if customer has enough credits
+    // 3. Deduct credits from customer record
+    // 4. Create audit log entry
+    // 5. Update credits ledger
+    
+    console.log(`Deducting ${amount} credits from customer ${customerId}. Reason: ${reason}`);
+    
+    res.json({
+      success: true,
+      message: `Successfully deducted ${amount} credits`,
+      customerId,
+      amount,
+      reason,
+      type
+    });
+    
+  } catch (error) {
+    console.error('Deduct credits error:', error);
+    res.status(500).json({ error: 'Failed to deduct credits' });
+  }
+});
+
+// Get credits history for a customer
+app.get('/api/admin/credits/history/:customerId', authenticateAdmin, (req, res) => {
+  try {
+    const { customerId } = req.params;
+    
+    // Mock credits history data for now - in production this would come from the database
+    const mockHistory = [
+      {
+        id: '1',
+        customerId: customerId,
+        delta: 1,
+        reason: 'Monthly Creator Pass - Payment processed',
+        type: 'PAYMENT_CREDITS',
+        balance_after: 5,
+        created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+        admin_user: 'admin',
+        ref_order_id: 'ord_1234567890'
+      },
+      {
+        id: '2',
+        customerId: customerId,
+        delta: -1,
+        reason: 'Event booking - Rich Nick Monthly Intensive',
+        type: 'EVENT_BOOKING',
+        balance_after: 4,
+        created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+        admin_user: 'admin',
+        ref_order_id: null
+      },
+      {
+        id: '3',
+        customerId: customerId,
+        delta: 1,
+        reason: 'Manual credit addition - Offline payment processed',
+        type: 'MANUAL_ADD',
+        balance_after: 5,
+        created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+        admin_user: 'admin',
+        ref_order_id: null
+      }
+    ];
+    
+    res.json(mockHistory);
+    
+  } catch (error) {
+    console.error('Get credits history error:', error);
+    res.status(500).json({ error: 'Failed to fetch credits history' });
+  }
+});
+
 // PayPal success endpoint
 app.get('/api/paypal/success', async (req, res) => {
   try {
