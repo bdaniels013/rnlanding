@@ -408,61 +408,6 @@ function Hero() {
               <div className="pointer-events-none absolute inset-0 ring-1 ring-white/10"/>
             </div>
             
-            {/* Multi-Platform Video Showcase */}
-            <div className="mt-6">
-              <h3 className="text-lg font-semibold text-white/90 mb-4 text-center">Viral across all platforms</h3>
-              
-              {/* Platform Tabs */}
-              <div className="flex justify-center mb-6">
-                <div className="flex space-x-1 bg-white/10 rounded-xl p-1">
-                  {['All', 'YouTube', 'Instagram', 'Facebook'].map((platform) => (
-                    <button
-                      key={platform}
-                      className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-white/20"
-                      onClick={() => setActivePlatform(platform)}
-                    >
-                      {platform}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Video Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 max-h-96 overflow-y-auto">
-                {SITE.socialVideos
-                  .filter(video => activePlatform === 'All' || video.platform === activePlatform)
-                  .slice(0, 12) // Show top 12 videos
-                  .map((video, index) => (
-                  <div key={index} className="group">
-                    <a 
-                      href={video.url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="block rounded-xl overflow-hidden border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-300 hover:scale-105"
-                    >
-                      <div className="aspect-[9/16] relative">
-                        <iframe
-                          title={`Rich Nick — ${video.platform}`}
-                          className="w-full h-full"
-                          src={video.embedUrl}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                          allowFullScreen
-                        />
-                        <div className="absolute top-1 left-1 bg-black/70 backdrop-blur rounded-lg px-1.5 py-0.5 text-xs font-medium">
-                          <video.icon className="w-2.5 h-2.5 inline mr-1" />
-                          {video.platform}
-                        </div>
-                        <div className="absolute bottom-1 right-1 bg-black/70 backdrop-blur rounded-lg px-1.5 py-0.5 text-xs font-medium">
-                          {video.views}
-                        </div>
-                      </div>
-                    </a>
-                  </div>
-                ))}
-              </div>
-
-
-            </div>
 
             {/* Social Media Links */}
             <div className="mt-6 grid grid-cols-3 gap-3 text-white/75 text-sm">
