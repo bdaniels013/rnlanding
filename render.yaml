@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: richnick-offers-system
+    name: rnlanding
     env: node
     plan: free
     buildCommand: npm install && npm run db:generate && npm run build:prod
@@ -9,11 +9,11 @@ services:
       - key: NODE_ENV
         value: production
       - key: NEXTAUTH_URL
-        value: https://richnick-offers-system.onrender.com
+        value: https://rnlanding.onrender.com
       - key: APP_URL
-        value: https://richnick-offers-system.onrender.com
+        value: https://rnlanding.onrender.com
       - key: FRONTEND_URL
-        value: https://richnick-offers-system.onrender.com
+        value: https://rnlanding.onrender.com
     healthCheckPath: /
 
 databases:
