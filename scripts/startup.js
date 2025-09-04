@@ -19,7 +19,7 @@ async function setupDatabase() {
     
     if (userCount === 0) {
       console.log('🌱 Seeding database with initial data...');
-      execSync('node prisma/seed.js', { stdio: 'inherit' });
+      execSync('npm run db:seed', { stdio: 'inherit' });
       console.log('✅ Database seeded successfully!');
     } else {
       console.log('✅ Database already has data, skipping seed.');
