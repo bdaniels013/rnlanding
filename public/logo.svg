@@ -1,0 +1,24 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="95" fill="#1a1a1a" stroke="#f59e0b" stroke-width="4"/>
+  
+  <!-- Inner circle -->
+  <circle cx="100" cy="100" r="75" fill="#000000" stroke="#f59e0b" stroke-width="2"/>
+  
+  <!-- Target/bullseye design -->
+  <circle cx="100" cy="100" r="50" fill="none" stroke="#f59e0b" stroke-width="3"/>
+  <circle cx="100" cy="100" r="30" fill="none" stroke="#f59e0b" stroke-width="2"/>
+  <circle cx="100" cy="100" r="15" fill="#f59e0b"/>
+  
+  <!-- "R" for Rich Nick -->
+  <text x="100" y="110" font-family="Arial, sans-serif" font-size="24" font-weight="bold" text-anchor="middle" fill="#ffffff">R</text>
+  
+  <!-- Viral growth indicators -->
+  <g stroke="#10b981" stroke-width="2" fill="none">
+    <!-- Growth arrows -->
+    <path d="M 40 40 L 50 30 M 50 30 L 60 40 M 50 30 L 50 50" stroke-linecap="round"/>
+    <path d="M 160 40 L 150 30 M 150 30 L 140 40 M 150 30 L 150 50" stroke-linecap="round"/>
+    <path d="M 40 160 L 50 170 M 50 170 L 60 160 M 50 170 L 50 150" stroke-linecap="round"/>
+    <path d="M 160 160 L 150 170 M 150 170 L 140 160 M 150 170 L 150 150" stroke-linecap="round"/>
+  </g>
+</svg>
