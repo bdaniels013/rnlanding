@@ -397,13 +397,13 @@ function Hero() {
             {/* Main Hero Video - Portrait Layout */}
             <div className="relative rounded-3xl overflow-hidden border border-white/15 shadow-2xl bg-black mx-auto max-w-sm">
               <div className="aspect-[9/16] w-full"> {/* Portrait aspect ratio for Shorts */}
-                <iframe
+              <iframe
                   title="Rich Nick — Viral Content"
-                  className="w-full h-full"
-                  src={SITE.heroVideoUrl}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                />
+                className="w-full h-full"
+                src={SITE.heroVideoUrl}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              />
               </div>
               <div className="pointer-events-none absolute inset-0 ring-1 ring-white/10"/>
             </div>
@@ -708,10 +708,10 @@ function Footer() {
     <footer className="py-12 bg-black border-t border-white/10">
       <div className="max-w-6xl mx-auto px-6">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
-          <div className="text-white/70 text-sm">© {new Date().getFullYear()} Rich Nick Growth LLC. All rights reserved.</div>
-          <div className="flex items-center gap-4 text-sm">
-            <a href={SITE.privacyUrl} className="text-white/70 hover:text-white">Privacy</a>
-            <a href={SITE.termsUrl} className="text-white/70 hover:text-white">Terms</a>
+        <div className="text-white/70 text-sm">© {new Date().getFullYear()} Rich Nick Growth LLC. All rights reserved.</div>
+        <div className="flex items-center gap-4 text-sm">
+          <a href={SITE.privacyUrl} className="text-white/70 hover:text-white">Privacy</a>
+          <a href={SITE.termsUrl} className="text-white/70 hover:text-white">Terms</a>
           </div>
         </div>
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t border-white/10">
@@ -764,7 +764,6 @@ export default function RichNickLanding() {
       <Ribbon />
       <Hero />
       <OffersSection />
-      <ViralStats />
 
       {/* Lead capture & value props */}
       <section className="py-10 bg-black">
@@ -773,6 +772,8 @@ export default function RichNickLanding() {
           <LeadForm />
         </div>
       </section>
+
+      <ViralStats />
       <Testimonials />
 
       <FAQ />
