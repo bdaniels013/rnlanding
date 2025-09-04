@@ -19,7 +19,7 @@
     "start": "node server.js"
   },
   "dependencies": {
-    "@paypal/paypal-server-sdk": "^0.5.1",
+    "@paypal/paypal-server-sdk": "^1.0.3",
     "@prisma/client": "^6.15.0",
     "@vitejs/plugin-react": "^4.0.3",
     "autoprefixer": "^10.4.14",

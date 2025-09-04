@@ -1,18 +1,16 @@
-import * as paypal from '@paypal/paypal-server-sdk';
+import { paypalClient, Environment } from '@paypal/paypal-server-sdk';
 
 class PayPalClient {
   constructor() {
-    const environment = process.env.PAYPAL_ENV === 'live' 
-      ? new paypal.core.LiveEnvironment(
-          process.env.PAYPAL_CLIENT_ID,
-          process.env.PAYPAL_CLIENT_SECRET
-        )
-      : new paypal.core.SandboxEnvironment(
-          process.env.PAYPAL_CLIENT_ID,
-          process.env.PAYPAL_CLIENT_SECRET
-        );
-    
-    this.client = new paypal.core.PayPalHttpClient(environment);
+    this.client = paypalClient({
+      clientCredentialsAuthCredentials: {
+        oAuthClientId: process.env.PAYPAL_CLIENT_ID,
+        oAuthClientSecret: process.env.PAYPAL_CLIENT_SECRET,
+      },
+      environment: process.env.PAYPAL_ENV === 'live' 
+        ? Environment.Live 
+        : Environment.Sandbox,
+    });
   }
 
   async createOrder(orderData) {
