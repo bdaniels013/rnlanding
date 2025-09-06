@@ -37,7 +37,7 @@ const SITE = {
   eventPrice: 1000,
   annualPrice: 10000,
   monthlyInstallments: 12,
-  calendlyUrl: "https://calendly.com/PLACEHOLDER/30min", // replace
+  calendlyUrl: "https://calendly.com/richhtalk3/30min", // Rich Nick's executive assistant
   stripeEventCheckoutUrl: "https://buy.stripe.com/test_XXXX", // replace
   stripeAnnualCheckoutUrl: "https://buy.stripe.com/test_YYYY", // replace
   financingApplyUrl: "https://your-financing-provider.example/apply", // replace (e.g., Affirm/Shop Pay Installments/Stripe Capital via Payment Links)
