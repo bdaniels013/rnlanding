@@ -47,9 +47,11 @@ export class DatabaseService {
   }
 
   // Offer operations
-  async getOffers() {
+  async getOffers(activeOnly = false) {
     try {
+      const whereClause = activeOnly ? { isActive: true } : {};
       const offers = await prisma.offer.findMany({
+        where: whereClause,
         orderBy: { createdAt: 'desc' }
       });
 

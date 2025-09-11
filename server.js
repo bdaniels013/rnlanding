@@ -41,7 +41,7 @@ app.use('/api/payment-cloud/hpp', hppRouter);
 // Basic API endpoints
 app.get('/api/offers', async (req, res) => {
   try {
-    const offers = await db.getOffers();
+    const offers = await db.getOffers(true); // Only return active offers
     res.json(offers);
   } catch (error) {
     console.error('Error fetching offers:', error);
