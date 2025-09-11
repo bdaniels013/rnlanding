@@ -46,6 +46,33 @@ export class DatabaseService {
     }
   }
 
+  // Offer operations
+  async getOffers() {
+    try {
+      const offers = await prisma.offer.findMany({
+        orderBy: { createdAt: 'desc' }
+      });
+
+      return offers.map(offer => ({
+        id: offer.id,
+        sku: offer.sku,
+        name: offer.name,
+        priceCents: offer.priceCents,
+        isSubscription: offer.isSubscription,
+        creditsValue: offer.creditsValue,
+        isCreditEligible: offer.isCreditEligible,
+        description: offer.description,
+        features: offer.features ? JSON.parse(offer.features) : [],
+        isActive: offer.isActive,
+        createdAt: offer.createdAt,
+        updatedAt: offer.updatedAt
+      }));
+    } catch (error) {
+      console.error('Error fetching offers:', error);
+      throw error;
+    }
+  }
+
   async getCustomerById(id) {
     try {
       const customer = await prisma.customer.findUnique({

@@ -263,6 +263,17 @@ app.get('/api/admin/customers', authenticateAdmin, async (req, res) => {
   }
 });
 
+// Get all offers
+app.get('/api/admin/offers', authenticateAdmin, async (req, res) => {
+  try {
+    const offers = await db.getOffers();
+    res.json(offers);
+  } catch (error) {
+    console.error('Get offers error:', error);
+    res.status(500).json({ error: 'Failed to fetch offers' });
+  }
+});
+
 // Add credits to customer
 app.post('/api/admin/credits/add', authenticateAdmin, async (req, res) => {
   try {

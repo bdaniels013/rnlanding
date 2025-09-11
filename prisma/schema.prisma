@@ -6,15 +6,15 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
   passwordHash String
-  role         Role     @default(STAFF)
+  role         String   @default("STAFF")
   twofaSecret  String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -32,7 +32,7 @@ model Customer {
   name      String
   email     String   @unique
   phone     String?
-  socials   Json?
+  socials   String?
   notes     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -55,6 +55,9 @@ model Offer {
   isSubscription   Boolean  @default(false)
   creditsValue     Int      @default(0)
   isCreditEligible Boolean  @default(false)
+  description      String?
+  features         String?
+  isActive         Boolean  @default(true)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -66,16 +69,16 @@ model Offer {
 }
 
 model Subscription {
-  id          String             @id @default(cuid())
+  id          String   @id @default(cuid())
   customerId  String
   offerId     String
-  status      SubscriptionStatus
+  status      String
   startAt     DateTime
   renewAt     DateTime?
   cancelAt    DateTime?
   paypalSubId String?
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relations
   customer Customer @relation(fields: [customerId], references: [id])
@@ -85,15 +88,15 @@ model Subscription {
 }
 
 model Order {
-  id            String      @id @default(cuid())
+  id            String   @id @default(cuid())
   customerId    String
   totalCents    Int
-  currency      String      @default("USD")
-  status        OrderStatus
+  currency      String   @default("USD")
+  status        String
   paypalOrderId String?
   capturedAt    DateTime?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   // Relations
   customer      Customer        @relation(fields: [customerId], references: [id])
@@ -123,13 +126,13 @@ model OrderItem {
 }
 
 model Payment {
-  id          String        @id @default(cuid())
+  id          String   @id @default(cuid())
   orderId     String
   amountCents Int
   paypalTxnId String?
-  status      PaymentStatus
-  rawWebhook  Json?
-  createdAt   DateTime      @default(now())
+  status      String
+  rawWebhook  String?
+  createdAt   DateTime @default(now())
 
   // Relations
   order Order @relation(fields: [orderId], references: [id])
@@ -156,15 +159,15 @@ model CreditsLedger {
 }
 
 model Booking {
-  id           String        @id @default(cuid())
+  id           String   @id @default(cuid())
   customerId   String
-  type         BookingType
+  type         String
   refId        String
   slotAt       DateTime?
   creditsSpent Int
-  status       BookingStatus
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  status       String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // Relations
   customer      Customer        @relation(fields: [customerId], references: [id])
@@ -174,30 +177,30 @@ model Booking {
 }
 
 model PlatformSlot {
-  id        String             @id @default(cuid())
+  id        String   @id @default(cuid())
   name      String
   partner   String
   slotAt    DateTime
-  status    PlatformSlotStatus
+  status    String
   notes     String?
-  createdAt DateTime           @default(now())
-  updatedAt DateTime           @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([name, partner])
   @@map("platform_slots")
 }
 
 model Contract {
-  id            String         @id @default(cuid())
+  id            String   @id @default(cuid())
   customerId    String
   orderId       String
   templateId    String
-  status        ContractStatus
+  status        String
   pdfUrl        String?
   esignProvider String?
   esignId       String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   // Relations
   order Order @relation(fields: [orderId], references: [id])
@@ -220,14 +223,14 @@ model Invoice {
 }
 
 model Notification {
-  id          String             @id @default(cuid())
-  type        NotificationType
+  id          String   @id @default(cuid())
+  type        String
   destination String
   subject     String?
-  payload     Json?
-  status      NotificationStatus
+  payload     String?
+  status      String
   sentAt      DateTime?
-  createdAt   DateTime           @default(now())
+  createdAt   DateTime @default(now())
 
   @@map("notifications")
 }
@@ -252,7 +255,7 @@ model AuditLog {
   targetType  String
   targetId    String?
   ip          String?
-  meta        Json?
+  meta        String?
   createdAt   DateTime @default(now())
 
   // Relations
@@ -261,67 +264,3 @@ model AuditLog {
   @@map("audit_logs")
 }
 
-// Enums
-enum Role {
-  OWNER
-  ADMIN
-  STAFF
-  READONLY
-}
-
-enum SubscriptionStatus {
-  ACTIVE
-  PAUSED
-  CANCELLED
-  EXPIRED
-}
-
-enum OrderStatus {
-  CREATED
-  PAID
-  REFUNDED
-  CANCELLED
-}
-
-enum PaymentStatus {
-  PENDING
-  COMPLETED
-  FAILED
-  REFUNDED
-}
-
-enum BookingType {
-  EVENT
-  PLATFORM
-}
-
-enum BookingStatus {
-  PENDING
-  CONFIRMED
-  CANCELLED
-  COMPLETED
-}
-
-enum PlatformSlotStatus {
-  AVAILABLE
-  HELD
-  BOOKED
-}
-
-enum ContractStatus {
-  DRAFT
-  SENT
-  SIGNED
-  EXPIRED
-}
-
-enum NotificationType {
-  EMAIL
-  SMS
-}
-
-enum NotificationStatus {
-  PENDING
-  SENT
-  FAILED
-}
