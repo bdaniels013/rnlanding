@@ -303,7 +303,7 @@ const AdminDashboard = ({ onLogout }) => {
       setOfferForm({
         sku: offer.sku,
         name: offer.name,
-        priceCents: offer.priceCents.toString(),
+        priceCents: offer.priceCents, // Keep as cents for internal storage
         isSubscription: offer.isSubscription,
         creditsValue: offer.creditsValue,
         isCreditEligible: offer.isCreditEligible,
@@ -316,7 +316,7 @@ const AdminDashboard = ({ onLogout }) => {
       setOfferForm({ 
         sku: '', 
         name: '', 
-        priceCents: '', 
+        priceCents: 0, // Start with 0 cents for new offers
         isSubscription: false, 
         creditsValue: 0, 
         isCreditEligible: false,
@@ -961,15 +961,16 @@ const OfferModal = ({ offer, form, setForm, onSubmit, onClose }) => (
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Price (cents) *</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Price (USD) *</label>
             <input
               type="number"
-              value={form.priceCents}
-              onChange={(e) => setForm({ ...form, priceCents: e.target.value })}
+              step="0.01"
+              value={form.priceCents ? (form.priceCents / 100).toFixed(2) : ''}
+              onChange={(e) => setForm({ ...form, priceCents: Math.round(parseFloat(e.target.value || 0) * 100) })}
               className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
-            <p className="text-xs text-gray-400 mt-1">Enter price in cents (e.g., 100000 for $1000.00)</p>
+            <p className="text-xs text-gray-400 mt-1">Enter price in dollars (e.g., 1000.00 for $1000.00)</p>
           </div>
           
           <div>
