@@ -38,7 +38,7 @@
       </div>
 
       <h1 class="h">Secure Checkout</h1>
-      <p class="muted">Step 2 of 2 — You’ll complete payment on our PCI‑compliant payment gateway. No card data is entered on this site.</p>
+      <p class="muted">Step 2 of 2 — Customers will complete payment on a PCI‑compliant payment gateway. No card data is entered on this site.</p>
 
       <div class="grid" style="margin-top:18px">
         <div class="card">
@@ -48,7 +48,7 @@
             <button class="btn" onclick="go('/api/payment-cloud/hpp/start?amount_cents=1000000&offer_id=annual-plan')">Annual Plan — $10,000.00</button>
           </div>
           <div style="height:14px"></div>
-          <div class="muted" style="font-size:12px">If your gateway isn’t configured yet, this page will temporarily show a non‑processing demo for reviewer approval. Once your key is added, these buttons redirect to the gateway’s hosted page.</div>
+          <div class="muted" style="font-size:12px">Once private key is added, these buttons redirect to the gateway’s hosted page.</div>
         </div>
 
         <div class="card">
@@ -67,6 +67,9 @@
     <script>
       function go(url){ window.location.href = url; }
     </script>
+    <div style="max-width:980px;margin:16px auto 32px;padding:0 20px;color:#9aa; font-size:11px;">
+      <div>Rich Nick Growth LLC • 750 Forest Park Ln., Suwanee, GA 30024 • (813) 476-0044</div>
+    </div>
   </body>
   </html>
 

@@ -695,6 +695,12 @@ function Footer() {
             </a>
           </div>
         </div>
+
+        {/* Business address and contact */}
+        <div className="mt-6 text-[11px] leading-relaxed text-white/40">
+          <div>Rich Nick Growth LLC • 750 Forest Park Ln., Suwanee, GA 30024</div>
+          <div>Contact: (813) 476-0044</div>
+        </div>
       </div>
     </footer>
   );
