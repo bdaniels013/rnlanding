@@ -167,8 +167,12 @@ const AdminDashboard = ({ onLogout }) => {
   const handleCustomerSubmit = async (e) => {
     e.preventDefault();
     try {
-      const url = editingCustomer ? `/api/admin/customers?id=${editingCustomer.id}` : '/api/admin/customers';
+      const url = '/api/admin/customers';
       const method = editingCustomer ? 'PUT' : 'POST';
+      
+      const requestBody = editingCustomer 
+        ? { id: editingCustomer.id, ...customerForm }
+        : customerForm;
       
       const response = await fetch(url, {
         method,
@@ -176,7 +180,7 @@ const AdminDashboard = ({ onLogout }) => {
           'x-admin-auth': 'true',
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(customerForm)
+        body: JSON.stringify(requestBody)
       });
       
       if (!response.ok) {

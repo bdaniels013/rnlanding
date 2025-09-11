@@ -302,6 +302,42 @@ app.get('/api/admin/customers', authenticateAdmin, async (req, res) => {
   }
 });
 
+// Create new customer
+app.post('/api/admin/customers', authenticateAdmin, async (req, res) => {
+  try {
+    const customerData = req.body;
+    const customer = await db.createCustomer(customerData);
+    res.json(customer);
+  } catch (error) {
+    console.error('Create customer error:', error);
+    res.status(500).json({ error: 'Failed to create customer' });
+  }
+});
+
+// Update customer
+app.put('/api/admin/customers', authenticateAdmin, async (req, res) => {
+  try {
+    const { id, ...updateData } = req.body;
+    const customer = await db.updateCustomer(id, updateData);
+    res.json(customer);
+  } catch (error) {
+    console.error('Update customer error:', error);
+    res.status(500).json({ error: 'Failed to update customer' });
+  }
+});
+
+// Delete customer
+app.delete('/api/admin/customers', authenticateAdmin, async (req, res) => {
+  try {
+    const { id } = req.query;
+    await db.deleteCustomer(id);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Delete customer error:', error);
+    res.status(500).json({ error: 'Failed to delete customer' });
+  }
+});
+
 // Get all offers
 app.get('/api/admin/offers', authenticateAdmin, async (req, res) => {
   try {

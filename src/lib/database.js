@@ -21,6 +21,7 @@ export class DatabaseService {
         name: customer.name,
         email: customer.email,
         phone: customer.phone,
+        notes: customer.notes,
         credits: customer.creditsLedger[0]?.balanceAfter || 0,
         updatedAt: customer.updatedAt
       }));
@@ -36,12 +37,43 @@ export class DatabaseService {
         data: {
           name: customerData.name,
           email: customerData.email,
-          phone: customerData.phone
+          phone: customerData.phone,
+          notes: customerData.notes || null
         }
       });
       return customer;
     } catch (error) {
       console.error('Error creating customer:', error);
+      throw error;
+    }
+  }
+
+  async updateCustomer(id, updateData) {
+    try {
+      const customer = await prisma.customer.update({
+        where: { id },
+        data: {
+          name: updateData.name,
+          email: updateData.email,
+          phone: updateData.phone,
+          notes: updateData.notes || null
+        }
+      });
+      return customer;
+    } catch (error) {
+      console.error('Error updating customer:', error);
+      throw error;
+    }
+  }
+
+  async deleteCustomer(id) {
+    try {
+      await prisma.customer.delete({
+        where: { id }
+      });
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting customer:', error);
       throw error;
     }
   }
