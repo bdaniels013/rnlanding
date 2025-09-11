@@ -1,0 +1,108 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Secure Checkout — Rich Nick</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+    <style>
+      :root { --bg:#0b0f1a; --card: rgba(255,255,255,.05); --b:#1f2937; --accent1:#6366f1; --accent2:#db2777; }
+      *{box-sizing:border-box}
+      body{margin:0; font-family:Inter,system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; background:var(--bg); color:#fff}
+      .wrap{max-width:880px;margin:24px auto;padding:20px}
+      .card{background:var(--card);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:24px;backdrop-filter: blur(6px)}
+      .grid{display:grid;grid-template-columns:1fr;gap:16px}
+      @media(min-width:900px){.grid{grid-template-columns:1.25fr .75fr}}
+      .btn{display:inline-flex;align-items:center;justify-content:center;padding:14px 16px;border-radius:12px;border:0;background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#fff;font-weight:600;cursor:pointer;width:100%}
+      .h{margin:0 0 8px}
+      .muted{color:#b8c}
+      input,select{width:100%;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#fff}
+      label{font-size:12px;color:#aab;margin-bottom:6px;display:block}
+      .row{display:grid;grid-template-columns:1fr;gap:12px}
+      @media(min-width:700px){.row{grid-template-columns:1fr 1fr}}
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div style="margin-bottom:16px"><img src="/assets/richhnicklogo.jpg" alt="Rich Nick" style="height:36px;border-radius:8px"/></div>
+      <h1 class="h">Secure Checkout</h1>
+      <p class="muted">You’ll be redirected to our gateway’s hosted page to enter your payment securely.</p>
+
+      <div class="grid">
+        <div class="card">
+          <h3 class="h">Your details</h3>
+          <form id="prefill-form">
+            <div class="row">
+              <div>
+                <label>Full name</label>
+                <input id="name" placeholder="Jane Doe" />
+              </div>
+              <div>
+                <label>Email</label>
+                <input id="email" type="email" placeholder="jane@example.com" />
+              </div>
+            </div>
+            <div class="row">
+              <div>
+                <label>Offer</label>
+                <select id="offer">
+                  <option value="monthly-creator-pass" selected>Monthly Creator Pass — $1,000.00</option>
+                  <option value="annual-plan">Annual Plan — $10,000.00</option>
+                </select>
+              </div>
+              <div>
+                <label>Amount</label>
+                <select id="amount">
+                  <option value="100000" selected>$1,000.00</option>
+                  <option value="1000000">$10,000.00</option>
+                </select>
+              </div>
+            </div>
+            <div style="height:10px"></div>
+            <button class="btn" type="submit">Continue — Secure Hosted Payment</button>
+          </form>
+        </div>
+        <div class="card">
+          <h3 class="h">Order Summary</h3>
+          <div id="summary" class="muted">Monthly Creator Pass — $1,000.00</div>
+          <div style="height:10px"></div>
+          <div class="muted" style="font-size:12px">No card data is entered on this site. You’ll complete payment on our PCI‑compliant gateway (NMI) and be returned here with your receipt.</div>
+        </div>
+      </div>
+    </div>
+    <script>
+      const form = document.getElementById('prefill-form');
+      const offer = document.getElementById('offer');
+      const amount = document.getElementById('amount');
+      const name = document.getElementById('name');
+      const email = document.getElementById('email');
+      const summary = document.getElementById('summary');
+
+      function updateSummary(){
+        summary.textContent = `${offer.options[offer.selectedIndex].text}`;
+      }
+      offer.addEventListener('change', () => {
+        if(offer.value === 'annual-plan'){ amount.value = '1000000'; }
+        else { amount.value = '100000'; }
+        updateSummary();
+      });
+      amount.addEventListener('change', updateSummary);
+      updateSummary();
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const params = new URLSearchParams({
+          amount_cents: amount.value,
+          offer_id: offer.value,
+          name: name.value,
+          email: email.value
+        }).toString();
+        window.location.href = `/api/payment-cloud/hpp/start?${params}`;
+      });
+    </script>
+  </body>
+  </html>
+
+

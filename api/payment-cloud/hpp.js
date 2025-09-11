@@ -45,6 +45,22 @@ router.get('/start', async (req, res) => {
     form.append('redirect_url', redirectUrl);
     form.append('orderid', `RN-${Date.now()}`);
     form.append('order_description', `Rich Nick - ${offerId}`);
+    // Optional customer prefill
+    const name = String(req.query.name || '');
+    const email = String(req.query.email || '');
+    if (email) form.append('email', email);
+    if (name) {
+      const [first, ...rest] = name.split(' ');
+      form.append('first_name', first || '');
+      form.append('last_name', rest.join(' ') || '');
+    }
+    // Optional branding (NMI HPP supports css_url)
+    if (process.env.HPP_CSS_URL) {
+      form.append('css_url', process.env.HPP_CSS_URL);
+    }
+    if (process.env.HPP_COMPANY) {
+      form.append('company', process.env.HPP_COMPANY);
+    }
 
     const resp = await fetch('https://secure.networkmerchants.com/api/transact.php', {
       method: 'POST',
