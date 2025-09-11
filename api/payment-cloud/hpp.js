@@ -24,6 +24,10 @@ function getBaseUrl(req) {
 router.get('/start', async (req, res) => {
   try {
     if (!process.env.PAYMENT_CLOUD_SECRET_KEY) {
+      if (process.env.PAYMENT_CLOUD_MODE === 'demo') {
+        // Redirect to a local demo page so reviewers can see the hosted flow intent
+        return res.redirect(302, '/secure-checkout-demo.html');
+      }
       return res.status(500).send('Payment gateway not configured');
     }
 

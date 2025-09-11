@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Secure Checkout (Demo)</title>
+    <style>
+      body { background:#0b0f1a; color:#fff; font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin:0; }
+      .wrap { max-width: 520px; margin: 40px auto; padding: 24px; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; background: rgba(255,255,255,0.04); backdrop-filter: blur(6px);} 
+      h1 { margin: 0 0 12px; }
+      .note { color: #aab; font-size: 14px; margin-bottom: 16px; }
+      .btn { display:block; width:100%; padding:14px 16px; border-radius:12px; border:0; background:linear-gradient(90deg,#4f46e5,#db2777); color:#fff; font-weight:600; cursor:pointer; }
+      .box { padding:12px 14px; border-radius:12px; background: rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.08); margin: 10px 0;}
+      .kv { display:flex; justify-content:space-between; color:#ccd; font-size:14px; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Secure Checkout (Demo Mode)</h1>
+      <div class="note">This demo shows the hosted checkout redirect flow required for PaymentCloud/NMI approval. No real payments are processed.</div>
+      <div class="box">
+        <div class="kv"><span>Merchant</span><strong>Rich Nick Growth LLC</strong></div>
+        <div class="kv"><span>Amount</span><strong>$1,000.00</strong></div>
+        <div class="kv"><span>Gateway</span><strong>NMI Hosted Payment Page</strong></div>
+      </div>
+      <button class="btn" onclick="window.location.href='/checkout/success?payment=hosted&demo=true'">Simulate Hosted Approval</button>
+      <div style="height:10px"></div>
+      <button class="btn" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1)" onclick="window.location.href='/checkout/cancel?payment=hosted&demo=true'">Simulate Cancel</button>
+      <p class="note" style="margin-top:16px">Switch off demo by setting <code>PAYMENT_CLOUD_MODE</code> to anything other than <code>demo</code> and setting <code>PAYMENT_CLOUD_SECRET_KEY</code>.</p>
+    </div>
+  </body>
+  </html>
+
+
