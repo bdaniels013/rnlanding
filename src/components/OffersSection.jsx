@@ -39,6 +39,12 @@ const OffersSection = () => {
   };
 
   const getOfferFeatures = (offer) => {
+    // Use features from database if available, otherwise fall back to hardcoded
+    if (offer.features && offer.features.length > 0) {
+      return offer.features;
+    }
+    
+    // Fallback to hardcoded features for backward compatibility
     const features = [];
     
     if (offer.sku === 'monthly-creator-pass') {
@@ -65,11 +71,13 @@ const OffersSection = () => {
   };
 
   const getOfferBadge = (offer) => {
+    // Use hardcoded badges for known offers, or could be made dynamic in the future
     if (offer.sku === 'monthly-creator-pass') {
       return { text: 'EVENT ACCESS', color: 'bg-blue-600' };
     } else if (offer.sku === 'content-management') {
       return { text: 'ONGOING SUPPORT', color: 'bg-purple-600' };
     }
+    // For new offers, you could add a badge field to the database
     return null;
   };
 

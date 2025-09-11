@@ -39,28 +39,14 @@ app.use('/api/payment-cloud', paymentCloudRouter);
 app.use('/api/payment-cloud/hpp', hppRouter);
 
 // Basic API endpoints
-app.get('/api/offers', (req, res) => {
-  res.json([
-    {
-      id: 'monthly-creator-pass',
-      sku: 'monthly-creator-pass',
-      name: 'Sign up for a month',
-      priceCents: 100000,
-      isSubscription: false,
-      creditsValue: 1,
-      isCreditEligible: true
-    },
-    {
-      id: 'content-management',
-      sku: 'content-management',
-      name: 'Ongoing Content Management Services',
-      priceCents: 150000,
-      isSubscription: true, // Now using PayPal subscription
-      creditsValue: 0,
-      isCreditEligible: false,
-      paypalPlanId: 'P-9A346031N5163840TNC5AE3Q' // Your PayPal subscription plan ID
-    }
-  ]);
+app.get('/api/offers', async (req, res) => {
+  try {
+    const offers = await db.getOffers();
+    res.json(offers);
+  } catch (error) {
+    console.error('Error fetching offers:', error);
+    res.status(500).json({ error: 'Failed to fetch offers' });
+  }
 });
 
 // Checkout endpoint with real PayPal integration
