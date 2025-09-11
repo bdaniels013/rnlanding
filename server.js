@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import setupDatabase from './scripts/startup.js';
 import { paypalService } from './src/lib/paypal.js';
 import { db } from './src/lib/database.js';
+import paymentCloudRouter from './api/payment-cloud/charge.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,6 +29,9 @@ app.use(express.static(path.join(__dirname, 'dist')));
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// Payment Cloud API routes
+app.use('/api/payment-cloud', paymentCloudRouter);
 
 // Basic API endpoints
 app.get('/api/offers', (req, res) => {

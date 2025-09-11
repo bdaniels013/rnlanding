@@ -6,6 +6,7 @@ import AdminLogin from './components/AdminLogin';
 import CheckoutSuccess from './components/CheckoutSuccess';
 import CheckoutCancel from './components/CheckoutCancel';
 import CheckoutFlow from './components/CheckoutFlow';
+import SecureCheckout from './components/SecureCheckout';
 
 /**
  * RICHNICK VIRAL GROWTH — LANDING PAGE
@@ -687,6 +688,7 @@ export default function RichNickLanding() {
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
+  const [showSecureCheckout, setShowSecureCheckout] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState(null);
 
   useEffect(() => {
@@ -728,7 +730,14 @@ export default function RichNickLanding() {
     };
     
     setSelectedOffer(monthlyCreatorPass);
-    setShowCheckout(true);
+    setShowSecureCheckout(true);
+  };
+
+  const handleSecureCheckoutSuccess = (result) => {
+    console.log('Payment successful:', result);
+    setShowSecureCheckout(false);
+    // Redirect to success page or show success message
+    window.location.href = '/checkout/success?payment=secure&txn=' + result.transaction_id;
   };
 
   // Route to specific pages
@@ -782,6 +791,15 @@ export default function RichNickLanding() {
         <CheckoutFlow 
           selectedOffer={selectedOffer} 
           onClose={() => setShowCheckout(false)} 
+        />
+      )}
+
+      {/* Secure Checkout Modal */}
+      {showSecureCheckout && (
+        <SecureCheckout 
+          selectedOffer={selectedOffer} 
+          onClose={() => setShowSecureCheckout(false)}
+          onSuccess={handleSecureCheckoutSuccess}
         />
       )}
     </div>

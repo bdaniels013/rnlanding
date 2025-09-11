@@ -16,6 +16,7 @@
     "db:seed": "node scripts/seed.js",
     "db:studio": "npx prisma studio",
     "setup": "node scripts/setup.js",
+    "test:payment": "node scripts/test-payment-cloud.js",
     "start": "node server.js"
   },
   "dependencies": {
