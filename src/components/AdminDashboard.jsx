@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, Users, CreditCard, Calendar, TrendingUp, Package, AlertCircle, LogOut, User } from 'lucide-react';
+import { DollarSign, Users, CreditCard, Calendar, TrendingUp, Package, AlertCircle, LogOut, User, Plus, Edit, Trash2, Search, Filter, X } from 'lucide-react';
 import CreditsManagement from './CreditsManagement';
 
 const AdminDashboard = ({ onLogout }) => {
@@ -8,6 +8,26 @@ const AdminDashboard = ({ onLogout }) => {
   const [error, setError] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [customerInfoCaptures, setCustomerInfoCaptures] = useState([]);
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [customers, setCustomers] = useState([]);
+  const [offers, setOffers] = useState([]);
+  const [showCustomerModal, setShowCustomerModal] = useState(false);
+  const [showOfferModal, setShowOfferModal] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState(null);
+  const [editingOffer, setEditingOffer] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [customerForm, setCustomerForm] = useState({ name: '', email: '', phone: '', notes: '' });
+  const [offerForm, setOfferForm] = useState({ 
+    sku: '', 
+    name: '', 
+    priceCents: '', 
+    isSubscription: false, 
+    creditsValue: 0, 
+    isCreditEligible: false,
+    description: '',
+    features: [],
+    isActive: true
+  });
 
   useEffect(() => {
     // Check if user is authenticated
@@ -27,9 +47,19 @@ const AdminDashboard = ({ onLogout }) => {
     const interval = setInterval(() => {
       fetchDashboardData();
       fetchCustomerInfoCaptures();
+      if (activeTab === 'customers') fetchCustomers();
+      if (activeTab === 'offers') fetchOffers();
     }, 30000);
     return () => clearInterval(interval);
   }, [onLogout]);
+
+  useEffect(() => {
+    if (activeTab === 'customers') {
+      fetchCustomers();
+    } else if (activeTab === 'offers') {
+      fetchOffers();
+    }
+  }, [activeTab, searchTerm]);
 
   const handleLogout = () => {
     localStorage.removeItem('adminAuth');
@@ -80,6 +110,207 @@ const AdminDashboard = ({ onLogout }) => {
     }
   };
 
+  const fetchCustomers = async () => {
+    try {
+      const response = await fetch(`/api/admin/customers?search=${searchTerm}`, {
+        headers: {
+          'x-admin-auth': 'true',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch customers');
+      }
+      
+      const data = await response.json();
+      setCustomers(data.customers);
+    } catch (err) {
+      console.error('Failed to fetch customers:', err);
+    }
+  };
+
+  const fetchOffers = async () => {
+    try {
+      const response = await fetch(`/api/admin/offers?search=${searchTerm}`, {
+        headers: {
+          'x-admin-auth': 'true',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch offers');
+      }
+      
+      const data = await response.json();
+      setOffers(data.offers);
+    } catch (err) {
+      console.error('Failed to fetch offers:', err);
+    }
+  };
+
+  const handleCustomerSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const url = editingCustomer ? `/api/admin/customers?id=${editingCustomer.id}` : '/api/admin/customers';
+      const method = editingCustomer ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'x-admin-auth': 'true',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(customerForm)
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to save customer');
+      }
+      
+      setShowCustomerModal(false);
+      setEditingCustomer(null);
+      setCustomerForm({ name: '', email: '', phone: '', notes: '' });
+      fetchCustomers();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleOfferSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const url = editingOffer ? `/api/admin/offers?id=${editingOffer.id}` : '/api/admin/offers';
+      const method = editingOffer ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'x-admin-auth': 'true',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(offerForm)
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to save offer');
+      }
+      
+      setShowOfferModal(false);
+      setEditingOffer(null);
+      setOfferForm({ 
+        sku: '', 
+        name: '', 
+        priceCents: '', 
+        isSubscription: false, 
+        creditsValue: 0, 
+        isCreditEligible: false,
+        description: '',
+        features: [],
+        isActive: true
+      });
+      fetchOffers();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleDeleteCustomer = async (customerId) => {
+    if (!confirm('Are you sure you want to delete this customer?')) return;
+    
+    try {
+      const response = await fetch(`/api/admin/customers?id=${customerId}`, {
+        method: 'DELETE',
+        headers: {
+          'x-admin-auth': 'true',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete customer');
+      }
+      
+      fetchCustomers();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleDeleteOffer = async (offerId) => {
+    if (!confirm('Are you sure you want to delete this offer?')) return;
+    
+    try {
+      const response = await fetch(`/api/admin/offers?id=${offerId}`, {
+        method: 'DELETE',
+        headers: {
+          'x-admin-auth': 'true',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete offer');
+      }
+      
+      fetchOffers();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const openCustomerModal = (customer = null) => {
+    if (customer) {
+      setEditingCustomer(customer);
+      setCustomerForm({
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone || '',
+        notes: customer.notes || ''
+      });
+    } else {
+      setEditingCustomer(null);
+      setCustomerForm({ name: '', email: '', phone: '', notes: '' });
+    }
+    setShowCustomerModal(true);
+  };
+
+  const openOfferModal = (offer = null) => {
+    if (offer) {
+      setEditingOffer(offer);
+      setOfferForm({
+        sku: offer.sku,
+        name: offer.name,
+        priceCents: offer.priceCents.toString(),
+        isSubscription: offer.isSubscription,
+        creditsValue: offer.creditsValue,
+        isCreditEligible: offer.isCreditEligible,
+        description: offer.description || '',
+        features: offer.features ? JSON.parse(offer.features) : [],
+        isActive: offer.isActive
+      });
+    } else {
+      setEditingOffer(null);
+      setOfferForm({ 
+        sku: '', 
+        name: '', 
+        priceCents: '', 
+        isSubscription: false, 
+        creditsValue: 0, 
+        isCreditEligible: false,
+        description: '',
+        features: [],
+        isActive: true
+      });
+    }
+    setShowOfferModal(true);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
@@ -119,11 +350,47 @@ const AdminDashboard = ({ onLogout }) => {
             </div>
           </div>
         </div>
+        
+        {/* Navigation Tabs */}
+        <div className="mt-4 flex space-x-1 bg-gray-700 p-1 rounded-lg">
+          <button
+            onClick={() => setActiveTab('dashboard')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'dashboard'
+                ? 'bg-gray-600 text-white'
+                : 'text-gray-300 hover:text-white hover:bg-gray-600'
+            }`}
+          >
+            Dashboard
+          </button>
+          <button
+            onClick={() => setActiveTab('customers')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'customers'
+                ? 'bg-gray-600 text-white'
+                : 'text-gray-300 hover:text-white hover:bg-gray-600'
+            }`}
+          >
+            Customers
+          </button>
+          <button
+            onClick={() => setActiveTab('offers')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'offers'
+                ? 'bg-gray-600 text-white'
+                : 'text-gray-300 hover:text-white hover:bg-gray-600'
+            }`}
+          >
+            Offers & Services
+          </button>
+        </div>
       </div>
 
       <div className="p-4 sm:p-6">
-        {/* Key Metrics */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
+        {activeTab === 'dashboard' && (
+          <>
+            {/* Key Metrics */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
           <MetricCard
             title="Revenue Today"
             value={`$${dashboardData.revenue_today?.toLocaleString() || '0'}`}
@@ -265,25 +532,91 @@ const AdminDashboard = ({ onLogout }) => {
         {/* Credits Management */}
         <CreditsManagement />
 
-        {/* Upcoming Platform Slots */}
-        <div className="bg-gray-800 rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">Upcoming Platform Slots</h2>
-          <div className="space-y-3">
-            {dashboardData.upcoming_platform_slots?.map(slot => (
-              <div key={slot.id} className="flex items-center justify-between p-3 bg-gray-700 rounded">
-                <div>
-                  <div className="font-medium">{slot.name}</div>
-                  <div className="text-sm text-gray-400">{slot.partner}</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm">{new Date(slot.slotAt).toLocaleDateString()}</div>
-                  <div className="text-xs text-gray-400">{new Date(slot.slotAt).toLocaleTimeString()}</div>
-                </div>
+            {/* Upcoming Platform Slots */}
+            <div className="bg-gray-800 rounded-lg p-6">
+              <h2 className="text-xl font-semibold mb-4">Upcoming Platform Slots</h2>
+              <div className="space-y-3">
+                {dashboardData.upcoming_platform_slots?.map(slot => (
+                  <div key={slot.id} className="flex items-center justify-between p-3 bg-gray-700 rounded">
+                    <div>
+                      <div className="font-medium">{slot.name}</div>
+                      <div className="text-sm text-gray-400">{slot.partner}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm">{new Date(slot.slotAt).toLocaleDateString()}</div>
+                      <div className="text-xs text-gray-400">{new Date(slot.slotAt).toLocaleTimeString()}</div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
+          </>
+        )}
+
+        {/* Customer Management */}
+        {activeTab === 'customers' && (
+          <CustomerManagement
+            customers={customers}
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            onEdit={openCustomerModal}
+            onDelete={handleDeleteCustomer}
+            onAdd={() => openCustomerModal()}
+          />
+        )}
+
+        {/* Offers Management */}
+        {activeTab === 'offers' && (
+          <OffersManagement
+            offers={offers}
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            onEdit={openOfferModal}
+            onDelete={handleDeleteOffer}
+            onAdd={() => openOfferModal()}
+          />
+        )}
       </div>
+
+      {/* Customer Modal */}
+      {showCustomerModal && (
+        <CustomerModal
+          customer={editingCustomer}
+          form={customerForm}
+          setForm={setCustomerForm}
+          onSubmit={handleCustomerSubmit}
+          onClose={() => {
+            setShowCustomerModal(false);
+            setEditingCustomer(null);
+            setCustomerForm({ name: '', email: '', phone: '', notes: '' });
+          }}
+        />
+      )}
+
+      {/* Offer Modal */}
+      {showOfferModal && (
+        <OfferModal
+          offer={editingOffer}
+          form={offerForm}
+          setForm={setOfferForm}
+          onSubmit={handleOfferSubmit}
+          onClose={() => {
+            setShowOfferModal(false);
+            setEditingOffer(null);
+            setOfferForm({ 
+              sku: '', 
+              name: '', 
+              priceCents: '', 
+              isSubscription: false, 
+              creditsValue: 0, 
+              isCreditEligible: false,
+              description: '',
+              features: [],
+              isActive: true
+            });
+          }}
+        />
+      )}
     </div>
   );
 };
@@ -301,6 +634,378 @@ const MetricCard = ({ title, value, icon, color, subtitle }) => (
           {icon}
         </div>
       </div>
+    </div>
+  </div>
+);
+
+// Customer Management Component
+const CustomerManagement = ({ customers, searchTerm, setSearchTerm, onEdit, onDelete, onAdd }) => (
+  <div className="space-y-6">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <h2 className="text-2xl font-bold">Customer Management</h2>
+      <button
+        onClick={onAdd}
+        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+      >
+        <Plus className="w-4 h-4" />
+        Add Customer
+      </button>
+    </div>
+
+    <div className="flex flex-col sm:flex-row gap-4">
+      <div className="relative flex-1">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+        <input
+          type="text"
+          placeholder="Search customers..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+    </div>
+
+    <div className="bg-gray-800 rounded-lg overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-gray-700">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Name</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Email</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Phone</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Credits</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Orders</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-700">
+            {customers.map((customer) => (
+              <tr key={customer.id} className="hover:bg-gray-700/50">
+                <td className="px-4 py-4 whitespace-nowrap">
+                  <div className="text-sm font-medium text-white">{customer.name}</div>
+                  {customer.notes && (
+                    <div className="text-xs text-gray-400 truncate max-w-xs">{customer.notes}</div>
+                  )}
+                </td>
+                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">{customer.email}</td>
+                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">{customer.phone || 'N/A'}</td>
+                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">{customer.totalCredits || 0}</td>
+                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">{customer.orders?.length || 0}</td>
+                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => onEdit(customer)}
+                      className="text-blue-400 hover:text-blue-300"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => onDelete(customer.id)}
+                      className="text-red-400 hover:text-red-300"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+);
+
+// Offers Management Component
+const OffersManagement = ({ offers, searchTerm, setSearchTerm, onEdit, onDelete, onAdd }) => (
+  <div className="space-y-6">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <h2 className="text-2xl font-bold">Offers & Services Management</h2>
+      <button
+        onClick={onAdd}
+        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+      >
+        <Plus className="w-4 h-4" />
+        Add Offer
+      </button>
+    </div>
+
+    <div className="flex flex-col sm:flex-row gap-4">
+      <div className="relative flex-1">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+        <input
+          type="text"
+          placeholder="Search offers..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+    </div>
+
+    <div className="bg-gray-800 rounded-lg overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-gray-700">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Name</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">SKU</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Price</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Type</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Credits</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Sales</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-700">
+            {offers.map((offer) => (
+              <tr key={offer.id} className="hover:bg-gray-700/50">
+                <td className="px-4 py-4 whitespace-nowrap">
+                  <div className="text-sm font-medium text-white">{offer.name}</div>
+                  {offer.description && (
+                    <div className="text-xs text-gray-400 truncate max-w-xs">{offer.description}</div>
+                  )}
+                </td>
+                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300 font-mono">{offer.sku}</td>
+                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">${(offer.priceCents / 100).toFixed(2)}</td>
+                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">
+                  {offer.isSubscription ? 'Subscription' : 'One-time'}
+                </td>
+                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">
+                  {offer.isCreditEligible ? offer.creditsValue : 'N/A'}
+                </td>
+                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">
+                  {offer.paidSales || 0} paid
+                </td>
+                <td className="px-4 py-4 whitespace-nowrap">
+                  <span className={`px-2 py-1 text-xs rounded-full ${
+                    offer.isActive ? 'bg-green-600 text-green-100' : 'bg-red-600 text-red-100'
+                  }`}>
+                    {offer.isActive ? 'Active' : 'Inactive'}
+                  </span>
+                </td>
+                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => onEdit(offer)}
+                      className="text-blue-400 hover:text-blue-300"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => onDelete(offer.id)}
+                      className="text-red-400 hover:text-red-300"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+);
+
+// Customer Modal Component
+const CustomerModal = ({ customer, form, setForm, onSubmit, onClose }) => (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-white">
+          {customer ? 'Edit Customer' : 'Add Customer'}
+        </h3>
+        <button onClick={onClose} className="text-gray-400 hover:text-white">
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+      
+      <form onSubmit={onSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Name *</label>
+          <input
+            type="text"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Email *</label>
+          <input
+            type="email"
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Phone</label>
+          <input
+            type="tel"
+            value={form.phone}
+            onChange={(e) => setForm({ ...form, phone: e.target.value })}
+            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Notes</label>
+          <textarea
+            value={form.notes}
+            onChange={(e) => setForm({ ...form, notes: e.target.value })}
+            rows={3}
+            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        
+        <div className="flex space-x-3 pt-4">
+          <button
+            type="submit"
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors"
+          >
+            {customer ? 'Update' : 'Create'}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+);
+
+// Offer Modal Component
+const OfferModal = ({ offer, form, setForm, onSubmit, onClose }) => (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="bg-gray-800 rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-white">
+          {offer ? 'Edit Offer' : 'Add Offer'}
+        </h3>
+        <button onClick={onClose} className="text-gray-400 hover:text-white">
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+      
+      <form onSubmit={onSubmit} className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">SKU *</label>
+            <input
+              type="text"
+              value={form.sku}
+              onChange={(e) => setForm({ ...form, sku: e.target.value })}
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Name *</label>
+            <input
+              type="text"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Price (cents) *</label>
+            <input
+              type="number"
+              value={form.priceCents}
+              onChange={(e) => setForm({ ...form, priceCents: e.target.value })}
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+            <p className="text-xs text-gray-400 mt-1">Enter price in cents (e.g., 100000 for $1000.00)</p>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Credits Value</label>
+            <input
+              type="number"
+              value={form.creditsValue}
+              onChange={(e) => setForm({ ...form, creditsValue: parseInt(e.target.value) || 0 })}
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Description</label>
+          <textarea
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+            rows={3}
+            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              checked={form.isSubscription}
+              onChange={(e) => setForm({ ...form, isSubscription: e.target.checked })}
+              className="mr-2"
+            />
+            <span className="text-sm text-gray-300">Subscription</span>
+          </label>
+          
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              checked={form.isCreditEligible}
+              onChange={(e) => setForm({ ...form, isCreditEligible: e.target.checked })}
+              className="mr-2"
+            />
+            <span className="text-sm text-gray-300">Credit Eligible</span>
+          </label>
+          
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              checked={form.isActive}
+              onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
+              className="mr-2"
+            />
+            <span className="text-sm text-gray-300">Active</span>
+          </label>
+        </div>
+        
+        <div className="flex space-x-3 pt-4">
+          <button
+            type="submit"
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors"
+          >
+            {offer ? 'Update' : 'Create'}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 );
