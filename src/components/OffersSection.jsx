@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Star, CreditCard, Calendar, Users, ArrowRight, Check } from 'lucide-react';
 import CheckoutFlow from './CheckoutFlow';
+import SecureCheckout from './SecureCheckout';
 
 const OffersSection = () => {
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedOffer, setSelectedOffer] = useState(null);
   const [showCheckout, setShowCheckout] = useState(false);
+  const [showSecureCheckout, setShowSecureCheckout] = useState(false);
 
   useEffect(() => {
     fetchOffers();
@@ -26,7 +28,15 @@ const OffersSection = () => {
 
   const handleSelectOffer = (offer) => {
     setSelectedOffer(offer);
-    setShowCheckout(true);
+    setShowSecureCheckout(true);
+  };
+
+  const handleSecureCheckoutSuccess = (result) => {
+    console.log('Payment successful:', result);
+    setShowSecureCheckout(false);
+    setSelectedOffer(null);
+    // Redirect to success page or show success message
+    window.location.href = '/checkout/success?payment=secure&txn=' + result.transaction_id;
   };
 
   const getOfferFeatures = (offer) => {
@@ -177,7 +187,7 @@ const OffersSection = () => {
             <div className="flex items-center justify-center space-x-8 text-gray-400">
               <div className="flex items-center">
                 <Check className="w-5 h-5 text-green-400 mr-2" />
-                <span>Secure PayPal Checkout</span>
+                <span>Secure Payment Cloud Checkout</span>
               </div>
               <div className="flex items-center">
                 <Check className="w-5 h-5 text-green-400 mr-2" />
@@ -192,14 +202,15 @@ const OffersSection = () => {
         </div>
       </section>
 
-      {/* Checkout Modal */}
-      {showCheckout && (
-        <CheckoutFlow
+      {/* Secure Checkout Modal */}
+      {showSecureCheckout && (
+        <SecureCheckout
           selectedOffer={selectedOffer}
           onClose={() => {
-            setShowCheckout(false);
+            setShowSecureCheckout(false);
             setSelectedOffer(null);
           }}
+          onSuccess={handleSecureCheckoutSuccess}
         />
       )}
     </>
