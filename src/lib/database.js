@@ -73,6 +73,91 @@ export class DatabaseService {
     }
   }
 
+  async createOffer(offerData) {
+    try {
+      const offer = await prisma.offer.create({
+        data: {
+          sku: offerData.sku,
+          name: offerData.name,
+          priceCents: parseInt(offerData.priceCents),
+          isSubscription: Boolean(offerData.isSubscription),
+          creditsValue: parseInt(offerData.creditsValue) || 0,
+          isCreditEligible: Boolean(offerData.isCreditEligible),
+          description: offerData.description || null,
+          features: offerData.features ? JSON.stringify(offerData.features) : null,
+          isActive: Boolean(offerData.isActive)
+        }
+      });
+
+      return {
+        id: offer.id,
+        sku: offer.sku,
+        name: offer.name,
+        priceCents: offer.priceCents,
+        isSubscription: offer.isSubscription,
+        creditsValue: offer.creditsValue,
+        isCreditEligible: offer.isCreditEligible,
+        description: offer.description,
+        features: offer.features ? JSON.parse(offer.features) : [],
+        isActive: offer.isActive,
+        createdAt: offer.createdAt,
+        updatedAt: offer.updatedAt
+      };
+    } catch (error) {
+      console.error('Error creating offer:', error);
+      throw error;
+    }
+  }
+
+  async updateOffer(id, updateData) {
+    try {
+      const offer = await prisma.offer.update({
+        where: { id },
+        data: {
+          sku: updateData.sku,
+          name: updateData.name,
+          priceCents: parseInt(updateData.priceCents),
+          isSubscription: Boolean(updateData.isSubscription),
+          creditsValue: parseInt(updateData.creditsValue) || 0,
+          isCreditEligible: Boolean(updateData.isCreditEligible),
+          description: updateData.description || null,
+          features: updateData.features ? JSON.stringify(updateData.features) : null,
+          isActive: Boolean(updateData.isActive)
+        }
+      });
+
+      return {
+        id: offer.id,
+        sku: offer.sku,
+        name: offer.name,
+        priceCents: offer.priceCents,
+        isSubscription: offer.isSubscription,
+        creditsValue: offer.creditsValue,
+        isCreditEligible: offer.isCreditEligible,
+        description: offer.description,
+        features: offer.features ? JSON.parse(offer.features) : [],
+        isActive: offer.isActive,
+        createdAt: offer.createdAt,
+        updatedAt: offer.updatedAt
+      };
+    } catch (error) {
+      console.error('Error updating offer:', error);
+      throw error;
+    }
+  }
+
+  async deleteOffer(id) {
+    try {
+      await prisma.offer.delete({
+        where: { id }
+      });
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting offer:', error);
+      throw error;
+    }
+  }
+
   async getCustomerById(id) {
     try {
       const customer = await prisma.customer.findUnique({

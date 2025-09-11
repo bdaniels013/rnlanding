@@ -196,8 +196,10 @@ const AdminDashboard = ({ onLogout }) => {
   const handleOfferSubmit = async (e) => {
     e.preventDefault();
     try {
-      const url = editingOffer ? `/api/admin/offers?id=${editingOffer.id}` : '/api/admin/offers';
+      const url = '/api/admin/offers';
       const method = editingOffer ? 'PUT' : 'POST';
+      
+      const requestBody = editingOffer ? { id: editingOffer.id, ...offerForm } : offerForm;
       
       const response = await fetch(url, {
         method,
@@ -205,7 +207,7 @@ const AdminDashboard = ({ onLogout }) => {
           'x-admin-auth': 'true',
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(offerForm)
+        body: JSON.stringify(requestBody)
       });
       
       if (!response.ok) {

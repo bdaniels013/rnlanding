@@ -327,6 +327,48 @@ app.get('/api/admin/offers', authenticateAdmin, async (req, res) => {
   }
 });
 
+// Create new offer
+app.post('/api/admin/offers', authenticateAdmin, async (req, res) => {
+  try {
+    const offerData = req.body;
+    const offer = await db.createOffer(offerData);
+    res.json(offer);
+  } catch (error) {
+    console.error('Create offer error:', error);
+    res.status(500).json({ error: 'Failed to create offer' });
+  }
+});
+
+// Update offer
+app.put('/api/admin/offers', authenticateAdmin, async (req, res) => {
+  try {
+    const { id, ...updateData } = req.body;
+    if (!id) {
+      return res.status(400).json({ error: 'Offer ID is required' });
+    }
+    const offer = await db.updateOffer(id, updateData);
+    res.json(offer);
+  } catch (error) {
+    console.error('Update offer error:', error);
+    res.status(500).json({ error: 'Failed to update offer' });
+  }
+});
+
+// Delete offer
+app.delete('/api/admin/offers', authenticateAdmin, async (req, res) => {
+  try {
+    const { id } = req.query;
+    if (!id) {
+      return res.status(400).json({ error: 'Offer ID is required' });
+    }
+    await db.deleteOffer(id);
+    res.json({ message: 'Offer deleted successfully' });
+  } catch (error) {
+    console.error('Delete offer error:', error);
+    res.status(500).json({ error: 'Failed to delete offer' });
+  }
+});
+
 // Add credits to customer
 app.post('/api/admin/credits/add', authenticateAdmin, async (req, res) => {
   try {
