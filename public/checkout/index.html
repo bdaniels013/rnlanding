@@ -46,6 +46,13 @@
             </div>
             <div class="row">
               <div>
+                <label>Phone</label>
+                <input id="phone" type="tel" placeholder="(555) 123-4567" />
+              </div>
+              <div></div>
+            </div>
+            <div class="row">
+              <div>
                 <label>Offer</label>
                 <select id="offer">
                   <option value="monthly-creator-pass" selected>Monthly Creator Pass — $1,000.00</option>
@@ -78,6 +85,7 @@
       const amount = document.getElementById('amount');
       const name = document.getElementById('name');
       const email = document.getElementById('email');
+      const phone = document.getElementById('phone');
       const summary = document.getElementById('summary');
 
       function updateSummary(){
@@ -97,7 +105,8 @@
           amount_cents: amount.value,
           offer_id: offer.value,
           name: name.value,
-          email: email.value
+          email: email.value,
+          phone: phone.value
         }).toString();
         window.location.href = `/api/payment-cloud/hpp/start?${params}`;
       });

@@ -27,7 +27,7 @@ const OffersSection = () => {
   };
 
   const handleSelectOffer = (offer) => {
-    window.location.href = '/secure-checkout';
+    window.location.href = '/checkout';
   };
 
   const handleSecureCheckoutSuccess = (result) => {

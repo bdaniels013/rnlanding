@@ -718,8 +718,7 @@ export default function RichNickLanding() {
   };
 
   const handleReserveSeat = () => {
-    // Temporary: send to branded secure checkout landing (hands off to hosted page)
-    window.location.href = '/secure-checkout';
+    window.location.href = '/checkout';
   };
 
   const handleSecureCheckoutSuccess = (result) => {
