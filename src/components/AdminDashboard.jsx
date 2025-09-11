@@ -297,6 +297,7 @@ const AdminDashboard = ({ onLogout }) => {
   };
 
   const openOfferModal = (offer = null) => {
+    console.log('Opening offer modal with offer:', offer);
     if (offer) {
       setEditingOffer(offer);
       setOfferForm({
@@ -307,7 +308,7 @@ const AdminDashboard = ({ onLogout }) => {
         creditsValue: offer.creditsValue,
         isCreditEligible: offer.isCreditEligible,
         description: offer.description || '',
-        features: offer.features ? JSON.parse(offer.features) : [],
+        features: offer.features || [],
         isActive: offer.isActive
       });
     } else {
@@ -990,6 +991,18 @@ const OfferModal = ({ offer, form, setForm, onSubmit, onClose }) => (
             rows={3}
             className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Features (one per line)</label>
+          <textarea
+            value={form.features ? form.features.join('\n') : ''}
+            onChange={(e) => setForm({ ...form, features: e.target.value.split('\n').filter(f => f.trim()) })}
+            rows={4}
+            placeholder="Feature 1&#10;Feature 2&#10;Feature 3"
+            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <p className="text-xs text-gray-400 mt-1">Enter each feature on a new line</p>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
