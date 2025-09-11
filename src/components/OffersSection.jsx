@@ -27,9 +27,7 @@ const OffersSection = () => {
   };
 
   const handleSelectOffer = (offer) => {
-    const amountCents = offer.priceCents;
-    const offerId = offer.id;
-    window.location.href = `/api/payment-cloud/hpp/start?amount_cents=${amountCents}&offer_id=${offerId}`;
+    window.location.href = '/secure-checkout';
   };
 
   const handleSecureCheckoutSuccess = (result) => {

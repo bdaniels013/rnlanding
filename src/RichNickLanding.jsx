@@ -718,10 +718,8 @@ export default function RichNickLanding() {
   };
 
   const handleReserveSeat = () => {
-    // Redirect to hosted payment page (no card data on our site)
-    const amountCents = 100000; // $1,000
-    const offerId = 'monthly-creator-pass';
-    window.location.href = `/api/payment-cloud/hpp/start?amount_cents=${amountCents}&offer_id=${offerId}`;
+    // Temporary: send to branded secure checkout landing (hands off to hosted page)
+    window.location.href = '/secure-checkout';
   };
 
   const handleSecureCheckoutSuccess = (result) => {
