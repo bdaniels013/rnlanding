@@ -112,6 +112,7 @@ const AdminDashboard = ({ onLogout }) => {
 
   const fetchCustomers = async () => {
     try {
+      console.log('Fetching customers...');
       const response = await fetch(`/api/admin/customers?search=${searchTerm}`, {
         headers: {
           'x-admin-auth': 'true',
@@ -119,19 +120,26 @@ const AdminDashboard = ({ onLogout }) => {
         }
       });
       
+      console.log('Customers response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch customers');
+        const errorText = await response.text();
+        console.error('Customers API error:', errorText);
+        throw new Error(`Failed to fetch customers: ${response.status}`);
       }
       
       const data = await response.json();
-      setCustomers(data.customers);
+      console.log('Customers data:', data);
+      setCustomers(data.customers || []);
     } catch (err) {
       console.error('Failed to fetch customers:', err);
+      setCustomers([]);
     }
   };
 
   const fetchOffers = async () => {
     try {
+      console.log('Fetching offers...');
       const response = await fetch(`/api/admin/offers?search=${searchTerm}`, {
         headers: {
           'x-admin-auth': 'true',
@@ -139,14 +147,20 @@ const AdminDashboard = ({ onLogout }) => {
         }
       });
       
+      console.log('Offers response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch offers');
+        const errorText = await response.text();
+        console.error('Offers API error:', errorText);
+        throw new Error(`Failed to fetch offers: ${response.status}`);
       }
       
       const data = await response.json();
-      setOffers(data.offers);
+      console.log('Offers data:', data);
+      setOffers(data.offers || []);
     } catch (err) {
       console.error('Failed to fetch offers:', err);
+      setOffers([]);
     }
   };
 
@@ -666,52 +680,61 @@ const CustomerManagement = ({ customers, searchTerm, setSearchTerm, onEdit, onDe
     </div>
 
     <div className="bg-gray-800 rounded-lg overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-700">
-            <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Name</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Email</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Phone</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Credits</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Orders</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-700">
-            {customers.map((customer) => (
-              <tr key={customer.id} className="hover:bg-gray-700/50">
-                <td className="px-4 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-white">{customer.name}</div>
-                  {customer.notes && (
-                    <div className="text-xs text-gray-400 truncate max-w-xs">{customer.notes}</div>
-                  )}
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">{customer.email}</td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">{customer.phone || 'N/A'}</td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">{customer.totalCredits || 0}</td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">{customer.orders?.length || 0}</td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => onEdit(customer)}
-                      className="text-blue-400 hover:text-blue-300"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => onDelete(customer.id)}
-                      className="text-red-400 hover:text-red-300"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
+      {customers.length === 0 ? (
+        <div className="p-8 text-center">
+          <div className="text-gray-400 mb-4">No customers found</div>
+          <div className="text-sm text-gray-500">
+            {searchTerm ? 'Try adjusting your search terms' : 'Add your first customer using the "Add Customer" button above'}
+          </div>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-700">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Name</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Email</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Phone</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Credits</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Orders</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="divide-y divide-gray-700">
+              {customers.map((customer) => (
+                <tr key={customer.id} className="hover:bg-gray-700/50">
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-white">{customer.name}</div>
+                    {customer.notes && (
+                      <div className="text-xs text-gray-400 truncate max-w-xs">{customer.notes}</div>
+                    )}
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">{customer.email}</td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">{customer.phone || 'N/A'}</td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">{customer.totalCredits || 0}</td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">{customer.orders?.length || 0}</td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => onEdit(customer)}
+                        className="text-blue-400 hover:text-blue-300"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => onDelete(customer.id)}
+                        className="text-red-400 hover:text-red-300"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   </div>
 );
@@ -744,68 +767,77 @@ const OffersManagement = ({ offers, searchTerm, setSearchTerm, onEdit, onDelete,
     </div>
 
     <div className="bg-gray-800 rounded-lg overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-700">
-            <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Name</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">SKU</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Price</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Type</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Credits</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Sales</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-700">
-            {offers.map((offer) => (
-              <tr key={offer.id} className="hover:bg-gray-700/50">
-                <td className="px-4 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-white">{offer.name}</div>
-                  {offer.description && (
-                    <div className="text-xs text-gray-400 truncate max-w-xs">{offer.description}</div>
-                  )}
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300 font-mono">{offer.sku}</td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">${(offer.priceCents / 100).toFixed(2)}</td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">
-                  {offer.isSubscription ? 'Subscription' : 'One-time'}
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">
-                  {offer.isCreditEligible ? offer.creditsValue : 'N/A'}
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">
-                  {offer.paidSales || 0} paid
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap">
-                  <span className={`px-2 py-1 text-xs rounded-full ${
-                    offer.isActive ? 'bg-green-600 text-green-100' : 'bg-red-600 text-red-100'
-                  }`}>
-                    {offer.isActive ? 'Active' : 'Inactive'}
-                  </span>
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => onEdit(offer)}
-                      className="text-blue-400 hover:text-blue-300"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => onDelete(offer.id)}
-                      className="text-red-400 hover:text-red-300"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
+      {offers.length === 0 ? (
+        <div className="p-8 text-center">
+          <div className="text-gray-400 mb-4">No offers found</div>
+          <div className="text-sm text-gray-500">
+            {searchTerm ? 'Try adjusting your search terms' : 'Add your first offer using the "Add Offer" button above'}
+          </div>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-700">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Name</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">SKU</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Price</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Type</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Credits</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Sales</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="divide-y divide-gray-700">
+              {offers.map((offer) => (
+                <tr key={offer.id} className="hover:bg-gray-700/50">
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-white">{offer.name}</div>
+                    {offer.description && (
+                      <div className="text-xs text-gray-400 truncate max-w-xs">{offer.description}</div>
+                    )}
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300 font-mono">{offer.sku}</td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">${(offer.priceCents / 100).toFixed(2)}</td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">
+                    {offer.isSubscription ? 'Subscription' : 'One-time'}
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">
+                    {offer.isCreditEligible ? offer.creditsValue : 'N/A'}
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">
+                    {offer.paidSales || 0} paid
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    <span className={`px-2 py-1 text-xs rounded-full ${
+                      offer.isActive ? 'bg-green-600 text-green-100' : 'bg-red-600 text-red-100'
+                    }`}>
+                      {offer.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => onEdit(offer)}
+                        className="text-blue-400 hover:text-blue-300"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => onDelete(offer.id)}
+                        className="text-red-400 hover:text-red-300"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   </div>
 );
