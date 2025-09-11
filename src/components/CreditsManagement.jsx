@@ -33,7 +33,7 @@ export default function CreditsManagement() {
       }
       
       const data = await response.json();
-      setCustomers(data);
+      setCustomers(data.customers || []);
       setError(null);
     } catch (err) {
       setError(err.message);
