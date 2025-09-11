@@ -718,19 +718,10 @@ export default function RichNickLanding() {
   };
 
   const handleReserveSeat = () => {
-    // Create the monthly creator pass offer
-    const monthlyCreatorPass = {
-      id: 'monthly-creator-pass',
-      sku: 'monthly-creator-pass',
-      name: 'Sign up for a month',
-      priceCents: 100000, // $1,000
-      isSubscription: false,
-      creditsValue: 1,
-      isCreditEligible: true
-    };
-    
-    setSelectedOffer(monthlyCreatorPass);
-    setShowSecureCheckout(true);
+    // Redirect to hosted payment page (no card data on our site)
+    const amountCents = 100000; // $1,000
+    const offerId = 'monthly-creator-pass';
+    window.location.href = `/api/payment-cloud/hpp/start?amount_cents=${amountCents}&offer_id=${offerId}`;
   };
 
   const handleSecureCheckoutSuccess = (result) => {

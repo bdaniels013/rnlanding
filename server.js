@@ -5,6 +5,7 @@ import setupDatabase from './scripts/startup.js';
 import { paypalService } from './src/lib/paypal.js';
 import { db } from './src/lib/database.js';
 import paymentCloudRouter from './api/payment-cloud/charge.js';
+import hppRouter from './api/payment-cloud/hpp.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,6 +33,7 @@ app.get('/health', (req, res) => {
 
 // Payment Cloud API routes
 app.use('/api/payment-cloud', paymentCloudRouter);
+app.use('/api/payment-cloud/hpp', hppRouter);
 
 // Basic API endpoints
 app.get('/api/offers', (req, res) => {
