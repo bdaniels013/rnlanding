@@ -49,15 +49,6 @@ app.get('/api/offers', (req, res) => {
       isCreditEligible: true
     },
     {
-      id: 'annual-plan',
-      sku: 'annual-plan',
-      name: '1 year @ $10k',
-      priceCents: 1000000,
-      isSubscription: false,
-      creditsValue: 12,
-      isCreditEligible: true
-    },
-    {
       id: 'content-management',
       sku: 'content-management',
       name: 'Ongoing Content Management Services',

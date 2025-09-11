@@ -433,6 +433,23 @@ function Hero({ onReserveSeat }) {
   );
 }
 
+function CardBrandLogos() {
+  return (
+    <section className="bg-black/80 border-t border-white/10">
+      <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-center gap-6 opacity-80">
+        {/* VISA */}
+        <svg width="56" height="18" viewBox="0 0 80 26" xmlns="http://www.w3.org/2000/svg" aria-label="Visa"><rect width="80" height="26" rx="6" fill="#0b0f1a"/><text x="12" y="17" fill="#6ea8ff" fontFamily="Helvetica, Arial, sans-serif" fontSize="14" fontWeight="700">VISA</text></svg>
+        {/* MASTERCARD */}
+        <svg width="56" height="18" viewBox="0 0 80 26" xmlns="http://www.w3.org/2000/svg" aria-label="Mastercard"><rect width="80" height="26" rx="6" fill="#0b0f1a"/><circle cx="33" cy="13" r="7" fill="#ff5f45"/><circle cx="41" cy="13" r="7" fill="#ffb14a" fillOpacity="0.9"/><text x="50" y="17" fill="#e5e7eb" fontFamily="Helvetica, Arial" fontSize="10">MC</text></svg>
+        {/* AMEX */}
+        <svg width="56" height="18" viewBox="0 0 80 26" xmlns="http://www.w3.org/2000/svg" aria-label="American Express"><rect width="80" height="26" rx="6" fill="#0b0f1a"/><rect x="8" y="6" width="28" height="14" rx="3" fill="#3b82f6"/><text x="13" y="16" fill="#fff" fontFamily="Helvetica, Arial" fontSize="10" fontWeight="700">AMEX</text></svg>
+        {/* DISCOVER */}
+        <svg width="72" height="18" viewBox="0 0 96 26" xmlns="http://www.w3.org/2000/svg" aria-label="Discover"><rect width="96" height="26" rx="6" fill="#0b0f1a"/><circle cx="48" cy="13" r="6" fill="#fb923c"/><text x="12" y="17" fill="#e5e7eb" fontFamily="Helvetica, Arial" fontSize="12" fontWeight="700">DISCOVER</text></svg>
+      </div>
+    </section>
+  );
+}
+
 function ViralStats() {
   return (
     <section className="py-16 bg-gradient-to-b from-black to-slate-950">
@@ -757,6 +774,7 @@ export default function RichNickLanding() {
 
       <Ribbon />
       <Hero onReserveSeat={handleReserveSeat} />
+      <CardBrandLogos />
       <OffersSection />
 
       {/* Lead capture & value props */}

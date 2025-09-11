@@ -50,15 +50,6 @@ const OffersSection = () => {
         'Custom strategy call for personal playbook',
         'Guaranteed to boost engagement & followers'
       );
-    } else if (offer.sku === 'annual-plan') {
-      features.push(
-        '12 Credits for 12 Events OR 6 Platform Features',
-        'Platform options: Famous Animal, The Debut, We Go Tampa, Ugly Money Podcast',
-        'Content shoots at all events',
-        'Priority booking access',
-        'Advanced collaboration network',
-        'Guaranteed to boost engagement & followers'
-      );
     } else if (offer.sku === 'content-management') {
       features.push(
         'Weekly scheduled follow-ups',
@@ -74,9 +65,7 @@ const OffersSection = () => {
   };
 
   const getOfferBadge = (offer) => {
-    if (offer.sku === 'annual-plan') {
-      return { text: 'BEST VALUE', color: 'bg-green-600' };
-    } else if (offer.sku === 'monthly-creator-pass') {
+    if (offer.sku === 'monthly-creator-pass') {
       return { text: 'EVENT ACCESS', color: 'bg-blue-600' };
     } else if (offer.sku === 'content-management') {
       return { text: 'ONGOING SUPPORT', color: 'bg-purple-600' };
