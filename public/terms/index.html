@@ -7,79 +7,278 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="icon" type="image/x-icon" href="/assets/richhnicklogo.jpg">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 800px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.7;
+            color: #2d3748;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
             margin: 0 auto;
-            padding: 20px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
         }
-        h1 {
-            font-size: 28px;
-            font-weight: bold;
-            color: #000;
-            margin-bottom: 10px;
-        }
-        h2 {
-            font-size: 20px;
-            font-weight: bold;
-            color: #000;
-            margin-top: 30px;
-            margin-bottom: 15px;
-        }
-        h3 {
-            font-size: 18px;
-            font-weight: bold;
-            color: #000;
-            margin-top: 20px;
-            margin-bottom: 10px;
-        }
-        p {
-            margin-bottom: 15px;
-            color: #555;
-        }
-        ul {
-            margin-bottom: 15px;
-            padding-left: 20px;
-        }
-        li {
-            margin-bottom: 8px;
-            color: #555;
-        }
+        
         .header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
             text-align: center;
-            margin-bottom: 40px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #eee;
+            padding: 60px 40px;
+            position: relative;
+            overflow: hidden;
         }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            opacity: 0.3;
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 16px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .last-updated {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+        
+        .content {
+            padding: 60px 40px;
+        }
+        
+        h2 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #1e3a8a;
+            margin-top: 48px;
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid #e2e8f0;
+            position: relative;
+        }
+        
+        h2::after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: 0;
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+        }
+        
+        h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #374151;
+            margin-top: 32px;
+            margin-bottom: 16px;
+        }
+        
+        p {
+            margin-bottom: 20px;
+            color: #4a5568;
+            font-size: 1rem;
+        }
+        
+        ul {
+            margin-bottom: 20px;
+            padding-left: 24px;
+        }
+        
+        li {
+            margin-bottom: 12px;
+            color: #4a5568;
+            position: relative;
+        }
+        
+        li::marker {
+            color: #3b82f6;
+        }
+        
         .toc {
-            background: #f9f9f9;
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 5px;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            padding: 32px;
+            margin: 40px 0;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
+        
+        .toc h2 {
+            margin-top: 0;
+            color: #1e3a8a;
+            font-size: 1.5rem;
+        }
+        
+        .toc ul {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 8px;
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .toc li {
+            margin-bottom: 8px;
+        }
+        
         .toc a {
-            color: #0066cc;
+            color: #3b82f6;
             text-decoration: none;
+            font-weight: 500;
+            padding: 8px 12px;
+            border-radius: 6px;
+            display: block;
+            transition: all 0.2s ease;
         }
+        
         .toc a:hover {
+            background: #dbeafe;
+            color: #1e40af;
+            transform: translateX(4px);
+        }
+        
+        .contact-info {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            padding: 24px;
+            margin: 32px 0;
+            border-radius: 12px;
+            border-left: 6px solid #3b82f6;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .contact-info h2 {
+            margin-top: 0;
+            color: #1e40af;
+        }
+        
+        .contact-info p {
+            margin-bottom: 12px;
+        }
+        
+        .contact-info strong {
+            color: #1e40af;
+            font-weight: 600;
+        }
+        
+        .contact-info a {
+            color: #1e40af;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .contact-info a:hover {
             text-decoration: underline;
         }
-        .contact-info {
-            background: #f0f8ff;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 5px;
-            border-left: 4px solid #0066cc;
+        
+        .highlight-box {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            padding: 24px;
+            margin: 32px 0;
+            border-radius: 12px;
+            border: 1px solid #bae6fd;
+            text-align: center;
+        }
+        
+        .highlight-box p {
+            margin-bottom: 0;
+            font-weight: 500;
+            color: #0c4a6e;
+        }
+        
+        .highlight-box a {
+            color: #0369a1;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .highlight-box a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .header {
+                padding: 40px 20px;
+            }
+            
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            .content {
+                padding: 40px 20px;
+            }
+            
+            .toc ul {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Print styles */
+        @media print {
+            body {
+                background: white;
+            }
+            
+            .container {
+                box-shadow: none;
+                border-radius: 0;
+            }
+            
+            .header {
+                background: #1e3a8a;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>TERMS AND CONDITIONS</h1>
-        <p><strong>Last updated: September 11, 2025</strong></p>
-    </div>
+    <div class="container">
+        <div class="header">
+            <div class="header-content">
+                <h1>TERMS AND CONDITIONS</h1>
+                <p class="last-updated">Last updated: September 11, 2025</p>
+            </div>
+        </div>
+        
+        <div class="content">
 
     <div class="toc">
         <h2>TABLE OF CONTENTS</h2>
@@ -324,8 +523,10 @@
         <strong>Email:</strong> <a href="mailto:richhnick3@gmail.com">richhnick3@gmail.com</a></p>
     </div>
 
-    <div style="text-align: center; margin-top: 40px; padding: 20px; background: #f9f9f9; border-radius: 5px;">
-        <p><strong>Complete Terms and Conditions:</strong> This document contains all 25 sections with full legal content. For a detailed refund policy, please see our <a href="/refund-policy">separate refund policy page</a>.</p>
+            <div class="highlight-box">
+                <p><strong>Complete Terms and Conditions:</strong> This document contains all 25 sections with full legal content. For a detailed refund policy, please see our <a href="/refund-policy">separate refund policy page</a>.</p>
+            </div>
+        </div>
     </div>
 </body>
 </html>
