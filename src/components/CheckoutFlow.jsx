@@ -234,7 +234,7 @@ const CheckoutFlow = ({ selectedOffer, onClose }) => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-semibold">${offer.price}</div>
+                      <div className="font-semibold">${(offer.priceCents / 100).toFixed(2)}</div>
                       <div className="text-sm text-gray-400">Qty: {item.qty}</div>
                     </div>
                   </div>
