@@ -31,14 +31,6 @@ async function main() {
       isCreditEligible: true,
     },
     {
-      sku: 'annual-plan',
-      name: '1 year @ $10k',
-      priceCents: 1000000, // $10,000
-      isSubscription: true,
-      creditsValue: 12,
-      isCreditEligible: true,
-    },
-    {
       sku: 'content-management',
       name: 'Ongoing Content Management Services',
       priceCents: 150000, // $1,500

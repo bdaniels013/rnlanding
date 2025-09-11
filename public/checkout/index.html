@@ -55,13 +55,13 @@
               <div>
                 <label>Offer</label>
                 <select id="offer">
-                  <option value="monthly-creator-pass" selected>Monthly Creator Pass — $1,000.00</option>
+                  <option value="">Loading offers...</option>
                 </select>
               </div>
               <div>
                 <label>Amount</label>
                 <select id="amount">
-                  <option value="100000" selected>$1,000.00</option>
+                  <option value="">Loading...</option>
                 </select>
               </div>
             </div>
@@ -92,16 +92,67 @@
       const email = document.getElementById('email');
       const phone = document.getElementById('phone');
       const summary = document.getElementById('summary');
+      let offers = [];
+
+      // Load offers from API
+      async function loadOffers() {
+        try {
+          const response = await fetch('/api/offers');
+          offers = await response.json();
+          
+          // Clear existing options
+          offer.innerHTML = '';
+          amount.innerHTML = '';
+          
+          // Add offers to dropdowns
+          offers.forEach((offerData, index) => {
+            const option = document.createElement('option');
+            option.value = offerData.sku;
+            option.textContent = `${offerData.name} — $${(offerData.priceCents / 100).toLocaleString()}`;
+            if (index === 0) option.selected = true;
+            offer.appendChild(option);
+            
+            const amountOption = document.createElement('option');
+            amountOption.value = offerData.priceCents;
+            amountOption.textContent = `$${(offerData.priceCents / 100).toLocaleString()}`;
+            if (index === 0) amountOption.selected = true;
+            amount.appendChild(amountOption);
+          });
+          
+          updateSummary();
+        } catch (error) {
+          console.error('Failed to load offers:', error);
+          offer.innerHTML = '<option value="">Error loading offers</option>';
+          amount.innerHTML = '<option value="">Error loading offers</option>';
+        }
+      }
 
       function updateSummary(){
-        summary.textContent = `${offer.options[offer.selectedIndex].text}`;
+        if (offer.selectedIndex >= 0) {
+          summary.textContent = `${offer.options[offer.selectedIndex].text}`;
+        }
       }
-      offer.addEventListener('change', updateSummary);
+
+      function syncAmountWithOffer() {
+        const selectedOffer = offers.find(o => o.sku === offer.value);
+        if (selectedOffer) {
+          amount.value = selectedOffer.priceCents;
+        }
+      }
+
+      offer.addEventListener('change', () => {
+        syncAmountWithOffer();
+        updateSummary();
+      });
+      
       amount.addEventListener('change', updateSummary);
-      updateSummary();
 
       form.addEventListener('submit', (e) => {
         e.preventDefault();
+        if (!offer.value || !amount.value) {
+          alert('Please select an offer');
+          return;
+        }
         const params = new URLSearchParams({
           amount_cents: amount.value,
           offer_id: offer.value,
@@ -111,6 +162,9 @@
         }).toString();
         window.location.href = `/api/payment-cloud/hpp/start?${params}`;
       });
+
+      // Load offers when page loads
+      loadOffers();
     </script>
     <div style="max-width:880px;margin:16px auto 32px;padding:0 20px;color:#9aa; font-size:11px;">
       <div>Rich Nick Growth LLC • 750 Forest Park Ln., Suwanee, GA 30024 • (813) 476-0044</div>

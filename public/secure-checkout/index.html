@@ -43,11 +43,11 @@
       <div class="grid" style="margin-top:18px">
         <div class="card">
           <h3 class="h">Choose an option</h3>
-          <div class="row">
-            <button class="btn" onclick="go('/api/payment-cloud/hpp/start?amount_cents=100000&offer_id=monthly-creator-pass')">Monthly Creator Pass — $1,000.00</button>
+          <div id="offers-container" class="row">
+            <div class="muted">Loading offers...</div>
           </div>
           <div style="height:14px"></div>
-          <div class="muted" style="font-size:12px">Once private key is added, these buttons redirect to the gateway’s hosted page.</div>
+          <div class="muted" style="font-size:12px">Once private key is added, these buttons redirect to the gateway's hosted page.</div>
         </div>
 
         <div class="card">
@@ -65,6 +65,31 @@
     </div>
     <script>
       function go(url){ window.location.href = url; }
+
+      // Load offers from API
+      async function loadOffers() {
+        try {
+          const response = await fetch('/api/offers');
+          const offers = await response.json();
+          
+          const container = document.getElementById('offers-container');
+          container.innerHTML = '';
+          
+          offers.forEach(offer => {
+            const button = document.createElement('button');
+            button.className = 'btn';
+            button.textContent = `${offer.name} — $${(offer.priceCents / 100).toLocaleString()}`;
+            button.onclick = () => go(`/api/payment-cloud/hpp/start?amount_cents=${offer.priceCents}&offer_id=${offer.sku}`);
+            container.appendChild(button);
+          });
+        } catch (error) {
+          console.error('Failed to load offers:', error);
+          document.getElementById('offers-container').innerHTML = '<div class="muted">Error loading offers</div>';
+        }
+      }
+
+      // Load offers when page loads
+      loadOffers();
     </script>
     <div style="max-width:980px;margin:16px auto 32px;padding:0 20px;color:#9aa; font-size:11px;">
       <div>Rich Nick Growth LLC • 750 Forest Park Ln., Suwanee, GA 30024 • RichhNick3@gmail.com(813) 476-0044</div>
