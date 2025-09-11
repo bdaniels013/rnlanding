@@ -44,7 +44,7 @@ const SITE = {
   financingApplyUrl: "https://your-financing-provider.example/apply", // replace (e.g., Affirm/Shop Pay Installments/Stripe Capital via Payment Links)
   leadWebhook: "/api/lead", // Make an API route in Next.js or serverless function
   privacyUrl: "#",
-  termsUrl: "#",
+  termsUrl: "/terms",
   // Social Media Links
   youtubeUrl: "https://www.youtube.com/@richhnick",
   instagramUrl: "https://www.instagram.com/richhnick",
