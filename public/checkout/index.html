@@ -60,9 +60,7 @@
               </div>
               <div>
                 <label>Amount</label>
-                <select id="amount">
-                  <option value="">Loading...</option>
-                </select>
+                <input id="amount" type="text" readonly style="background:rgba(255,255,255,.03); color:#888; cursor:not-allowed;" />
               </div>
             </div>
             <div style="height:10px"></div>
@@ -102,28 +100,26 @@
           
           // Clear existing options
           offer.innerHTML = '';
-          amount.innerHTML = '';
           
-          // Add offers to dropdowns
+          // Add offers to dropdown
           offers.forEach((offerData, index) => {
             const option = document.createElement('option');
             option.value = offerData.sku;
             option.textContent = `${offerData.name} — $${(offerData.priceCents / 100).toLocaleString()}`;
             if (index === 0) option.selected = true;
             offer.appendChild(option);
-            
-            const amountOption = document.createElement('option');
-            amountOption.value = offerData.priceCents;
-            amountOption.textContent = `$${(offerData.priceCents / 100).toLocaleString()}`;
-            if (index === 0) amountOption.selected = true;
-            amount.appendChild(amountOption);
           });
+          
+          // Set initial amount for first offer
+          if (offers.length > 0) {
+            amount.value = `$${(offers[0].priceCents / 100).toLocaleString()}`;
+          }
           
           updateSummary();
         } catch (error) {
           console.error('Failed to load offers:', error);
           offer.innerHTML = '<option value="">Error loading offers</option>';
-          amount.innerHTML = '<option value="">Error loading offers</option>';
+          amount.value = 'Error loading offers';
         }
       }
 
@@ -136,7 +132,7 @@
       function syncAmountWithOffer() {
         const selectedOffer = offers.find(o => o.sku === offer.value);
         if (selectedOffer) {
-          amount.value = selectedOffer.priceCents;
+          amount.value = `$${(selectedOffer.priceCents / 100).toLocaleString()}`;
         }
       }
 
@@ -144,17 +140,20 @@
         syncAmountWithOffer();
         updateSummary();
       });
-      
-      amount.addEventListener('change', updateSummary);
 
       form.addEventListener('submit', (e) => {
         e.preventDefault();
-        if (!offer.value || !amount.value) {
+        if (!offer.value) {
           alert('Please select an offer');
           return;
         }
+        const selectedOffer = offers.find(o => o.sku === offer.value);
+        if (!selectedOffer) {
+          alert('Please select a valid offer');
+          return;
+        }
         const params = new URLSearchParams({
-          amount_cents: amount.value,
+          amount_cents: selectedOffer.priceCents,
           offer_id: offer.value,
           name: name.value,
           email: email.value,
