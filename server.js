@@ -80,7 +80,6 @@ app.post('/api/checkout/create', async (req, res) => {
       // Find the offer by ID
       const offer = {
         'monthly-creator-pass': { priceCents: 100000, creditsValue: 1, isCreditEligible: true, isSubscription: false, name: 'Sign up for a month' },
-        'annual-plan': { priceCents: 1000000, creditsValue: 12, isCreditEligible: true, isSubscription: false, name: '1 year @ $10k' },
         'content-management': { priceCents: 150000, creditsValue: 0, isCreditEligible: false, isSubscription: true, name: 'Ongoing Content Management Services', paypalPlanId: 'P-9A346031N5163840TNC5AE3Q' }
       }[item.offer_id];
       
@@ -102,7 +101,6 @@ app.post('/api/checkout/create', async (req, res) => {
     const hasSubscriptions = items.some(item => {
       const offer = {
         'monthly-creator-pass': { isSubscription: false },
-        'annual-plan': { isSubscription: false },
         'content-management': { isSubscription: true }
       }[item.offer_id];
       return offer && offer.isSubscription;
@@ -116,7 +114,6 @@ app.post('/api/checkout/create', async (req, res) => {
       const subscriptionItem = items.find(item => {
         const offer = {
           'monthly-creator-pass': { isSubscription: false },
-          'annual-plan': { isSubscription: false },
           'content-management': { isSubscription: true, paypalPlanId: 'P-9A346031N5163840TNC5AE3Q' }
         }[item.offer_id];
         return offer && offer.isSubscription;
