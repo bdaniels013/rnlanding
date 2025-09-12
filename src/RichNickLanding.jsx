@@ -7,6 +7,7 @@ import CheckoutSuccess from './components/CheckoutSuccess';
 import CheckoutCancel from './components/CheckoutCancel';
 import CheckoutFlow from './components/CheckoutFlow';
 import SecureCheckout from './components/SecureCheckout';
+import SocialMediaGallery from './components/SocialMediaGallery';
 
 /**
  * RICHNICK VIRAL GROWTH — LANDING PAGE
@@ -463,17 +464,8 @@ function ViralStats() {
 
 
 
-        {/* View Count Image */}
-        <div className="text-center">
-          <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
-            <h3 className="text-xl font-semibold mb-4">Real View Counts & Analytics</h3>
-            <img 
-              src="/assets/rn views.jpg" 
-              alt="Rich Nick's View Counts" 
-              className="max-w-full h-auto rounded-xl mx-auto shadow-2xl"
-            />
-          </div>
-        </div>
+        {/* Social Media Gallery */}
+        <SocialMediaGallery />
       </div>
     </section>
   );
