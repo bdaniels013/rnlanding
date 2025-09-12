@@ -391,7 +391,7 @@ app.post('/api/admin/social-media/photos/reorder', authenticateAdmin, async (req
   }
 });
 
-// File upload endpoint
+// File upload endpoint - stores images as base64 in database for persistence
 app.post('/api/admin/social-media/photos/upload', authenticateAdmin, upload.array('photos', 10), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
@@ -407,11 +407,15 @@ app.post('/api/admin/social-media/photos/upload', authenticateAdmin, upload.arra
     const uploadedPhotos = [];
     
     for (const file of req.files) {
+      // Convert file to base64
+      const imageData = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+      
       const photoData = {
         platform,
         filename: file.filename,
         originalName: file.originalname,
-        url: `/uploads/social-media/${file.filename}`,
+        url: `/uploads/social-media/${file.filename}`, // Keep for compatibility
+        imageData: imageData, // Store base64 data
         altText: altText || null,
         order: 0
       };

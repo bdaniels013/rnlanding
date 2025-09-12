@@ -230,6 +230,7 @@ model SocialMediaPhoto {
   filename    String
   originalName String
   url         String
+  imageData   String?  // Base64 encoded image data for persistence
   altText     String?
   order       Int      @default(0) // For sorting/ordering photos
   isActive    Boolean  @default(true)

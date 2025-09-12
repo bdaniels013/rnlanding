@@ -294,7 +294,7 @@ const MediaManagement = () => {
             <div key={photo.id} className="bg-gray-800 rounded-lg overflow-hidden">
               <div className="relative">
                 <img
-                  src={photo.url}
+                  src={photo.imageData || photo.url}
                   alt={photo.altText || photo.originalName}
                   className="w-full h-40 sm:h-48 object-cover"
                 />

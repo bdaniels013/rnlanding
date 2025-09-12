@@ -262,6 +262,7 @@ export class DatabaseService {
           filename: photoData.filename,
           originalName: photoData.originalName,
           url: photoData.url,
+          imageData: photoData.imageData || null,
           altText: photoData.altText || null,
           order: photoData.order || 0,
           isActive: photoData.isActive !== undefined ? photoData.isActive : true
@@ -283,6 +284,7 @@ export class DatabaseService {
           filename: updateData.filename,
           originalName: updateData.originalName,
           url: updateData.url,
+          imageData: updateData.imageData,
           altText: updateData.altText,
           order: updateData.order,
           isActive: updateData.isActive

@@ -69,7 +69,7 @@ const SocialMediaGallery = () => {
           // Single photo - display large
           <div className="max-w-4xl mx-auto">
             <img 
-              src={photos[0].url} 
+              src={photos[0].imageData || photos[0].url} 
               alt={photos[0].altText || "Social Media Analytics"} 
               className="max-w-full h-auto rounded-xl mx-auto shadow-2xl"
             />
@@ -83,7 +83,7 @@ const SocialMediaGallery = () => {
             {photos.map((photo) => (
               <div key={photo.id} className="relative">
                 <img 
-                  src={photo.url} 
+                  src={photo.imageData || photo.url} 
                   alt={photo.altText || "Social Media Analytics"} 
                   className="w-full h-auto rounded-xl shadow-2xl"
                 />
