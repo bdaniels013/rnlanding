@@ -154,7 +154,7 @@
         updateSummary();
       });
 
-      form.addEventListener('submit', (e) => {
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (!offer.value) {
           alert('Please select an offer');
@@ -165,6 +165,38 @@
           alert('Please select a valid offer');
           return;
         }
+
+        // Capture customer info before redirecting
+        try {
+          const customerInfo = {
+            name: name.value,
+            email: email.value,
+            phone: phone.value,
+            timestamp: new Date().toISOString(),
+            action: 'checkout_started',
+            selectedOffer: selectedOffer.name
+          };
+
+          const response = await fetch('/api/admin/customer-info', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-admin-auth': 'true'
+            },
+            body: JSON.stringify(customerInfo)
+          });
+
+          if (!response.ok) {
+            console.error('Failed to capture customer info, but continuing with checkout');
+          } else {
+            console.log('Customer info captured successfully');
+          }
+        } catch (error) {
+          console.error('Error capturing customer info:', error);
+          // Continue with checkout even if logging fails
+        }
+
+        // Proceed with payment redirect
         const params = new URLSearchParams({
           amount_cents: selectedOffer.priceCents,
           offer_id: offer.value,
