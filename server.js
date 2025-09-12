@@ -22,19 +22,9 @@ const pendingOrders = new Map();
 // Setup database on startup
 setupDatabase();
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, 'public', 'uploads', 'social-media'));
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
+// Configure multer for file uploads - using memory storage for base64 conversion
 const upload = multer({ 
-  storage: storage,
+  storage: multer.memoryStorage(),
   limits: {
     fileSize: 10 * 1024 * 1024 // 10MB limit
   },
@@ -410,11 +400,15 @@ app.post('/api/admin/social-media/photos/upload', authenticateAdmin, upload.arra
       // Convert file to base64
       const imageData = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
       
+      // Generate filename since we're using memory storage
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      const filename = file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname);
+      
       const photoData = {
         platform,
-        filename: file.filename,
+        filename: filename,
         originalName: file.originalname,
-        url: `/uploads/social-media/${file.filename}`, // Keep for compatibility
+        url: `/uploads/social-media/${filename}`, // Keep for compatibility
         imageData: imageData, // Store base64 data
         altText: altText || null,
         order: 0
