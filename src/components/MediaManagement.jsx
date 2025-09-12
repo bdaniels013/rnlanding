@@ -8,6 +8,13 @@ const MediaManagement = () => {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadFiles, setUploadFiles] = useState(null);
   const [altText, setAltText] = useState('');
+  const [editingPhoto, setEditingPhoto] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editForm, setEditForm] = useState({
+    platform: '',
+    altText: '',
+    isActive: true
+  });
 
   const platforms = [
     { id: 'facebook', name: 'Facebook', color: 'bg-blue-500', icon: '📘' },
@@ -106,6 +113,53 @@ const MediaManagement = () => {
     } catch (error) {
       console.error('Delete error:', error);
       alert('Failed to delete photo');
+    }
+  };
+
+  const handleEdit = (photo) => {
+    setEditingPhoto(photo);
+    setEditForm({
+      platform: photo.platform,
+      altText: photo.altText || '',
+      isActive: photo.isActive
+    });
+    setShowEditModal(true);
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    if (!editingPhoto) return;
+
+    try {
+      const response = await fetch('/api/admin/social-media/photos', {
+        method: 'PUT',
+        headers: {
+          'x-admin-auth': 'true',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          id: editingPhoto.id,
+          platform: editForm.platform,
+          filename: editingPhoto.filename,
+          originalName: editingPhoto.originalName,
+          url: editingPhoto.url,
+          altText: editForm.altText,
+          order: editingPhoto.order,
+          isActive: editForm.isActive
+        })
+      });
+
+      if (response.ok) {
+        setShowEditModal(false);
+        setEditingPhoto(null);
+        fetchPhotos();
+      } else {
+        const error = await response.json();
+        alert('Failed to update photo: ' + error.error);
+      }
+    } catch (error) {
+      console.error('Update error:', error);
+      alert('Failed to update photo: ' + error.message);
     }
   };
 
@@ -274,12 +328,20 @@ const MediaManagement = () => {
                   <span className="text-xs text-gray-500">
                     {new Date(photo.createdAt).toLocaleDateString()}
                   </span>
-                  <button
-                    onClick={() => handleDelete(photo.id)}
-                    className="text-red-400 hover:text-red-300 text-sm"
-                  >
-                    Delete
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEdit(photo)}
+                      className="text-blue-400 hover:text-blue-300 text-sm"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(photo.id)}
+                      className="text-red-400 hover:text-red-300 text-sm"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -358,6 +420,80 @@ const MediaManagement = () => {
                   ) : (
                     'Upload Photos'
                   )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {showEditModal && editingPhoto && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-xl font-bold text-white mb-4">Edit Photo</h3>
+            
+            <form onSubmit={handleEditSubmit}>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Platform
+                </label>
+                <select
+                  value={editForm.platform}
+                  onChange={(e) => setEditForm({...editForm, platform: e.target.value})}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+                  {platforms.map(platform => (
+                    <option key={platform.id} value={platform.id}>
+                      {platform.icon} {platform.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Alt Text (Description)
+                </label>
+                <textarea
+                  value={editForm.altText}
+                  onChange={(e) => setEditForm({...editForm, altText: e.target.value})}
+                  placeholder="Describe the photo for accessibility..."
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  rows="3"
+                />
+              </div>
+
+              <div className="mb-6">
+                <label className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={editForm.isActive}
+                    onChange={(e) => setEditForm({...editForm, isActive: e.target.checked})}
+                    className="w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500 focus:ring-2"
+                  />
+                  <span className="text-sm font-medium text-gray-300">
+                    Active (visible on website)
+                  </span>
+                </label>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingPhoto(null);
+                  }}
+                  className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg"
+                >
+                  Save Changes
                 </button>
               </div>
             </form>
