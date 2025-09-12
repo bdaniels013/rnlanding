@@ -377,10 +377,10 @@ const AdminDashboard = ({ onLogout }) => {
         </div>
         
         {/* Navigation Tabs */}
-        <div className="mt-4 flex space-x-1 bg-gray-700 p-1 rounded-lg">
+        <div className="mt-4 flex flex-wrap gap-1 bg-gray-700 p-1 rounded-lg">
           <button
             onClick={() => setActiveTab('dashboard')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors flex items-center ${
               activeTab === 'dashboard'
                 ? 'bg-gray-600 text-white'
                 : 'text-gray-300 hover:text-white hover:bg-gray-600'
@@ -390,7 +390,7 @@ const AdminDashboard = ({ onLogout }) => {
           </button>
           <button
             onClick={() => setActiveTab('customers')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors flex items-center ${
               activeTab === 'customers'
                 ? 'bg-gray-600 text-white'
                 : 'text-gray-300 hover:text-white hover:bg-gray-600'
@@ -400,24 +400,25 @@ const AdminDashboard = ({ onLogout }) => {
           </button>
           <button
             onClick={() => setActiveTab('offers')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors flex items-center ${
               activeTab === 'offers'
                 ? 'bg-gray-600 text-white'
                 : 'text-gray-300 hover:text-white hover:bg-gray-600'
             }`}
           >
-            Offers & Services
+            <span className="hidden xs:inline">Offers & Services</span>
+            <span className="xs:hidden">Offers</span>
           </button>
           <button
             onClick={() => setActiveTab('media')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors flex items-center ${
               activeTab === 'media'
                 ? 'bg-gray-600 text-white'
                 : 'text-gray-300 hover:text-white hover:bg-gray-600'
             }`}
           >
-            <Image className="w-4 h-4 inline mr-1" />
-            Media
+            <Image className="w-3 h-3 sm:w-4 sm:h-4 mr-1 flex-shrink-0" />
+            <span>Media</span>
           </button>
         </div>
       </div>
