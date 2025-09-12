@@ -204,12 +204,12 @@ const MediaManagement = () => {
   }, {});
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-white">Media Management</h2>
+    <div className="p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold text-white">Media Management</h2>
         <button
           onClick={() => setShowUploadModal(true)}
-          className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+          className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 w-full sm:w-auto"
         >
           <span>📤</span>
           Upload Photos
@@ -217,10 +217,10 @@ const MediaManagement = () => {
       </div>
 
       {/* Platform Tabs */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex flex-wrap gap-2 mb-6">
         <button
           onClick={() => setSelectedPlatform('all')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+          className={`px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base ${
             selectedPlatform === 'all'
               ? 'bg-purple-600 text-white'
               : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
@@ -232,30 +232,31 @@ const MediaManagement = () => {
           <button
             key={platform.id}
             onClick={() => setSelectedPlatform(platform.id)}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
+            className={`px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-1 sm:gap-2 text-sm sm:text-base ${
               selectedPlatform === platform.id
                 ? `${platform.color} text-white`
                 : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
             }`}
           >
-            <span>{platform.icon}</span>
-            {platform.name}
+            <span className="text-sm sm:text-base">{platform.icon}</span>
+            <span className="hidden xs:inline">{platform.name}</span>
+            <span className="xs:hidden">{platform.name.charAt(0)}</span>
           </button>
         ))}
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
         {platforms.map(platform => {
           const count = groupedPhotos[platform.id]?.length || 0;
           const activeCount = groupedPhotos[platform.id]?.filter(p => p.isActive).length || 0;
           return (
-            <div key={platform.id} className="bg-gray-800 rounded-lg p-4">
+            <div key={platform.id} className="bg-gray-800 rounded-lg p-3 sm:p-4">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-2xl">{platform.icon}</span>
-                <h3 className="font-semibold text-white">{platform.name}</h3>
+                <span className="text-lg sm:text-2xl">{platform.icon}</span>
+                <h3 className="font-semibold text-white text-sm sm:text-base truncate">{platform.name}</h3>
               </div>
-              <div className="text-sm text-gray-400">
+              <div className="text-xs sm:text-sm text-gray-400">
                 <div>Total: {count}</div>
                 <div>Active: {activeCount}</div>
               </div>
@@ -288,14 +289,14 @@ const MediaManagement = () => {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {filteredPhotos.map(photo => (
             <div key={photo.id} className="bg-gray-800 rounded-lg overflow-hidden">
               <div className="relative">
                 <img
                   src={photo.url}
                   alt={photo.altText || photo.originalName}
-                  className="w-full h-48 object-cover"
+                  className="w-full h-40 sm:h-48 object-cover"
                 />
                 <div className="absolute top-2 right-2 flex gap-1">
                   <button
@@ -315,29 +316,29 @@ const MediaManagement = () => {
                   </span>
                 </div>
               </div>
-              <div className="p-4">
-                <h4 className="font-medium text-white truncate mb-1">
+              <div className="p-3 sm:p-4">
+                <h4 className="font-medium text-white truncate mb-1 text-sm sm:text-base">
                   {photo.originalName}
                 </h4>
                 {photo.altText && (
-                  <p className="text-sm text-gray-400 mb-2 line-clamp-2">
+                  <p className="text-xs sm:text-sm text-gray-400 mb-2 line-clamp-2">
                     {photo.altText}
                   </p>
                 )}
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                   <span className="text-xs text-gray-500">
                     {new Date(photo.createdAt).toLocaleDateString()}
                   </span>
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleEdit(photo)}
-                      className="text-blue-400 hover:text-blue-300 text-sm"
+                      className="text-blue-400 hover:text-blue-300 text-xs sm:text-sm px-2 py-1 rounded hover:bg-blue-400/10"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(photo.id)}
-                      className="text-red-400 hover:text-red-300 text-sm"
+                      className="text-red-400 hover:text-red-300 text-xs sm:text-sm px-2 py-1 rounded hover:bg-red-400/10"
                     >
                       Delete
                     </button>
@@ -351,9 +352,9 @@ const MediaManagement = () => {
 
       {/* Upload Modal */}
       {showUploadModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-xl font-bold text-white mb-4">Upload Photos</h3>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-lg p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg sm:text-xl font-bold text-white mb-4">Upload Photos</h3>
             
             <form onSubmit={handleUpload}>
               <div className="mb-4">
@@ -429,9 +430,9 @@ const MediaManagement = () => {
 
       {/* Edit Modal */}
       {showEditModal && editingPhoto && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-xl font-bold text-white mb-4">Edit Photo</h3>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-lg p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg sm:text-xl font-bold text-white mb-4">Edit Photo</h3>
             
             <form onSubmit={handleEditSubmit}>
               <div className="mb-4">
