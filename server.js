@@ -49,6 +49,118 @@ app.get('/api/offers', async (req, res) => {
   }
 });
 
+// Social Media API endpoints
+app.get('/api/social-media/counts', async (req, res) => {
+  try {
+    const counts = await fetchAllSocialMediaCounts();
+    res.json(counts);
+  } catch (error) {
+    console.error('Error fetching social media counts:', error);
+    res.status(500).json({ error: 'Failed to fetch social media counts' });
+  }
+});
+
+// Function to fetch all social media counts
+async function fetchAllSocialMediaCounts() {
+  const [youtubeCount, instagramCount, facebookCount] = await Promise.allSettled([
+    fetchYouTubeSubscriberCount(),
+    fetchInstagramFollowerCount(),
+    fetchFacebookFollowerCount()
+  ]);
+
+  return {
+    youtube: youtubeCount.status === 'fulfilled' ? youtubeCount.value : 0,
+    instagram: instagramCount.status === 'fulfilled' ? instagramCount.value : 0,
+    facebook: facebookCount.status === 'fulfilled' ? facebookCount.value : 0
+  };
+}
+
+// YouTube API - Get subscriber count
+async function fetchYouTubeSubscriberCount() {
+  try {
+    const API_KEY = process.env.YOUTUBE_API_KEY;
+    const CHANNEL_ID = process.env.YOUTUBE_CHANNEL_ID || 'UCyour-channel-id'; // You'll need to get this
+    
+    if (!API_KEY) {
+      console.log('YouTube API key not configured');
+      return 0;
+    }
+
+    const response = await fetch(
+      `https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${CHANNEL_ID}&key=${API_KEY}`
+    );
+    
+    if (!response.ok) {
+      throw new Error(`YouTube API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    if (data.items && data.items.length > 0) {
+      return parseInt(data.items[0].statistics.subscriberCount) || 0;
+    }
+    
+    return 0;
+  } catch (error) {
+    console.error('Error fetching YouTube subscriber count:', error);
+    return 0;
+  }
+}
+
+// Instagram API - Get follower count
+async function fetchInstagramFollowerCount() {
+  try {
+    const ACCESS_TOKEN = process.env.INSTAGRAM_ACCESS_TOKEN;
+    const USER_ID = process.env.INSTAGRAM_USER_ID;
+    
+    if (!ACCESS_TOKEN || !USER_ID) {
+      console.log('Instagram access token or user ID not configured');
+      return 0;
+    }
+
+    const response = await fetch(
+      `https://graph.instagram.com/${USER_ID}?fields=followers_count&access_token=${ACCESS_TOKEN}`
+    );
+    
+    if (!response.ok) {
+      throw new Error(`Instagram API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data.followers_count || 0;
+  } catch (error) {
+    console.error('Error fetching Instagram follower count:', error);
+    return 0;
+  }
+}
+
+// Facebook API - Get follower count
+async function fetchFacebookFollowerCount() {
+  try {
+    const ACCESS_TOKEN = process.env.FACEBOOK_ACCESS_TOKEN;
+    const PAGE_ID = process.env.FACEBOOK_PAGE_ID;
+    
+    if (!ACCESS_TOKEN || !PAGE_ID) {
+      console.log('Facebook access token or page ID not configured');
+      return 0;
+    }
+
+    const response = await fetch(
+      `https://graph.facebook.com/v18.0/${PAGE_ID}?fields=followers_count&access_token=${ACCESS_TOKEN}`
+    );
+    
+    if (!response.ok) {
+      throw new Error(`Facebook API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data.followers_count || 0;
+  } catch (error) {
+    console.error('Error fetching Facebook follower count:', error);
+    return 0;
+  }
+}
+
 // Checkout endpoint with real PayPal integration
 app.post('/api/checkout/create', async (req, res) => {
   try {
