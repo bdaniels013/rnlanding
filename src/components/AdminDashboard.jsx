@@ -1034,7 +1034,10 @@ const OfferModal = ({ offer, form, setForm, onSubmit, onClose }) => (
           <label className="block text-sm font-medium text-gray-300 mb-1">Features (one per line)</label>
           <textarea
             value={form.features ? form.features.join('\n') : ''}
-            onChange={(e) => setForm({ ...form, features: e.target.value.split('\n').filter(f => f.trim()) })}
+            onChange={(e) => {
+              const lines = e.target.value.split('\n');
+              setForm({ ...form, features: lines });
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault();
@@ -1043,11 +1046,13 @@ const OfferModal = ({ offer, form, setForm, onSubmit, onClose }) => (
                 const end = textarea.selectionEnd;
                 const value = textarea.value;
                 const newValue = value.substring(0, start) + '\n' + value.substring(end);
-                setForm({ ...form, features: newValue.split('\n').filter(f => f.trim()) });
-                // Set cursor position after the newline
-                setTimeout(() => {
-                  textarea.selectionStart = textarea.selectionEnd = start + 1;
-                }, 0);
+                
+                // Update the form state
+                setForm({ ...form, features: newValue.split('\n') });
+                
+                // Update the textarea value directly and set cursor position
+                textarea.value = newValue;
+                textarea.setSelectionRange(start + 1, start + 1);
               }
             }}
             rows={4}
