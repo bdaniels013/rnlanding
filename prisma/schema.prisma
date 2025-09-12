@@ -50,6 +50,7 @@ model Offer {
   isCreditEligible Boolean        @default(false)
   description      String?
   features         String?
+  badge            String?
   isActive         Boolean        @default(true)
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt

@@ -27,6 +27,7 @@ const AdminDashboard = ({ onLogout }) => {
     isCreditEligible: false,
     description: '',
     features: [],
+    badge: '',
     isActive: true
   });
 
@@ -314,6 +315,7 @@ const AdminDashboard = ({ onLogout }) => {
         isCreditEligible: offer.isCreditEligible,
         description: offer.description || '',
         features: offer.features || [],
+        badge: offer.badge || '',
         isActive: offer.isActive
       });
     } else {
@@ -327,6 +329,7 @@ const AdminDashboard = ({ onLogout }) => {
         isCreditEligible: false,
         description: '',
         features: [],
+        badge: '',
         isActive: true
       });
     }
@@ -1016,15 +1019,42 @@ const OfferModal = ({ offer, form, setForm, onSubmit, onClose }) => (
         </div>
         
         <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Badge Text (Optional)</label>
+          <input
+            type="text"
+            value={form.badge}
+            onChange={(e) => setForm({ ...form, badge: e.target.value })}
+            placeholder="e.g., Most Popular, Limited Time, Best Value"
+            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <p className="text-xs text-gray-400 mt-1">Leave empty for no badge</p>
+        </div>
+        
+        <div>
           <label className="block text-sm font-medium text-gray-300 mb-1">Features (one per line)</label>
           <textarea
             value={form.features ? form.features.join('\n') : ''}
             onChange={(e) => setForm({ ...form, features: e.target.value.split('\n').filter(f => f.trim()) })}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                const textarea = e.target;
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const value = textarea.value;
+                const newValue = value.substring(0, start) + '\n' + value.substring(end);
+                setForm({ ...form, features: newValue.split('\n').filter(f => f.trim()) });
+                // Set cursor position after the newline
+                setTimeout(() => {
+                  textarea.selectionStart = textarea.selectionEnd = start + 1;
+                }, 0);
+              }
+            }}
             rows={4}
             placeholder="Feature 1&#10;Feature 2&#10;Feature 3"
             className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <p className="text-xs text-gray-400 mt-1">Enter each feature on a new line</p>
+          <p className="text-xs text-gray-400 mt-1">Enter each feature on a new line. Press Enter to add new lines.</p>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

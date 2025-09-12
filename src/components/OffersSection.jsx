@@ -71,13 +71,21 @@ const OffersSection = () => {
   };
 
   const getOfferBadge = (offer) => {
-    // Use hardcoded badges for known offers, or could be made dynamic in the future
+    // Use badge from database if available
+    if (offer.badge && offer.badge.trim()) {
+      return {
+        text: offer.badge,
+        color: 'bg-gradient-to-r from-blue-500 to-purple-600'
+      };
+    }
+    
+    // Fallback to hardcoded badges for backward compatibility
     if (offer.sku === 'monthly-creator-pass') {
       return { text: 'EVENT ACCESS', color: 'bg-blue-600' };
     } else if (offer.sku === 'content-management') {
       return { text: 'ONGOING SUPPORT', color: 'bg-purple-600' };
     }
-    // For new offers, you could add a badge field to the database
+    
     return null;
   };
 
@@ -127,6 +135,9 @@ const OffersSection = () => {
                     {/* Header */}
                     <div className="text-center mb-8">
                       <h3 className="text-2xl font-bold text-white mb-2">{offer.name}</h3>
+                      {offer.description && (
+                        <p className="text-gray-300 text-sm mb-4">{offer.description}</p>
+                      )}
                       <div className="text-4xl font-bold text-white mb-2">
                         ${(offer.priceCents / 100).toLocaleString()}
                         {offer.isSubscription && <span className="text-lg text-gray-400">/month</span>}
