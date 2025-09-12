@@ -2,6 +2,7 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { PrismaClient } from '@prisma/client';
+import multer from 'multer';
 import setupDatabase from './scripts/startup.js';
 import { paypalService } from './src/lib/paypal.js';
 import { db } from './src/lib/database.js';
@@ -21,6 +22,35 @@ const pendingOrders = new Map();
 // Setup database on startup
 setupDatabase();
 
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, 'public', 'uploads', 'social-media'));
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed!'));
+    }
+  }
+});
+
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -28,11 +58,25 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static files from the dist directory
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'dist')));
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// Simple authentication middleware
+const authenticateAdmin = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  const adminAuth = req.headers['x-admin-auth'];
+  
+  // For now, we'll accept the adminAuth header or basic auth
+  if (adminAuth === 'true' || (authHeader && authHeader.includes('admin'))) {
+    next();
+  } else {
+    res.status(401).json({ error: 'Unauthorized access' });
+  }
+};
 
 // Payment Cloud API routes
 app.use('/api/payment-cloud', paymentCloudRouter);
@@ -49,117 +93,18 @@ app.get('/api/offers', async (req, res) => {
   }
 });
 
-// Social Media API endpoints
-app.get('/api/social-media/counts', async (req, res) => {
+// Social Media Photos API endpoints
+app.get('/api/social-media/photos', async (req, res) => {
   try {
-    const counts = await fetchAllSocialMediaCounts();
-    res.json(counts);
+    const { platform } = req.query;
+    const photos = await db.getSocialMediaPhotos(platform, true);
+    res.json({ photos });
   } catch (error) {
-    console.error('Error fetching social media counts:', error);
-    res.status(500).json({ error: 'Failed to fetch social media counts' });
+    console.error('Error fetching social media photos:', error);
+    res.status(500).json({ error: 'Failed to fetch photos' });
   }
 });
 
-// Function to fetch all social media counts
-async function fetchAllSocialMediaCounts() {
-  const [youtubeCount, instagramCount, facebookCount] = await Promise.allSettled([
-    fetchYouTubeSubscriberCount(),
-    fetchInstagramFollowerCount(),
-    fetchFacebookFollowerCount()
-  ]);
-
-  return {
-    youtube: youtubeCount.status === 'fulfilled' ? youtubeCount.value : 0,
-    instagram: instagramCount.status === 'fulfilled' ? instagramCount.value : 0,
-    facebook: facebookCount.status === 'fulfilled' ? facebookCount.value : 0
-  };
-}
-
-// YouTube API - Get subscriber count
-async function fetchYouTubeSubscriberCount() {
-  try {
-    const API_KEY = process.env.YOUTUBE_API_KEY;
-    const CHANNEL_ID = process.env.YOUTUBE_CHANNEL_ID || 'UCyour-channel-id'; // You'll need to get this
-    
-    if (!API_KEY) {
-      console.log('YouTube API key not configured');
-      return 0;
-    }
-
-    const response = await fetch(
-      `https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${CHANNEL_ID}&key=${API_KEY}`
-    );
-    
-    if (!response.ok) {
-      throw new Error(`YouTube API error: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    
-    if (data.items && data.items.length > 0) {
-      return parseInt(data.items[0].statistics.subscriberCount) || 0;
-    }
-    
-    return 0;
-  } catch (error) {
-    console.error('Error fetching YouTube subscriber count:', error);
-    return 0;
-  }
-}
-
-// Instagram API - Get follower count
-async function fetchInstagramFollowerCount() {
-  try {
-    const ACCESS_TOKEN = process.env.INSTAGRAM_ACCESS_TOKEN;
-    const USER_ID = process.env.INSTAGRAM_USER_ID;
-    
-    if (!ACCESS_TOKEN || !USER_ID) {
-      console.log('Instagram access token or user ID not configured');
-      return 0;
-    }
-
-    const response = await fetch(
-      `https://graph.instagram.com/${USER_ID}?fields=followers_count&access_token=${ACCESS_TOKEN}`
-    );
-    
-    if (!response.ok) {
-      throw new Error(`Instagram API error: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    return data.followers_count || 0;
-  } catch (error) {
-    console.error('Error fetching Instagram follower count:', error);
-    return 0;
-  }
-}
-
-// Facebook API - Get follower count
-async function fetchFacebookFollowerCount() {
-  try {
-    const ACCESS_TOKEN = process.env.FACEBOOK_ACCESS_TOKEN;
-    const PAGE_ID = process.env.FACEBOOK_PAGE_ID;
-    
-    if (!ACCESS_TOKEN || !PAGE_ID) {
-      console.log('Facebook access token or page ID not configured');
-      return 0;
-    }
-
-    const response = await fetch(
-      `https://graph.facebook.com/v18.0/${PAGE_ID}?fields=followers_count&access_token=${ACCESS_TOKEN}`
-    );
-    
-    if (!response.ok) {
-      throw new Error(`Facebook API error: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    return data.followers_count || 0;
-  } catch (error) {
-    console.error('Error fetching Facebook follower count:', error);
-    return 0;
-  }
-}
 
 // Checkout endpoint with real PayPal integration
 app.post('/api/checkout/create', async (req, res) => {
@@ -379,19 +324,6 @@ app.post('/api/checkout/create', async (req, res) => {
   }
 });
 
-// Simple authentication middleware
-const authenticateAdmin = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  const adminAuth = req.headers['x-admin-auth'];
-  
-  // For now, we'll accept the adminAuth header or basic auth
-  if (adminAuth === 'true' || (authHeader && authHeader.includes('admin'))) {
-    next();
-  } else {
-    res.status(401).json({ error: 'Unauthorized access' });
-  }
-};
-
 // Admin dashboard endpoint
 app.get('/api/admin/dashboard', authenticateAdmin, async (req, res) => {
   try {
@@ -400,6 +332,98 @@ app.get('/api/admin/dashboard', authenticateAdmin, async (req, res) => {
   } catch (error) {
     console.error('Admin dashboard error:', error);
     res.status(500).json({ error: 'Failed to fetch dashboard data' });
+  }
+});
+
+// Admin endpoints for social media photos
+app.get('/api/admin/social-media/photos', authenticateAdmin, async (req, res) => {
+  try {
+    const { platform } = req.query;
+    const photos = await db.getSocialMediaPhotos(platform, false); // Get all photos for admin
+    res.json({ photos });
+  } catch (error) {
+    console.error('Error fetching social media photos:', error);
+    res.status(500).json({ error: 'Failed to fetch photos' });
+  }
+});
+
+app.post('/api/admin/social-media/photos', authenticateAdmin, async (req, res) => {
+  try {
+    const photoData = req.body;
+    const photo = await db.createSocialMediaPhoto(photoData);
+    res.json(photo);
+  } catch (error) {
+    console.error('Error creating social media photo:', error);
+    res.status(500).json({ error: 'Failed to create photo' });
+  }
+});
+
+app.put('/api/admin/social-media/photos', authenticateAdmin, async (req, res) => {
+  try {
+    const { id, ...updateData } = req.body;
+    const photo = await db.updateSocialMediaPhoto(id, updateData);
+    res.json(photo);
+  } catch (error) {
+    console.error('Error updating social media photo:', error);
+    res.status(500).json({ error: 'Failed to update photo' });
+  }
+});
+
+app.delete('/api/admin/social-media/photos', authenticateAdmin, async (req, res) => {
+  try {
+    const { id } = req.query;
+    await db.deleteSocialMediaPhoto(id);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting social media photo:', error);
+    res.status(500).json({ error: 'Failed to delete photo' });
+  }
+});
+
+app.post('/api/admin/social-media/photos/reorder', authenticateAdmin, async (req, res) => {
+  try {
+    const { photoIds } = req.body;
+    await db.reorderSocialMediaPhotos(photoIds);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error reordering social media photos:', error);
+    res.status(500).json({ error: 'Failed to reorder photos' });
+  }
+});
+
+// File upload endpoint
+app.post('/api/admin/social-media/photos/upload', authenticateAdmin, upload.array('photos', 10), async (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'No files uploaded' });
+    }
+
+    const { platform, altText } = req.body;
+    
+    if (!platform || !['facebook', 'instagram', 'youtube'].includes(platform)) {
+      return res.status(400).json({ error: 'Invalid platform. Must be facebook, instagram, or youtube' });
+    }
+
+    const uploadedPhotos = [];
+    
+    for (const file of req.files) {
+      const photoData = {
+        platform,
+        filename: file.filename,
+        originalName: file.originalname,
+        url: `/uploads/social-media/${file.filename}`,
+        altText: altText || null,
+        order: 0
+      };
+      
+      const photo = await db.createSocialMediaPhoto(photoData);
+      uploadedPhotos.push(photo);
+    }
+
+    res.json({ photos: uploadedPhotos });
+  } catch (error) {
+    console.error('Error uploading photos:', error);
+    res.status(500).json({ error: 'Failed to upload photos' });
   }
 });
 

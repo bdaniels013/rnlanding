@@ -228,6 +228,101 @@ export class DatabaseService {
     }
   }
 
+  // Social Media Photos operations
+  async getSocialMediaPhotos(platform = null, activeOnly = true) {
+    try {
+      const where = {};
+      if (platform) {
+        where.platform = platform;
+      }
+      if (activeOnly) {
+        where.isActive = true;
+      }
+
+      const photos = await prisma.socialMediaPhoto.findMany({
+        where,
+        orderBy: [
+          { platform: 'asc' },
+          { order: 'asc' },
+          { createdAt: 'desc' }
+        ]
+      });
+      return photos;
+    } catch (error) {
+      console.error('Error fetching social media photos:', error);
+      throw error;
+    }
+  }
+
+  async createSocialMediaPhoto(photoData) {
+    try {
+      const photo = await prisma.socialMediaPhoto.create({
+        data: {
+          platform: photoData.platform,
+          filename: photoData.filename,
+          originalName: photoData.originalName,
+          url: photoData.url,
+          altText: photoData.altText || null,
+          order: photoData.order || 0,
+          isActive: photoData.isActive !== undefined ? photoData.isActive : true
+        }
+      });
+      return photo;
+    } catch (error) {
+      console.error('Error creating social media photo:', error);
+      throw error;
+    }
+  }
+
+  async updateSocialMediaPhoto(id, updateData) {
+    try {
+      const photo = await prisma.socialMediaPhoto.update({
+        where: { id },
+        data: {
+          platform: updateData.platform,
+          filename: updateData.filename,
+          originalName: updateData.originalName,
+          url: updateData.url,
+          altText: updateData.altText,
+          order: updateData.order,
+          isActive: updateData.isActive
+        }
+      });
+      return photo;
+    } catch (error) {
+      console.error('Error updating social media photo:', error);
+      throw error;
+    }
+  }
+
+  async deleteSocialMediaPhoto(id) {
+    try {
+      await prisma.socialMediaPhoto.delete({
+        where: { id }
+      });
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting social media photo:', error);
+      throw error;
+    }
+  }
+
+  async reorderSocialMediaPhotos(photoIds) {
+    try {
+      const updates = photoIds.map((id, index) => 
+        prisma.socialMediaPhoto.update({
+          where: { id },
+          data: { order: index }
+        })
+      );
+      await Promise.all(updates);
+      return { success: true };
+    } catch (error) {
+      console.error('Error reordering social media photos:', error);
+      throw error;
+    }
+  }
+
   // Credits operations
   async addCredits(customerId, amount, reason, type = 'MANUAL_ADD', refOrderId = null) {
     try {

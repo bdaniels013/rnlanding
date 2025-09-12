@@ -223,6 +223,21 @@ model CustomerInfoCapture {
   @@map("customer_info_captures")
 }
 
+model SocialMediaPhoto {
+  id          String   @id @default(cuid())
+  platform    String   // 'facebook', 'instagram', 'youtube'
+  filename    String
+  originalName String
+  url         String
+  altText     String?
+  order       Int      @default(0) // For sorting/ordering photos
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("social_media_photos")
+}
+
 model AuditLog {
   id          String   @id @default(cuid())
   actorUserId String

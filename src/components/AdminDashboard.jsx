@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, Users, CreditCard, Calendar, TrendingUp, Package, AlertCircle, LogOut, User, Plus, Edit, Trash2, Search, Filter, X } from 'lucide-react';
+import { DollarSign, Users, CreditCard, Calendar, TrendingUp, Package, AlertCircle, LogOut, User, Plus, Edit, Trash2, Search, Filter, X, Image } from 'lucide-react';
 import CreditsManagement from './CreditsManagement';
+import MediaManagement from './MediaManagement';
 
 const AdminDashboard = ({ onLogout }) => {
   const [dashboardData, setDashboardData] = useState(null);
@@ -404,6 +405,17 @@ const AdminDashboard = ({ onLogout }) => {
           >
             Offers & Services
           </button>
+          <button
+            onClick={() => setActiveTab('media')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'media'
+                ? 'bg-gray-600 text-white'
+                : 'text-gray-300 hover:text-white hover:bg-gray-600'
+            }`}
+          >
+            <Image className="w-4 h-4 inline mr-1" />
+            Media
+          </button>
         </div>
       </div>
 
@@ -596,6 +608,11 @@ const AdminDashboard = ({ onLogout }) => {
             onDelete={handleDeleteOffer}
             onAdd={() => openOfferModal()}
           />
+        )}
+
+        {/* Media Management */}
+        {activeTab === 'media' && (
+          <MediaManagement />
         )}
       </div>
 
