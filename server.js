@@ -76,6 +76,12 @@ const authenticateAdmin = (req, res, next) => {
 app.use('/api/payment-cloud', paymentCloudRouter);
 app.use('/api/payment-cloud/hpp', hppRouter);
 
+// Payment Cloud public key endpoint
+app.get('/api/payment-cloud/public-key', (req, res) => {
+  const publicKey = process.env.PAYMENT_CLOUD_PUBLIC_KEY || '4wK5E5-h49T6h-32TQf9-844vbe';
+  res.json({ publicKey });
+});
+
 // Basic API endpoints
 app.get('/api/offers', async (req, res) => {
   try {

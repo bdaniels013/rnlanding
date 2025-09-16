@@ -67,35 +67,50 @@ const SecureCheckout = ({ selectedOffer, onClose, onSuccess }) => {
     }
   }, []);
 
-  const initializePaymentCloud = () => {
+  const initializePaymentCloud = async () => {
     if (window.CollectJS) {
       collectJsRef.current = window.CollectJS;
-      collectJsRef.current.configure({
-        fields: {
-          number: {
-            selector: '#card-number',
-            title: 'Card Number',
-            placeholder: '1234 5678 9012 3456'
+      
+      try {
+        // Fetch the public key from the server
+        const response = await fetch('/api/payment-cloud/public-key');
+        const data = await response.json();
+        const publicKey = data.publicKey || '4wK5E5-h49T6h-32TQf9-844vbe';
+        
+        console.log('Initializing Payment Cloud with public key:', publicKey);
+        
+        collectJsRef.current.configure({
+          tokenizationKey: publicKey,
+          fields: {
+            number: {
+              selector: '#card-number',
+              title: 'Card Number',
+              placeholder: '1234 5678 9012 3456'
+            },
+            cvv: {
+              selector: '#card-cvv',
+              title: 'CVV',
+              placeholder: '123'
+            },
+            exp: {
+              selector: '#card-expiry',
+              title: 'Expiry',
+              placeholder: 'MM/YY'
+            }
           },
-          cvv: {
-            selector: '#card-cvv',
-            title: 'CVV',
-            placeholder: '123'
-          },
-          exp: {
-            selector: '#card-expiry',
-            title: 'Expiry',
-            placeholder: 'MM/YY'
+          callback: function(response) {
+            console.log('Payment Cloud callback:', response);
+            if (response.token) {
+              processPayment('card', { token: response.token });
+            } else {
+              setError(response.error || 'Card tokenization failed');
+            }
           }
-        },
-        callback: function(response) {
-          if (response.token) {
-            processPayment('card', { token: response.token });
-          } else {
-            setError(response.error || 'Card tokenization failed');
-          }
-        }
-      });
+        });
+      } catch (error) {
+        console.error('Failed to initialize Payment Cloud:', error);
+        setError('Payment system initialization failed');
+      }
     }
   };
 
