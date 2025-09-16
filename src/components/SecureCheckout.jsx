@@ -49,14 +49,21 @@ const SecureCheckout = ({ selectedOffer, onClose, onSuccess }) => {
   useEffect(() => {
     // Load Payment Cloud Collect.js SDK
     if (!window.CollectJS) {
+      console.log('Loading Payment Cloud Collect.js SDK...');
       const script = document.createElement('script');
       script.src = 'https://secure.networkmerchants.com/token/Collect.js';
       script.async = true;
       script.onload = () => {
+        console.log('Payment Cloud SDK loaded, initializing...');
         initializePaymentCloud();
+      };
+      script.onerror = () => {
+        console.error('Failed to load Payment Cloud SDK');
+        setError('Failed to load payment system. Please refresh the page.');
       };
       document.head.appendChild(script);
     } else {
+      console.log('Payment Cloud SDK already loaded, initializing...');
       initializePaymentCloud();
     }
 
@@ -71,12 +78,24 @@ const SecureCheckout = ({ selectedOffer, onClose, onSuccess }) => {
     if (window.CollectJS) {
       collectJsRef.current = window.CollectJS;
       
+      let publicKey = '4wK5E5-h49T6h-32TQf9-844vbe'; // Fallback key
+      
       try {
         // Fetch the public key from the server
+        console.log('Fetching Payment Cloud public key...');
         const response = await fetch('/api/payment-cloud/public-key');
-        const data = await response.json();
-        const publicKey = data.publicKey || '4wK5E5-h49T6h-32TQf9-844vbe';
-        
+        if (response.ok) {
+          const data = await response.json();
+          publicKey = data.publicKey || publicKey;
+          console.log('Received public key from server:', publicKey);
+        } else {
+          console.warn('Failed to fetch public key from server, using fallback');
+        }
+      } catch (error) {
+        console.warn('Error fetching public key, using fallback:', error);
+      }
+      
+      try {
         console.log('Initializing Payment Cloud with public key:', publicKey);
         
         collectJsRef.current.configure({
@@ -107,10 +126,15 @@ const SecureCheckout = ({ selectedOffer, onClose, onSuccess }) => {
             }
           }
         });
+        
+        console.log('Payment Cloud initialized successfully');
       } catch (error) {
-        console.error('Failed to initialize Payment Cloud:', error);
-        setError('Payment system initialization failed');
+        console.error('Failed to configure Payment Cloud:', error);
+        setError('Payment system configuration failed: ' + error.message);
       }
+    } else {
+      console.error('CollectJS not available');
+      setError('Payment system not available');
     }
   };
 
