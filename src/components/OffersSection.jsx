@@ -162,11 +162,7 @@ const OffersSection = () => {
                     {/* CTA Button */}
                     <button
                       onClick={() => handleSelectOffer(offer)}
-                      className={`w-full py-4 px-6 rounded-lg font-semibold transition-all flex items-center justify-center ${
-                        badge 
-                          ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700' 
-                          : 'bg-gray-700 text-white hover:bg-gray-600'
-                      }`}
+                      className="w-full py-4 px-6 rounded-lg font-semibold transition-all flex items-center justify-center bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700"
                     >
                       <CreditCard className="w-5 h-5 mr-2" />
                       Get Started Now
