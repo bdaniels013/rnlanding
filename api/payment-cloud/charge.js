@@ -41,7 +41,7 @@ router.post('/charge', async (req, res) => {
       state: customer.state || '',
       zip: customer.zip || '',
       country: 'US',
-      orderid: `RN-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      orderid: `RN-${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${Math.floor(Math.random() * 10000)}`,
       order_description: `Rich Nick - ${offer_id || 'service'}`,
       ip_address: req.headers['x-forwarded-for'] || req.connection.remoteAddress || '127.0.0.1'
     };
@@ -151,12 +151,22 @@ router.post('/charge', async (req, res) => {
         }
       });
     } else {
-      // Payment failed
+      // Payment failed - check for specific error types
       console.log('❌ Payment failed:', {
         response_code: responseData.response_code,
         response_text: responseData.responsetext,
         customer_email: customer_info.email
       });
+
+      // Handle duplicate transaction error
+      if (responseData.responsetext && responseData.responsetext.includes('Duplicate transaction')) {
+        return res.status(400).json({
+          success: false,
+          error: 'This payment has already been processed. Please try again with different card details or wait a few minutes.',
+          response_code: responseData.response_code,
+          isDuplicate: true
+        });
+      }
 
       return res.status(400).json({
         success: false,
