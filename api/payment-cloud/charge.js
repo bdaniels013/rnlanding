@@ -69,8 +69,8 @@ router.post('/charge', async (req, res) => {
           break;
         default:
           console.log('❌ Unsupported payment method:', method);
-          return res.status(400).json({
-            success: false,
+        return res.status(400).json({
+          success: false,
             error: 'Unsupported payment method'
           });
       }
@@ -112,6 +112,15 @@ router.post('/charge', async (req, res) => {
 
     // Parse NMI response
     const responseData = parseNMIResponse(responseText);
+    
+    console.log('=== NMI RESPONSE PARSING ===');
+    console.log('Raw response:', responseText);
+    console.log('Parsed response:', responseData);
+    console.log('Response check:', {
+      response: responseData.response,
+      response_code: responseData.response_code,
+      responsetext: responseData.responsetext
+    });
 
     if (responseData.response === '1' || responseData.response_code === '100') {
       // Payment successful
@@ -278,12 +287,15 @@ async function processWallet(payload, payment_data) {
 }
 
 function parseNMIResponse(responseText) {
-  const lines = responseText.split('\n');
+  // NMI returns URL-encoded format like: response=1&responsetext=Approved&authcode=992097
   const data = {};
   
-  lines.forEach(line => {
-    if (line.includes('=')) {
-      const [key, value] = line.split('=', 2);
+  // Split by & to get key=value pairs
+  const pairs = responseText.split('&');
+  
+  pairs.forEach(pair => {
+    if (pair.includes('=')) {
+      const [key, value] = pair.split('=', 2);
       data[key.trim()] = value.trim();
     }
   });
