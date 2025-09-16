@@ -27,7 +27,16 @@ const OffersSection = () => {
   };
 
   const handleSelectOffer = (offer) => {
-    window.location.href = '/checkout';
+    // Pass offer data via URL parameters for checkout
+    const params = new URLSearchParams({
+      checkout: 'true',
+      offer_id: offer.id,
+      amount_cents: offer.priceCents.toString(),
+      name: offer.name,
+      description: offer.description || ''
+    });
+    
+    window.location.href = `/?${params.toString()}`;
   };
 
   const handleSecureCheckoutSuccess = (result) => {

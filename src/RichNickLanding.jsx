@@ -733,14 +733,14 @@ export default function RichNickLanding() {
       const amountCents = urlParams.get('amount_cents');
       const offerId = urlParams.get('offer_id');
       const name = urlParams.get('name') || '';
-      const email = urlParams.get('email') || '';
+      const description = urlParams.get('description') || '';
 
-      // Create a mock offer object for the checkout
+      // Create offer object from URL parameters
       const offer = {
         id: offerId || 'monthly-creator-pass',
-        name: offerId === 'content-management' ? 'Ongoing Content Management Services' : 'Sign up for a month',
+        name: name || 'Selected Offer',
         priceCents: amountCents ? parseInt(amountCents) : 100000,
-        description: 'Secure payment processing with Payment Cloud',
+        description: description,
         features: ['Secure payment processing', 'PCI compliant', 'Multiple payment methods']
       };
 
