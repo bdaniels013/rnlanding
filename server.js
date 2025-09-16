@@ -76,7 +76,7 @@ const authenticateAdmin = (req, res, next) => {
 app.use('/api/payment-cloud', paymentCloudRouter);
 app.use('/api/payment-cloud/hpp', hppRouter);
 
-// Apple Pay merchant validation endpoint
+// Apple Pay merchant validation endpoint (NMI Integration)
 app.post('/api/payment-cloud/validate-merchant', async (req, res) => {
   try {
     const { validationURL } = req.body;
@@ -85,28 +85,49 @@ app.post('/api/payment-cloud/validate-merchant', async (req, res) => {
       return res.status(400).json({ error: 'Validation URL is required' });
     }
 
-    // For Apple Pay, you need to validate with Apple's servers
-    // This is a simplified version - in production, you'd need proper certificate handling
-    const response = await fetch(validationURL, {
+    // NMI Apple Pay requires merchant validation through their system
+    // This endpoint should be configured in NMI merchant portal
+    const response = await fetch('https://secure.networkmerchants.com/api/transact.php', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: JSON.stringify({
-        merchantIdentifier: process.env.APPLE_MERCHANT_ID || 'merchant.com.richhnick',
-        displayName: 'Rich Nick',
-        initiative: 'web',
-        initiativeContext: 'richhnick.org'
+      body: new URLSearchParams({
+        security_key: process.env.PAYMENT_CLOUD_SECRET_KEY,
+        type: 'apple_pay_validate',
+        validation_url: validationURL,
+        merchant_id: process.env.APPLE_MERCHANT_ID,
+        domain_name: process.env.APPLE_PAY_DOMAIN || 'richhnick.org'
       })
     });
 
-    const merchantSession = await response.json();
-    res.json({ merchantSession });
+    const responseText = await response.text();
+    const responseData = parseNMIResponse(responseText);
+
+    if (responseData.response === '1') {
+      res.json({ merchantSession: responseData.merchant_session });
+    } else {
+      throw new Error(responseData.responsetext || 'Apple Pay validation failed');
+    }
   } catch (error) {
     console.error('Apple Pay validation error:', error);
     res.status(500).json({ error: 'Merchant validation failed' });
   }
 });
+
+function parseNMIResponse(responseText) {
+  const lines = responseText.split('\n');
+  const data = {};
+  
+  lines.forEach(line => {
+    if (line.includes('=')) {
+      const [key, value] = line.split('=', 2);
+      data[key.trim()] = value.trim();
+    }
+  });
+  
+  return data;
+}
 
 // Basic API endpoints
 app.get('/api/offers', async (req, res) => {

@@ -193,25 +193,36 @@ async function processACHPayment(payload, payment_data) {
   payload.account_type = payment_data.checking_savings || 'checking';
 }
 
-// Apple Pay Processing
+// Apple Pay Processing (NMI Integration)
 async function processApplePay(payload, payment_data) {
   if (!payment_data.payment_data || !payment_data.payment_method) {
     throw new Error('Apple Pay payment data is required');
   }
 
+  // NMI Apple Pay requires specific merchant configuration
+  // This would need to be set up in NMI merchant portal first
   payload.payment = 'apple_pay';
   payload.apple_pay_payment_data = JSON.stringify(payment_data.payment_data);
   payload.apple_pay_payment_method = JSON.stringify(payment_data.payment_method);
+  
+  // Additional NMI Apple Pay parameters
+  payload.apple_pay_merchant_id = process.env.APPLE_MERCHANT_ID;
+  payload.apple_pay_domain_name = process.env.APPLE_PAY_DOMAIN || 'richhnick.org';
 }
 
-// Google Pay Processing
+// Google Pay Processing (NMI Integration)
 async function processGooglePay(payload, payment_data) {
   if (!payment_data.payment_method_data) {
     throw new Error('Google Pay payment method data is required');
   }
 
+  // NMI Google Pay requires specific merchant configuration
+  // This would need to be set up in NMI merchant portal first
   payload.payment = 'google_pay';
   payload.google_pay_payment_method_data = JSON.stringify(payment_data.payment_method_data);
+  
+  // Additional NMI Google Pay parameters
+  payload.google_pay_merchant_id = process.env.GOOGLE_PAY_MERCHANT_ID;
 }
 
 // PayPal Processing

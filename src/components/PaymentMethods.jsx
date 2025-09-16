@@ -35,20 +35,22 @@ const PaymentMethods = ({ onSelectMethod, selectedMethod, isProcessing }) => {
     {
       id: 'apple_pay',
       name: 'Apple Pay',
-      description: 'Pay with Touch ID or Face ID',
+      description: 'Pay with Touch ID or Face ID (NMI setup required)',
       icon: Apple,
       color: 'from-gray-800 to-gray-900',
       popular: true,
-      requiresDevice: true
+      requiresDevice: true,
+      requiresSetup: true
     },
     {
       id: 'google_pay',
       name: 'Google Pay',
-      description: 'Quick and secure mobile payments',
+      description: 'Quick and secure mobile payments (NMI setup required)',
       icon: Smartphone,
       color: 'from-blue-500 to-blue-600',
       popular: true,
-      requiresDevice: true
+      requiresDevice: true,
+      requiresSetup: true
     },
     {
       id: 'paypal',
@@ -152,6 +154,11 @@ const PaymentMethods = ({ onSelectMethod, selectedMethod, isProcessing }) => {
                     {!isSupported && method.requiresDevice && (
                       <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded-full">
                         Not Available
+                      </span>
+                    )}
+                    {method.requiresSetup && (
+                      <span className="px-2 py-1 bg-orange-500/20 text-orange-400 text-xs rounded-full">
+                        Setup Required
                       </span>
                     )}
                   </div>
