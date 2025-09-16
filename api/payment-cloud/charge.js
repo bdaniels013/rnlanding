@@ -6,10 +6,20 @@ const router = express.Router();
 // NMI Payment API - Comprehensive payment processing
 router.post('/charge', async (req, res) => {
   try {
+    console.log('=== PAYMENT CHARGE REQUEST ===');
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    
     const { method, customer_info, payment_data, amount, offer_id } = req.body;
 
     // Validate required fields
     if (!method || !customer_info || !payment_data || !amount) {
+      console.log('❌ Missing required fields:', {
+        method: !!method,
+        customer_info: !!customer_info,
+        payment_data: !!payment_data,
+        amount: !!amount,
+        actualValues: { method, customer_info, payment_data, amount }
+      });
       return res.status(400).json({
         success: false,
         error: 'Missing required fields'
@@ -46,30 +56,39 @@ router.post('/charge', async (req, res) => {
     };
 
     // Process different payment methods based on NMI documentation
-    switch (method) {
-      case 'card':
-        await processCardPayment(payload, payment_data);
-        break;
-      case 'ach':
-        await processACHPayment(payload, payment_data);
-        break;
-      case 'apple_pay':
-        await processApplePay(payload, payment_data);
-        break;
-      case 'google_pay':
-        await processGooglePay(payload, payment_data);
-        break;
-      case 'crypto':
-        await processCrypto(payload, payment_data);
-        break;
-      case 'wallet':
-        await processWallet(payload, payment_data);
-        break;
-      default:
-        return res.status(400).json({
-          success: false,
-          error: 'Unsupported payment method'
-        });
+    try {
+      switch (method) {
+        case 'card':
+          await processCardPayment(payload, payment_data);
+          break;
+        case 'ach':
+          await processACHPayment(payload, payment_data);
+          break;
+        case 'apple_pay':
+          await processApplePay(payload, payment_data);
+          break;
+        case 'google_pay':
+          await processGooglePay(payload, payment_data);
+          break;
+        case 'crypto':
+          await processCrypto(payload, payment_data);
+          break;
+        case 'wallet':
+          await processWallet(payload, payment_data);
+          break;
+        default:
+          console.log('❌ Unsupported payment method:', method);
+          return res.status(400).json({
+            success: false,
+            error: 'Unsupported payment method'
+          });
+      }
+    } catch (paymentError) {
+      console.log('❌ Payment method processing error:', paymentError.message);
+      return res.status(400).json({
+        success: false,
+        error: paymentError.message
+      });
     }
 
     // Make request to NMI Payment API
@@ -158,7 +177,16 @@ router.post('/charge', async (req, res) => {
 
 // Card Payment Processing
 async function processCardPayment(payload, payment_data) {
+  console.log('=== PROCESSING CARD PAYMENT ===');
+  console.log('Payment data received:', JSON.stringify(payment_data, null, 2));
+  
   if (!payment_data.number || !payment_data.expiry || !payment_data.cvv) {
+    console.log('❌ Missing card data:', {
+      number: !!payment_data.number,
+      expiry: !!payment_data.expiry,
+      cvv: !!payment_data.cvv,
+      name: !!payment_data.name
+    });
     throw new Error('Card number, expiry, and CVV are required');
   }
 
@@ -174,6 +202,13 @@ async function processCardPayment(payload, payment_data) {
   if (payment_data.name) {
     payload.cardholder_name = payment_data.name;
   }
+  
+  console.log('✅ Card payment data processed:', {
+    ccnumber: payload.ccnumber ? '[REDACTED]' : 'MISSING',
+    ccexp: payload.ccexp,
+    cvv: payload.cvv ? '[REDACTED]' : 'MISSING',
+    cardholder_name: payload.cardholder_name || 'MISSING'
+  });
 }
 
 // ACH Payment Processing
