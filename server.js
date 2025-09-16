@@ -3,11 +3,15 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { PrismaClient } from '@prisma/client';
 import multer from 'multer';
+import dotenv from 'dotenv';
 import setupDatabase from './scripts/startup.js';
 import { paypalService } from './src/lib/paypal.js';
 import { db } from './src/lib/database.js';
 import paymentCloudRouter from './api/payment-cloud/charge.js';
 import hppRouter from './api/payment-cloud/hpp.js';
+
+// Load environment variables
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
