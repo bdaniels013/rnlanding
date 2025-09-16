@@ -323,10 +323,6 @@ const SecureCheckout = ({ selectedOffer, onClose, onSuccess }) => {
     }
   };
 
-  const handlePayPal = () => {
-    // Redirect to existing PayPal flow
-    window.location.href = `/api/checkout/create?offer=${selectedOffer?.id || 'monthly-creator-pass'}`;
-  };
 
   const formatCardNumber = (value) => {
     return value.replace(/\s/g, '').replace(/(\d{4})/g, '$1 ').trim();
@@ -522,8 +518,6 @@ const SecureCheckout = ({ selectedOffer, onClose, onSuccess }) => {
                   handleApplePay();
                 } else if (method === 'google_pay') {
                   handleGooglePay();
-                } else if (method === 'paypal') {
-                  handlePayPal();
                 } else {
                   setPaymentMethod(method);
                 }

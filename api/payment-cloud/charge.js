@@ -59,9 +59,6 @@ router.post('/charge', async (req, res) => {
       case 'google_pay':
         await processGooglePay(payload, payment_data);
         break;
-      case 'paypal':
-        await processPayPal(payload, payment_data);
-        break;
       case 'crypto':
         await processCrypto(payload, payment_data);
         break;
@@ -79,7 +76,7 @@ router.post('/charge', async (req, res) => {
     const formData = new URLSearchParams();
     Object.entries(payload).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
-        formData.append(key, value);
+      formData.append(key, value);
       }
     });
 
@@ -225,15 +222,6 @@ async function processGooglePay(payload, payment_data) {
   payload.google_pay_merchant_id = process.env.GOOGLE_PAY_MERCHANT_ID;
 }
 
-// PayPal Processing
-async function processPayPal(payload, payment_data) {
-  if (!payment_data.paypal_token) {
-    throw new Error('PayPal token is required');
-  }
-
-  payload.payment = 'paypal';
-  payload.paypal_token = payment_data.paypal_token;
-}
 
 // Crypto Payment Processing
 async function processCrypto(payload, payment_data) {

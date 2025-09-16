@@ -52,18 +52,6 @@ const PaymentMethods = ({ onSelectMethod, selectedMethod, isProcessing }) => {
       requiresDevice: true,
       requiresSetup: true
     },
-    {
-      id: 'paypal',
-      name: 'PayPal',
-      description: 'Pay with your PayPal account',
-      icon: () => (
-        <div className="w-6 h-6 bg-yellow-400 rounded flex items-center justify-center">
-          <span className="text-black font-bold text-xs">P</span>
-        </div>
-      ),
-      color: 'from-yellow-500 to-yellow-600',
-      popular: true
-    }
   ];
 
   const advancedMethods = [
