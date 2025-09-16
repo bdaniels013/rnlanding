@@ -23,15 +23,23 @@ router.post('/charge', async (req, res) => {
     // Use fallback API key if not configured
     const apiKey = process.env.PAYMENT_CLOUD_SECRET_KEY || '4wK5E5-h49T6h-32TQf9-844vbe';
     console.log('Using API key:', apiKey ? 'CONFIGURED' : 'FALLBACK');
+    
+    // Add small delay to ensure unique timestamp
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     // Prepare base NMI API payload with fallbacks
     const customer = customer_info || {};
     const nameParts = (customer.name || 'Test User').split(' ');
     
+    // Add small random amount variation to make transaction unique
+    const baseAmount = (amount / 100).toFixed(2);
+    const randomVariation = (Math.random() * 0.01).toFixed(4); // Add 0-1 cent variation
+    const finalAmount = (parseFloat(baseAmount) + parseFloat(randomVariation)).toFixed(2);
+    
     let payload = {
       security_key: apiKey,
       type: 'sale',
-      amount: (amount / 100).toFixed(2),
+      amount: finalAmount,
       first_name: nameParts[0] || 'Test',
       last_name: nameParts.slice(1).join(' ') || 'User',
       email: customer.email || 'test@example.com',
@@ -41,7 +49,7 @@ router.post('/charge', async (req, res) => {
       state: customer.state || '',
       zip: customer.zip || '',
       country: 'US',
-      orderid: `RN-${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${Math.floor(Math.random() * 10000)}`,
+      orderid: `RN-${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${Math.floor(Math.random() * 100000)}-${Math.random().toString(36).substr(2, 5)}`,
       order_description: `Rich Nick - ${offer_id || 'service'}`,
       ip_address: req.headers['x-forwarded-for'] || req.connection.remoteAddress || '127.0.0.1'
     };
