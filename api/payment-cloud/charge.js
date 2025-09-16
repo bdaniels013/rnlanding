@@ -1,5 +1,8 @@
 import express from 'express';
 import fetch from 'node-fetch';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 const router = express.Router();
 
@@ -139,6 +142,23 @@ router.post('/charge', async (req, res) => {
         customer_email: customer_info.email,
         customer_vault_id: responseData.customer_vault_id
       });
+
+      // Store order in database
+      try {
+        const orderData = await createOrder({
+          customer_info,
+          offer_id,
+          amount,
+          transaction_id: responseData.transactionid,
+          payment_method: method,
+          response_data: responseData
+        });
+        
+        console.log('✅ Order created in database:', orderData);
+      } catch (orderError) {
+        console.error('❌ Failed to create order in database:', orderError);
+        // Don't fail the payment if order creation fails
+      }
 
       return res.json({
         success: true,
@@ -319,6 +339,98 @@ function parseNMIResponse(responseText) {
   });
   
   return data;
+}
+
+async function createOrder({ customer_info, offer_id, amount, transaction_id, payment_method, response_data }) {
+  try {
+    // Find or create customer
+    let customer = await prisma.customer.findUnique({
+      where: { email: customer_info.email }
+    });
+
+    if (!customer) {
+      customer = await prisma.customer.create({
+        data: {
+          name: customer_info.name,
+          email: customer_info.email,
+          phone: customer_info.phone || null,
+          socials: null,
+          notes: `Created from payment - ${payment_method}`
+        }
+      });
+      console.log('✅ Created new customer:', customer.id);
+    } else {
+      console.log('✅ Found existing customer:', customer.id);
+    }
+
+    // Find the offer
+    const offer = await prisma.offer.findFirst({
+      where: {
+        OR: [
+          { id: offer_id },
+          { sku: offer_id }
+        ]
+      }
+    });
+
+    if (!offer) {
+      throw new Error(`Offer not found: ${offer_id}`);
+    }
+
+    // Create the order
+    const order = await prisma.order.create({
+      data: {
+        customerId: customer.id,
+        totalCents: amount,
+        currency: 'USD',
+        status: 'PAID',
+        capturedAt: new Date(),
+        orderItems: {
+          create: {
+            offerId: offer.id,
+            qty: 1,
+            unitPriceCents: amount,
+            creditsAwarded: offer.creditsValue || 0
+          }
+        },
+        payments: {
+          create: {
+            amountCents: amount,
+            status: 'COMPLETED',
+            paypalTxnId: transaction_id
+          }
+        }
+      },
+      include: {
+        customer: true,
+        orderItems: {
+          include: {
+            offer: true
+          }
+        },
+        payments: true
+      }
+    });
+
+    // Award credits if applicable
+    if (offer.creditsValue > 0) {
+      await prisma.creditsLedger.create({
+        data: {
+          customerId: customer.id,
+          delta: offer.creditsValue,
+          reason: `Purchase: ${offer.name}`,
+          refOrderId: order.id,
+          balanceAfter: 0 // Will be calculated by the system
+        }
+      });
+      console.log('✅ Awarded credits:', offer.creditsValue);
+    }
+
+    return order;
+  } catch (error) {
+    console.error('Error creating order:', error);
+    throw error;
+  }
 }
 
 export default router;
