@@ -377,6 +377,9 @@ async function createOrder({ customer_info, offer_id, amount, transaction_id, pa
       throw new Error(`Offer not found: ${offer_id}`);
     }
 
+    // Update order description with subscription info
+    payload.order_description = `Rich Nick - ${offer.name}${offer.isSubscription ? ' (Monthly Subscription)' : ' (One-time Payment)'}`;
+
     // Create the order
     const order = await prisma.order.create({
       data: {
@@ -411,6 +414,27 @@ async function createOrder({ customer_info, offer_id, amount, transaction_id, pa
         payments: true
       }
     });
+
+    // Create subscription if offer is a subscription
+    if (offer.isSubscription) {
+      const startDate = new Date();
+      const renewDate = new Date();
+      renewDate.setMonth(renewDate.getMonth() + 1); // Add 1 month
+
+      const subscription = await prisma.subscription.create({
+        data: {
+          customerId: customer.id,
+          offerId: offer.id,
+          status: 'ACTIVE',
+          startAt: startDate,
+          renewAt: renewDate,
+          paypalSubId: transaction_id // Store NMI transaction ID for reference
+        }
+      });
+
+      console.log('✅ Created subscription:', subscription.id);
+      console.log('📅 Next renewal:', renewDate.toISOString());
+    }
 
     // Award credits if applicable
     if (offer.creditsValue > 0) {
