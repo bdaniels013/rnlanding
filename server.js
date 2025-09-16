@@ -76,6 +76,26 @@ const authenticateAdmin = (req, res, next) => {
 app.use('/api/payment-cloud', paymentCloudRouter);
 app.use('/api/payment-cloud/hpp', hppRouter);
 
+// Test endpoint to verify basic setup
+app.post('/api/payment-cloud/test', (req, res) => {
+  console.log('=== TEST ENDPOINT HIT ===');
+  console.log('Request body:', JSON.stringify(req.body, null, 2));
+  console.log('Environment check:', {
+    PAYMENT_CLOUD_SECRET_KEY: !!process.env.PAYMENT_CLOUD_SECRET_KEY,
+    NODE_ENV: process.env.NODE_ENV
+  });
+  
+  res.json({
+    success: true,
+    message: 'Test endpoint working',
+    receivedData: req.body,
+    envCheck: {
+      hasSecretKey: !!process.env.PAYMENT_CLOUD_SECRET_KEY,
+      nodeEnv: process.env.NODE_ENV
+    }
+  });
+});
+
 // Apple Pay merchant validation endpoint (NMI Integration)
 app.post('/api/payment-cloud/validate-merchant', async (req, res) => {
   try {

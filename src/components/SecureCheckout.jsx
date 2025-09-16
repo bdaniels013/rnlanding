@@ -72,20 +72,29 @@ const SecureCheckout = ({ selectedOffer, onClose, onSuccess }) => {
     setIsProcessing(true);
     setError(null);
 
+    const requestData = {
+      method,
+      customer_info: customerInfo,
+      payment_data: paymentData,
+      amount: selectedOffer?.priceCents || 100000, // Default to $1000
+      offer_id: selectedOffer?.id || 'monthly-creator-pass'
+    };
+
+    console.log('=== FRONTEND PAYMENT REQUEST ===');
+    console.log('Request data:', JSON.stringify(requestData, null, 2));
+
     try {
       const response = await fetch('/api/payment-cloud/charge', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          method,
-          customer_info: customerInfo,
-          payment_data: paymentData,
-          amount: selectedOffer?.priceCents || 100000, // Default to $1000
-          offer_id: selectedOffer?.id || 'monthly-creator-pass'
-        }),
+        body: JSON.stringify(requestData),
       });
+
+      console.log('=== FRONTEND PAYMENT RESPONSE ===');
+      console.log('Response status:', response.status);
+      console.log('Response data:', await response.clone().json());
 
       const result = await response.json();
 

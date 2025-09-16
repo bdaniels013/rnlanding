@@ -11,18 +11,20 @@ router.post('/charge', async (req, res) => {
     
     const { method, customer_info, payment_data, amount, offer_id } = req.body;
 
-    // Validate required fields
-    if (!method || !customer_info || !payment_data || !amount) {
-      console.log('❌ Missing required fields:', {
-        method: !!method,
-        customer_info: !!customer_info,
-        payment_data: !!payment_data,
-        amount: !!amount,
-        actualValues: { method, customer_info, payment_data, amount }
-      });
+    // Validate required fields with more detailed error messages
+    const missingFields = [];
+    if (!method) missingFields.push('method');
+    if (!customer_info) missingFields.push('customer_info');
+    if (!payment_data) missingFields.push('payment_data');
+    if (!amount) missingFields.push('amount');
+    
+    if (missingFields.length > 0) {
+      console.log('❌ Missing required fields:', missingFields);
+      console.log('Actual values received:', { method, customer_info, payment_data, amount });
       return res.status(400).json({
         success: false,
-        error: 'Missing required fields'
+        error: `Missing required fields: ${missingFields.join(', ')}`,
+        missingFields: missingFields
       });
     }
 
