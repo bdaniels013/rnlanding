@@ -157,6 +157,7 @@ export class DatabaseService {
           isCreditEligible: Boolean(updateData.isCreditEligible),
           description: updateData.description || null,
           features: updateData.features ? JSON.stringify(updateData.features) : null,
+          badge: updateData.badge || null,
           isActive: Boolean(updateData.isActive)
         }
       });
@@ -171,6 +172,7 @@ export class DatabaseService {
         isCreditEligible: offer.isCreditEligible,
         description: offer.description,
         features: offer.features ? JSON.parse(offer.features) : [],
+        badge: offer.badge,
         isActive: offer.isActive,
         createdAt: offer.createdAt,
         updatedAt: offer.updatedAt

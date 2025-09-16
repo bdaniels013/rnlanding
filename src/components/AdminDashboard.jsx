@@ -232,6 +232,7 @@ const AdminDashboard = ({ onLogout }) => {
         isCreditEligible: false,
         description: '',
         features: [],
+        badge: '',
         isActive: true
       });
       fetchOffers();
