@@ -23,61 +23,38 @@ function getBaseUrl(req) {
 // Start a hosted payment page session and redirect the customer to NMI
 router.get('/start', async (req, res) => {
   try {
+    console.log('HPP Start Request:', {
+      query: req.query,
+      hasSecretKey: !!process.env.PAYMENT_CLOUD_SECRET_KEY,
+      environment: process.env.PAYMENT_CLOUD_ENVIRONMENT
+    });
+
     if (!process.env.PAYMENT_CLOUD_SECRET_KEY) {
-      if (String(process.env.PAYMENT_CLOUD_MODE || '').toLowerCase() === 'demo') {
-        // Redirect to a local demo page so reviewers can see the hosted flow intent
-        return res.redirect(302, '/secure-checkout-demo.html');
-      }
+      console.error('PAYMENT_CLOUD_SECRET_KEY not configured');
       return res.status(500).send('Payment gateway not configured');
     }
 
     const amountCents = Number(req.query.amount_cents || '0');
     const offerId = String(req.query.offer_id || 'monthly-creator-pass');
     const amount = (amountCents / 100).toFixed(2);
-    if (!(amountCents > 0)) return res.status(400).send('Invalid amount');
-
-    const redirectUrl = `${getBaseUrl(req)}/api/payment-cloud/hpp/return`;
-
-    const form = new URLSearchParams();
-    form.append('security_key', process.env.PAYMENT_CLOUD_SECRET_KEY);
-    form.append('amount', amount);
-    form.append('type', 'sale');
-    form.append('redirect_url', redirectUrl);
-    form.append('orderid', `RN-${Date.now()}`);
-    form.append('order_description', `Rich Nick - ${offerId}`);
-    // Optional customer prefill
-    const name = String(req.query.name || '');
-    const email = String(req.query.email || '');
-    if (email) form.append('email', email);
-    if (name) {
-      const [first, ...rest] = name.split(' ');
-      form.append('first_name', first || '');
-      form.append('last_name', rest.join(' ') || '');
-    }
-    // Optional branding (NMI HPP supports css_url)
-    if (process.env.HPP_CSS_URL) {
-      form.append('css_url', process.env.HPP_CSS_URL);
-    }
-    if (process.env.HPP_COMPANY) {
-      form.append('company', process.env.HPP_COMPANY);
+    
+    console.log('Processing HPP request:', { amountCents, amount, offerId });
+    
+    if (!(amountCents > 0)) {
+      console.error('Invalid amount:', amountCents);
+      return res.status(400).send('Invalid amount');
     }
 
-    const resp = await fetch('https://secure.networkmerchants.com/api/transact.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: form.toString(),
-    });
-    const text = await resp.text();
-    const data = parseGatewayResponse(text);
-
-    if (data.form_url) {
-      return res.redirect(302, data.form_url);
-    }
-
-    return res.status(400).send(data.responsetext || 'Failed to start hosted checkout');
+    // For now, let's redirect to the secure checkout page instead of HPP
+    // This will use the direct API integration we have in SecureCheckout.jsx
+    const checkoutUrl = `${getBaseUrl(req)}/secure-checkout?amount_cents=${amountCents}&offer_id=${offerId}&name=${encodeURIComponent(req.query.name || '')}&email=${encodeURIComponent(req.query.email || '')}`;
+    
+    console.log('Redirecting to secure checkout:', checkoutUrl);
+    return res.redirect(302, checkoutUrl);
+    
   } catch (err) {
     console.error('HPP start error:', err);
-    return res.status(500).send('Internal error starting hosted checkout');
+    return res.status(500).send('Internal error starting hosted checkout: ' + err.message);
   }
 });
 
