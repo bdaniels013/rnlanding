@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   CreditCard, 
   Check, 
@@ -13,6 +13,8 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
+import PaymentSuccess from './PaymentSuccess';
+import PaymentMethods from './PaymentMethods';
 
 const SecureCheckout = ({ selectedOffer, onClose, onSuccess }) => {
   const [step, setStep] = useState(1);
@@ -42,101 +44,17 @@ const SecureCheckout = ({ selectedOffer, onClose, onSuccess }) => {
   const [showCardDetails, setShowCardDetails] = useState(false);
   const [showAchDetails, setShowAchDetails] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-
-  // Payment Cloud SDK refs
-  const collectJsRef = useRef(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [transactionData, setTransactionData] = useState(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('');
 
   useEffect(() => {
-    // Load Payment Cloud Collect.js SDK
-    if (!window.CollectJS) {
-      console.log('Loading Payment Cloud Collect.js SDK...');
-      const script = document.createElement('script');
-      script.src = 'https://secure.networkmerchants.com/token/Collect.js';
-      script.async = true;
-      script.onload = () => {
-        console.log('Payment Cloud SDK loaded, initializing...');
-        initializePaymentCloud();
-      };
-      script.onerror = () => {
-        console.error('Failed to load Payment Cloud SDK');
-        setError('Failed to load payment system. Please refresh the page.');
-      };
-      document.head.appendChild(script);
-    } else {
-      console.log('Payment Cloud SDK already loaded, initializing...');
-      initializePaymentCloud();
-    }
-
     // Load saved customer info
     const savedInfo = localStorage.getItem('richnick_customer_info');
     if (savedInfo) {
       setCustomerInfo(JSON.parse(savedInfo));
     }
   }, []);
-
-  const initializePaymentCloud = async () => {
-    if (window.CollectJS) {
-      collectJsRef.current = window.CollectJS;
-      
-      let publicKey = '4wK5E5-h49T6h-32TQf9-844vbe'; // Fallback key
-      
-      try {
-        // Fetch the public key from the server
-        console.log('Fetching Payment Cloud public key...');
-        const response = await fetch('/api/payment-cloud/public-key');
-        if (response.ok) {
-          const data = await response.json();
-          publicKey = data.publicKey || publicKey;
-          console.log('Received public key from server:', publicKey);
-        } else {
-          console.warn('Failed to fetch public key from server, using fallback');
-        }
-      } catch (error) {
-        console.warn('Error fetching public key, using fallback:', error);
-      }
-      
-      try {
-        console.log('Initializing Payment Cloud with public key:', publicKey);
-        
-        collectJsRef.current.configure({
-          tokenizationKey: publicKey,
-          fields: {
-            number: {
-              selector: '#card-number',
-              title: 'Card Number',
-              placeholder: '1234 5678 9012 3456'
-            },
-            cvv: {
-              selector: '#card-cvv',
-              title: 'CVV',
-              placeholder: '123'
-            },
-            exp: {
-              selector: '#card-expiry',
-              title: 'Expiry',
-              placeholder: 'MM/YY'
-            }
-          },
-          callback: function(response) {
-            console.log('Payment Cloud callback:', response);
-            if (response.token) {
-              processPayment('card', { token: response.token });
-            } else {
-              setError(response.error || 'Card tokenization failed');
-            }
-          }
-        });
-        
-        console.log('Payment Cloud initialized successfully');
-      } catch (error) {
-        console.error('Failed to configure Payment Cloud:', error);
-        setError('Payment system configuration failed: ' + error.message);
-      }
-    } else {
-      console.error('CollectJS not available');
-      setError('Payment system not available');
-    }
-  };
 
   const handleCustomerInfoSubmit = async (e) => {
     e.preventDefault();
@@ -174,6 +92,12 @@ const SecureCheckout = ({ selectedOffer, onClose, onSuccess }) => {
       if (result.success) {
         // Clear saved customer info
         localStorage.removeItem('richnick_customer_info');
+        
+        // Store transaction data and show success screen
+        setTransactionData(result);
+        setShowSuccess(true);
+        
+        // Call success callback
         onSuccess?.(result);
       } else {
         setError(result.error || 'Payment failed');
@@ -187,43 +111,215 @@ const SecureCheckout = ({ selectedOffer, onClose, onSuccess }) => {
 
   const handleCardSubmit = (e) => {
     e.preventDefault();
+    setError(null); // Clear previous errors
+    
     if (!cardInfo.number || !cardInfo.expiry || !cardInfo.cvv || !cardInfo.name) {
       setError('Please fill in all card details');
       return;
     }
     
-    if (collectJsRef.current) {
-      collectJsRef.current.tokenize();
-    } else {
-      setError('Payment system not ready. Please try again.');
+    // Validate card number (basic Luhn algorithm)
+    const cardNumber = cardInfo.number.replace(/\s/g, '');
+    if (cardNumber.length < 13 || cardNumber.length > 19) {
+      setError('Card number must be between 13 and 19 digits');
+      return;
     }
+    
+    if (!isValidCardNumber(cardNumber)) {
+      setError('Please enter a valid card number');
+      return;
+    }
+
+    // Validate expiry date
+    const [month, year] = cardInfo.expiry.split('/');
+    if (!month || !year || month.length !== 2 || year.length !== 2) {
+      setError('Please enter expiry date in MM/YY format');
+      return;
+    }
+    
+    const monthNum = parseInt(month);
+    const yearNum = parseInt(year);
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear() % 100;
+    const currentMonth = currentDate.getMonth() + 1;
+    
+    if (monthNum < 1 || monthNum > 12) {
+      setError('Please enter a valid expiry month (01-12)');
+      return;
+    }
+    
+    if (yearNum < currentYear || (yearNum === currentYear && monthNum < currentMonth)) {
+      setError('Card has expired');
+      return;
+    }
+
+    // Validate CVV
+    if (cardInfo.cvv.length < 3 || cardInfo.cvv.length > 4) {
+      setError('CVV must be 3 or 4 digits');
+      return;
+    }
+
+    // Process card payment
+    processPayment('card', {
+      number: cardNumber,
+      expiry: cardInfo.expiry,
+      cvv: cardInfo.cvv,
+      name: cardInfo.name
+    });
   };
 
   const handleAchSubmit = (e) => {
     e.preventDefault();
+    setError(null); // Clear previous errors
+    
     if (!achInfo.routing || !achInfo.account || !achInfo.name) {
       setError('Please fill in all ACH details');
+      return;
+    }
+    
+    // Validate routing number (basic check)
+    if (achInfo.routing.length !== 9) {
+      setError('Routing number must be exactly 9 digits');
+      return;
+    }
+
+    // Validate account number
+    if (achInfo.account.length < 4 || achInfo.account.length > 17) {
+      setError('Account number must be between 4 and 17 digits');
+      return;
+    }
+
+    // Validate account holder name
+    if (achInfo.name.trim().length < 2) {
+      setError('Account holder name must be at least 2 characters');
       return;
     }
     
     processPayment('ach', achInfo);
   };
 
-  const handleApplePay = () => {
-    if (window.ApplePaySession && ApplePaySession.canMakePayments()) {
-      // Apple Pay implementation would go here
-      setError('Apple Pay integration coming soon');
-    } else {
+  const handleApplePay = async () => {
+    if (!window.ApplePaySession || !ApplePaySession.canMakePayments()) {
       setError('Apple Pay not available on this device');
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      setError(null);
+
+      const request = {
+        countryCode: 'US',
+        currencyCode: 'USD',
+        supportedNetworks: ['visa', 'masterCard', 'amex', 'discover'],
+        merchantCapabilities: ['supports3DS'],
+        total: {
+          label: selectedOffer?.name || 'Rich Nick Service',
+          amount: ((selectedOffer?.priceCents || 100000) / 100).toFixed(2)
+        }
+      };
+
+      const session = new ApplePaySession(3, request);
+
+      session.onvalidatemerchant = async (event) => {
+        try {
+          const response = await fetch('/api/payment-cloud/validate-merchant', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ validationURL: event.validationURL })
+          });
+          const { merchantSession } = await response.json();
+          session.completeMerchantValidation(merchantSession);
+        } catch (err) {
+          session.abort();
+          setError('Apple Pay validation failed');
+        }
+      };
+
+      session.onpaymentauthorized = async (event) => {
+        try {
+          const payment = event.payment;
+          const result = await processPayment('apple_pay', {
+            payment_data: payment.paymentData,
+            payment_method: payment.paymentMethod
+          });
+          
+          if (result.success) {
+            session.completePayment(ApplePaySession.STATUS_SUCCESS);
+          } else {
+            session.completePayment(ApplePaySession.STATUS_FAILURE);
+            setError(result.error || 'Apple Pay payment failed');
+          }
+        } catch (err) {
+          session.completePayment(ApplePaySession.STATUS_FAILURE);
+          setError('Apple Pay payment failed');
+        }
+      };
+
+      session.oncancel = () => {
+        setError('Apple Pay payment cancelled');
+      };
+
+      session.begin();
+    } catch (error) {
+      setError('Apple Pay initialization failed');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
-  const handleGooglePay = () => {
-    if (window.google && window.google.payments) {
-      // Google Pay implementation would go here
-      setError('Google Pay integration coming soon');
-    } else {
+  const handleGooglePay = async () => {
+    if (!window.google || !window.google.payments) {
       setError('Google Pay not available');
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      setError(null);
+
+      const paymentsClient = new window.google.payments.api.PaymentsClient({
+        environment: 'PRODUCTION' // or 'TEST' for testing
+      });
+
+      const paymentDataRequest = {
+        apiVersion: 2,
+        apiVersionMinor: 0,
+        allowedPaymentMethods: [{
+          type: 'CARD',
+          parameters: {
+            allowedAuthMethods: ['PAN_ONLY', 'CRYPTOGRAM_3DS'],
+            allowedCardNetworks: ['AMEX', 'DISCOVER', 'JCB', 'MASTERCARD', 'VISA']
+          }
+        }],
+        transactionInfo: {
+          totalPriceStatus: 'FINAL',
+          totalPrice: ((selectedOffer?.priceCents || 100000) / 100).toFixed(2),
+          currencyCode: 'USD'
+        },
+        merchantInfo: {
+          merchantId: process.env.REACT_APP_GOOGLE_MERCHANT_ID,
+          merchantName: 'Rich Nick'
+        }
+      };
+
+      const paymentData = await paymentsClient.loadPaymentData(paymentDataRequest);
+      
+      const result = await processPayment('google_pay', {
+        payment_method_data: paymentData.paymentMethodData
+      });
+
+      if (!result.success) {
+        setError(result.error || 'Google Pay payment failed');
+      }
+    } catch (error) {
+      if (error.statusCode === 'CANCELED') {
+        setError('Google Pay payment cancelled');
+      } else {
+        setError('Google Pay payment failed');
+      }
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -239,6 +335,42 @@ const SecureCheckout = ({ selectedOffer, onClose, onSuccess }) => {
   const formatExpiry = (value) => {
     return value.replace(/\D/g, '').replace(/(\d{2})(\d)/, '$1/$2');
   };
+
+  const isValidCardNumber = (number) => {
+    // Basic Luhn algorithm validation
+    let sum = 0;
+    let isEven = false;
+    
+    for (let i = number.length - 1; i >= 0; i--) {
+      let digit = parseInt(number.charAt(i));
+      
+      if (isEven) {
+        digit *= 2;
+        if (digit > 9) {
+          digit -= 9;
+        }
+      }
+      
+      sum += digit;
+      isEven = !isEven;
+    }
+    
+    return sum % 10 === 0;
+  };
+
+  // Show success screen if payment was successful
+  if (showSuccess) {
+    return (
+      <PaymentSuccess
+        transactionData={transactionData}
+        onClose={onClose}
+        onBackToSite={() => {
+          setShowSuccess(false);
+          onClose();
+        }}
+      />
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -383,71 +515,22 @@ const SecureCheckout = ({ selectedOffer, onClose, onSuccess }) => {
             </div>
 
             {/* Payment Methods */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-white">Choose Payment Method</h3>
-              
-              {/* Apple Pay */}
-              <button
-                onClick={handleApplePay}
-                className="w-full p-4 bg-black border border-white/20 rounded-xl hover:bg-white/5 transition-all flex items-center gap-3"
-              >
-                <Apple className="w-6 h-6" />
-                <span className="font-medium text-white">Apple Pay</span>
-                <div className="ml-auto">
-                  <Lock className="w-4 h-4 text-white/50" />
-                </div>
-              </button>
-
-              {/* Google Pay */}
-              <button
-                onClick={handleGooglePay}
-                className="w-full p-4 bg-black border border-white/20 rounded-xl hover:bg-white/5 transition-all flex items-center gap-3"
-              >
-                <Smartphone className="w-6 h-6" />
-                <span className="font-medium text-white">Google Pay</span>
-                <div className="ml-auto">
-                  <Lock className="w-4 h-4 text-white/50" />
-                </div>
-              </button>
-
-              {/* Credit/Debit Card */}
-              <button
-                onClick={() => setPaymentMethod('card')}
-                className="w-full p-4 bg-black border border-white/20 rounded-xl hover:bg-white/5 transition-all flex items-center gap-3"
-              >
-                <CreditCard className="w-6 h-6" />
-                <span className="font-medium text-white">Credit/Debit Card</span>
-                <div className="ml-auto">
-                  <Lock className="w-4 h-4 text-white/50" />
-                </div>
-              </button>
-
-              {/* ACH Bank Transfer */}
-              <button
-                onClick={() => setPaymentMethod('ach')}
-                className="w-full p-4 bg-black border border-white/20 rounded-xl hover:bg-white/5 transition-all flex items-center gap-3"
-              >
-                <Building2 className="w-6 h-6" />
-                <span className="font-medium text-white">Bank Account (ACH)</span>
-                <div className="ml-auto">
-                  <Lock className="w-4 h-4 text-white/50" />
-                </div>
-              </button>
-
-              {/* PayPal */}
-              <button
-                onClick={handlePayPal}
-                className="w-full p-4 bg-black border border-white/20 rounded-xl hover:bg-white/5 transition-all flex items-center gap-3"
-              >
-                <div className="w-6 h-6 bg-yellow-400 rounded flex items-center justify-center">
-                  <span className="text-black font-bold text-xs">P</span>
-                </div>
-                <span className="font-medium text-white">PayPal</span>
-                <div className="ml-auto">
-                  <Lock className="w-4 h-4 text-white/50" />
-                </div>
-              </button>
-            </div>
+            <PaymentMethods 
+              onSelectMethod={(method) => {
+                setSelectedPaymentMethod(method);
+                if (method === 'apple_pay') {
+                  handleApplePay();
+                } else if (method === 'google_pay') {
+                  handleGooglePay();
+                } else if (method === 'paypal') {
+                  handlePayPal();
+                } else {
+                  setPaymentMethod(method);
+                }
+              }}
+              selectedMethod={selectedPaymentMethod}
+              isProcessing={isProcessing}
+            />
 
             {/* Card Payment Form */}
             {paymentMethod === 'card' && (
@@ -468,8 +551,7 @@ const SecureCheckout = ({ selectedOffer, onClose, onSuccess }) => {
                       Card Number
                     </label>
                     <input
-                      id="card-number"
-                      type="text"
+                      type={showCardDetails ? "text" : "password"}
                       value={cardInfo.number}
                       onChange={(e) => setCardInfo({...cardInfo, number: formatCardNumber(e.target.value)})}
                       className="w-full px-4 py-3 bg-white/5 border border-white/15 rounded-xl text-white placeholder-white/50 focus:outline-none focus:border-indigo-500 focus:bg-white/10 transition-all"
@@ -485,7 +567,6 @@ const SecureCheckout = ({ selectedOffer, onClose, onSuccess }) => {
                         Expiry Date
                       </label>
                       <input
-                        id="card-expiry"
                         type="text"
                         value={cardInfo.expiry}
                         onChange={(e) => setCardInfo({...cardInfo, expiry: formatExpiry(e.target.value)})}
@@ -500,8 +581,7 @@ const SecureCheckout = ({ selectedOffer, onClose, onSuccess }) => {
                         CVV
                       </label>
                       <input
-                        id="card-cvv"
-                        type="text"
+                        type={showCardDetails ? "text" : "password"}
                         value={cardInfo.cvv}
                         onChange={(e) => setCardInfo({...cardInfo, cvv: e.target.value.replace(/\D/g, '')})}
                         className="w-full px-4 py-3 bg-white/5 border border-white/15 rounded-xl text-white placeholder-white/50 focus:outline-none focus:border-indigo-500 focus:bg-white/10 transition-all"
@@ -580,7 +660,7 @@ const SecureCheckout = ({ selectedOffer, onClose, onSuccess }) => {
                       Routing Number
                     </label>
                     <input
-                      type="text"
+                      type={showAchDetails ? "text" : "password"}
                       value={achInfo.routing}
                       onChange={(e) => setAchInfo({...achInfo, routing: e.target.value.replace(/\D/g, '')})}
                       className="w-full px-4 py-3 bg-white/5 border border-white/15 rounded-xl text-white placeholder-white/50 focus:outline-none focus:border-indigo-500 focus:bg-white/10 transition-all"
@@ -595,7 +675,7 @@ const SecureCheckout = ({ selectedOffer, onClose, onSuccess }) => {
                       Account Number
                     </label>
                     <input
-                      type="text"
+                      type={showAchDetails ? "text" : "password"}
                       value={achInfo.account}
                       onChange={(e) => setAchInfo({...achInfo, account: e.target.value.replace(/\D/g, '')})}
                       className="w-full px-4 py-3 bg-white/5 border border-white/15 rounded-xl text-white placeholder-white/50 focus:outline-none focus:border-indigo-500 focus:bg-white/10 transition-all"

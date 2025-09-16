@@ -76,10 +76,36 @@ const authenticateAdmin = (req, res, next) => {
 app.use('/api/payment-cloud', paymentCloudRouter);
 app.use('/api/payment-cloud/hpp', hppRouter);
 
-// Payment Cloud public key endpoint
-app.get('/api/payment-cloud/public-key', (req, res) => {
-  const publicKey = process.env.PAYMENT_CLOUD_PUBLIC_KEY || '4wK5E5-h49T6h-32TQf9-844vbe';
-  res.json({ publicKey });
+// Apple Pay merchant validation endpoint
+app.post('/api/payment-cloud/validate-merchant', async (req, res) => {
+  try {
+    const { validationURL } = req.body;
+    
+    if (!validationURL) {
+      return res.status(400).json({ error: 'Validation URL is required' });
+    }
+
+    // For Apple Pay, you need to validate with Apple's servers
+    // This is a simplified version - in production, you'd need proper certificate handling
+    const response = await fetch(validationURL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        merchantIdentifier: process.env.APPLE_MERCHANT_ID || 'merchant.com.richhnick',
+        displayName: 'Rich Nick',
+        initiative: 'web',
+        initiativeContext: 'richhnick.org'
+      })
+    });
+
+    const merchantSession = await response.json();
+    res.json({ merchantSession });
+  } catch (error) {
+    console.error('Apple Pay validation error:', error);
+    res.status(500).json({ error: 'Merchant validation failed' });
+  }
 });
 
 // Basic API endpoints
