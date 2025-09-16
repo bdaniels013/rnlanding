@@ -97,6 +97,7 @@ export class DatabaseService {
         isCreditEligible: offer.isCreditEligible,
         description: offer.description,
         features: offer.features ? JSON.parse(offer.features) : [],
+        badge: offer.badge,
         isActive: offer.isActive,
         createdAt: offer.createdAt,
         updatedAt: offer.updatedAt

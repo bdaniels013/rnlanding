@@ -21,6 +21,9 @@ export default async function handler(req, res) {
         isSubscription: true,
         creditsValue: true,
         isCreditEligible: true,
+        description: true,
+        features: true,
+        badge: true,
         createdAt: true
       },
       orderBy: {
