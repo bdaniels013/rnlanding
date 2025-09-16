@@ -5,9 +5,6 @@ import {
   ArrowRight, 
   Shield, 
   Lock, 
-  Apple, 
-  Smartphone, 
-  Building2, 
   AlertCircle,
   Loader2,
   Eye,
@@ -34,19 +31,13 @@ const SecureCheckout = ({ selectedOffer, onClose, onSuccess }) => {
     cvv: '',
     name: ''
   });
-  const [achInfo, setAchInfo] = useState({
-    routing: '',
-    account: '',
-    name: ''
-  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showCardDetails, setShowCardDetails] = useState(false);
-  const [showAchDetails, setShowAchDetails] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [transactionData, setTransactionData] = useState(null);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('');
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('card');
 
   useEffect(() => {
     // Load saved customer info
@@ -54,6 +45,9 @@ const SecureCheckout = ({ selectedOffer, onClose, onSuccess }) => {
     if (savedInfo) {
       setCustomerInfo(JSON.parse(savedInfo));
     }
+    
+    // Auto-select credit card payment method
+    setPaymentMethod('card');
   }, []);
 
   const handleCustomerInfoSubmit = async (e) => {
@@ -177,160 +171,7 @@ const SecureCheckout = ({ selectedOffer, onClose, onSuccess }) => {
     });
   };
 
-  const handleAchSubmit = (e) => {
-    e.preventDefault();
-    setError(null); // Clear previous errors
-    
-    if (!achInfo.routing || !achInfo.account || !achInfo.name) {
-      setError('Please fill in all ACH details');
-      return;
-    }
-    
-    // Validate routing number (basic check)
-    if (achInfo.routing.length !== 9) {
-      setError('Routing number must be exactly 9 digits');
-      return;
-    }
 
-    // Validate account number
-    if (achInfo.account.length < 4 || achInfo.account.length > 17) {
-      setError('Account number must be between 4 and 17 digits');
-      return;
-    }
-
-    // Validate account holder name
-    if (achInfo.name.trim().length < 2) {
-      setError('Account holder name must be at least 2 characters');
-      return;
-    }
-    
-    processPayment('ach', achInfo);
-  };
-
-  const handleApplePay = async () => {
-    if (!window.ApplePaySession || !ApplePaySession.canMakePayments()) {
-      setError('Apple Pay not available on this device');
-      return;
-    }
-
-    try {
-      setIsProcessing(true);
-      setError(null);
-
-      const request = {
-        countryCode: 'US',
-        currencyCode: 'USD',
-        supportedNetworks: ['visa', 'masterCard', 'amex', 'discover'],
-        merchantCapabilities: ['supports3DS'],
-        total: {
-          label: selectedOffer?.name || 'Rich Nick Service',
-          amount: ((selectedOffer?.priceCents || 100000) / 100).toFixed(2)
-        }
-      };
-
-      const session = new ApplePaySession(3, request);
-
-      session.onvalidatemerchant = async (event) => {
-        try {
-          const response = await fetch('/api/payment-cloud/validate-merchant', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ validationURL: event.validationURL })
-          });
-          const { merchantSession } = await response.json();
-          session.completeMerchantValidation(merchantSession);
-        } catch (err) {
-          session.abort();
-          setError('Apple Pay validation failed');
-        }
-      };
-
-      session.onpaymentauthorized = async (event) => {
-        try {
-          const payment = event.payment;
-          const result = await processPayment('apple_pay', {
-            payment_data: payment.paymentData,
-            payment_method: payment.paymentMethod
-          });
-          
-          if (result.success) {
-            session.completePayment(ApplePaySession.STATUS_SUCCESS);
-          } else {
-            session.completePayment(ApplePaySession.STATUS_FAILURE);
-            setError(result.error || 'Apple Pay payment failed');
-          }
-        } catch (err) {
-          session.completePayment(ApplePaySession.STATUS_FAILURE);
-          setError('Apple Pay payment failed');
-        }
-      };
-
-      session.oncancel = () => {
-        setError('Apple Pay payment cancelled');
-      };
-
-      session.begin();
-    } catch (error) {
-      setError('Apple Pay initialization failed');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleGooglePay = async () => {
-    if (!window.google || !window.google.payments) {
-      setError('Google Pay not available');
-      return;
-    }
-
-    try {
-      setIsProcessing(true);
-      setError(null);
-
-      const paymentsClient = new window.google.payments.api.PaymentsClient({
-        environment: 'PRODUCTION' // or 'TEST' for testing
-      });
-
-      const paymentDataRequest = {
-        apiVersion: 2,
-        apiVersionMinor: 0,
-        allowedPaymentMethods: [{
-          type: 'CARD',
-          parameters: {
-            allowedAuthMethods: ['PAN_ONLY', 'CRYPTOGRAM_3DS'],
-            allowedCardNetworks: ['AMEX', 'DISCOVER', 'JCB', 'MASTERCARD', 'VISA']
-          }
-        }],
-        transactionInfo: {
-          totalPriceStatus: 'FINAL',
-          totalPrice: ((selectedOffer?.priceCents || 100000) / 100).toFixed(2),
-          currencyCode: 'USD'
-        },
-        merchantInfo: {
-          merchantId: process.env.REACT_APP_GOOGLE_MERCHANT_ID,
-          merchantName: 'Rich Nick'
-        }
-      };
-
-      const paymentData = await paymentsClient.loadPaymentData(paymentDataRequest);
-      
-      const result = await processPayment('google_pay', {
-        payment_method_data: paymentData.paymentMethodData
-      });
-
-      if (!result.success) {
-        setError(result.error || 'Google Pay payment failed');
-      }
-    } catch (error) {
-      if (error.statusCode === 'CANCELED') {
-        setError('Google Pay payment cancelled');
-      } else {
-        setError('Google Pay payment failed');
-      }
-    } finally {
-      setIsProcessing(false);
-    }
-  };
 
 
   const formatCardNumber = (value) => {
@@ -523,13 +364,7 @@ const SecureCheckout = ({ selectedOffer, onClose, onSuccess }) => {
             <PaymentMethods 
               onSelectMethod={(method) => {
                 setSelectedPaymentMethod(method);
-                if (method === 'apple_pay') {
-                  handleApplePay();
-                } else if (method === 'google_pay') {
-                  handleGooglePay();
-                } else {
-                  setPaymentMethod(method);
-                }
+                setPaymentMethod(method);
               }}
               selectedMethod={selectedPaymentMethod}
               isProcessing={isProcessing}
@@ -630,90 +465,6 @@ const SecureCheckout = ({ selectedOffer, onClose, onSuccess }) => {
               </div>
             )}
 
-            {/* ACH Payment Form */}
-            {paymentMethod === 'ach' && (
-              <div className="bg-white/5 rounded-xl p-6 border border-white/10">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-lg font-semibold text-white">Bank Account Details</h4>
-                  <button
-                    onClick={() => setShowAchDetails(!showAchDetails)}
-                    className="text-white/50 hover:text-white"
-                  >
-                    {showAchDetails ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-                
-                <form onSubmit={handleAchSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-white/80 mb-2">
-                      Account Holder Name
-                    </label>
-                    <input
-                      type="text"
-                      value={achInfo.name}
-                      onChange={(e) => setAchInfo({...achInfo, name: e.target.value})}
-                      className="w-full px-4 py-3 bg-white/5 border border-white/15 rounded-xl text-white placeholder-white/50 focus:outline-none focus:border-indigo-500 focus:bg-white/10 transition-all"
-                      placeholder="John Doe"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-white/80 mb-2">
-                      Routing Number
-                    </label>
-                    <input
-                      type={showAchDetails ? "text" : "password"}
-                      value={achInfo.routing}
-                      onChange={(e) => setAchInfo({...achInfo, routing: e.target.value.replace(/\D/g, '')})}
-                      className="w-full px-4 py-3 bg-white/5 border border-white/15 rounded-xl text-white placeholder-white/50 focus:outline-none focus:border-indigo-500 focus:bg-white/10 transition-all"
-                      placeholder="123456789"
-                      maxLength="9"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-white/80 mb-2">
-                      Account Number
-                    </label>
-                    <input
-                      type={showAchDetails ? "text" : "password"}
-                      value={achInfo.account}
-                      onChange={(e) => setAchInfo({...achInfo, account: e.target.value.replace(/\D/g, '')})}
-                      className="w-full px-4 py-3 bg-white/5 border border-white/15 rounded-xl text-white placeholder-white/50 focus:outline-none focus:border-indigo-500 focus:bg-white/10 transition-all"
-                      placeholder="1234567890"
-                      required
-                    />
-                  </div>
-
-                  <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
-                    <p className="text-sm text-blue-300">
-                      <strong>Secure ACH Transfer:</strong> Your bank account information is encrypted and processed securely. 
-                      ACH transfers typically take 1-3 business days to process.
-                    </p>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={isProcessing}
-                    className="w-full bg-gradient-to-r from-indigo-600 to-fuchsia-600 text-white py-4 px-6 rounded-xl font-semibold hover:from-indigo-700 hover:to-fuchsia-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-indigo-600/20"
-                  >
-                    {isProcessing ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        <Building2 className="w-4 h-4" />
-                        Pay with Bank Account
-                      </>
-                    )}
-                  </button>
-                </form>
-              </div>
-            )}
 
             {/* Back Button */}
             <button

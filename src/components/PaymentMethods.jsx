@@ -1,227 +1,64 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   CreditCard, 
-  Building2, 
-  Apple, 
-  Smartphone, 
-  DollarSign,
-  Bitcoin,
-  Wallet,
   Lock,
-  CheckCircle,
-  AlertCircle
+  CheckCircle
 } from 'lucide-react';
 
 const PaymentMethods = ({ onSelectMethod, selectedMethod, isProcessing }) => {
-  const [showAdvanced, setShowAdvanced] = useState(false);
-
-  const paymentMethods = [
-    {
-      id: 'card',
-      name: 'Credit/Debit Card',
-      description: 'Visa, Mastercard, American Express, Discover',
-      icon: CreditCard,
-      color: 'from-blue-600 to-blue-700',
-      popular: true
-    },
-    {
-      id: 'ach',
-      name: 'Bank Account (ACH)',
-      description: 'Direct bank transfer - 1-3 business days',
-      icon: Building2,
-      color: 'from-green-600 to-green-700',
-      popular: true
-    },
-    {
-      id: 'apple_pay',
-      name: 'Apple Pay',
-      description: 'Pay with Touch ID or Face ID (NMI setup required)',
-      icon: Apple,
-      color: 'from-gray-800 to-gray-900',
-      popular: true,
-      requiresDevice: true,
-      requiresSetup: true
-    },
-    {
-      id: 'google_pay',
-      name: 'Google Pay',
-      description: 'Quick and secure mobile payments (NMI setup required)',
-      icon: Smartphone,
-      color: 'from-blue-500 to-blue-600',
-      popular: true,
-      requiresDevice: true,
-      requiresSetup: true
-    },
-  ];
-
-  const advancedMethods = [
-    {
-      id: 'crypto',
-      name: 'Cryptocurrency',
-      description: 'Bitcoin, Ethereum, and other crypto',
-      icon: Bitcoin,
-      color: 'from-orange-500 to-orange-600',
-      comingSoon: true
-    },
-    {
-      id: 'wallet',
-      name: 'Digital Wallets',
-      description: 'Venmo, Cash App, and more',
-      icon: Wallet,
-      color: 'from-purple-500 to-purple-600',
-      comingSoon: true
-    }
-  ];
-
-  const checkDeviceSupport = (method) => {
-    if (method.id === 'apple_pay') {
-      return window.ApplePaySession && ApplePaySession.canMakePayments();
-    }
-    if (method.id === 'google_pay') {
-      return window.google && window.google.payments;
-    }
-    return true;
+  const paymentMethod = {
+    id: 'card',
+    name: 'Credit/Debit Card',
+    description: 'Visa, Mastercard, American Express, Discover',
+    icon: CreditCard,
+    color: 'from-blue-600 to-blue-700'
   };
 
-  const handleMethodSelect = (method) => {
-    if (method.comingSoon) {
-      return; // Don't allow selection of coming soon methods
-    }
-    
-    if (method.requiresDevice && !checkDeviceSupport(method)) {
-      return; // Don't allow selection if device doesn't support it
-    }
-    
-    onSelectMethod(method.id);
+  const handleMethodSelect = () => {
+    onSelectMethod(paymentMethod.id);
   };
 
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h3 className="text-2xl font-bold text-white mb-2">Choose Payment Method</h3>
-        <p className="text-white/70">Select your preferred payment option</p>
+        <h3 className="text-2xl font-bold text-white mb-2">Payment Method</h3>
+        <p className="text-white/70">Secure credit card payment</p>
       </div>
 
-      {/* Popular Payment Methods */}
+      {/* Credit Card Payment Method */}
       <div className="space-y-3">
-        {paymentMethods.map((method) => {
-          const Icon = method.icon;
-          const isSelected = selectedMethod === method.id;
-          const isSupported = checkDeviceSupport(method);
-          const isDisabled = isProcessing || method.comingSoon || (!isSupported && method.requiresDevice);
-
-          return (
-            <button
-              key={method.id}
-              onClick={() => handleMethodSelect(method)}
-              disabled={isDisabled}
-              className={`w-full p-4 rounded-xl border-2 transition-all ${
-                isSelected 
-                  ? 'border-indigo-500 bg-indigo-500/10' 
-                  : 'border-white/20 bg-black/50 hover:border-white/40 hover:bg-white/5'
-              } ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-            >
-              <div className="flex items-center gap-4">
-                <div className={`p-3 rounded-lg bg-gradient-to-r ${method.color}`}>
-                  <Icon className="w-6 h-6 text-white" />
-                </div>
-                
-                <div className="flex-1 text-left">
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-semibold text-white">{method.name}</h4>
-                    {method.popular && (
-                      <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full">
-                        Popular
-                      </span>
-                    )}
-                    {method.comingSoon && (
-                      <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs rounded-full">
-                        Coming Soon
-                      </span>
-                    )}
-                    {!isSupported && method.requiresDevice && (
-                      <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded-full">
-                        Not Available
-                      </span>
-                    )}
-                    {method.requiresSetup && (
-                      <span className="px-2 py-1 bg-orange-500/20 text-orange-400 text-xs rounded-full">
-                        Setup Required
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-white/70">{method.description}</p>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {isSelected && (
-                    <CheckCircle className="w-5 h-5 text-indigo-400" />
-                  )}
-                  <Lock className="w-4 h-4 text-white/50" />
-                </div>
-              </div>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Advanced Payment Methods */}
-      <div>
         <button
-          onClick={() => setShowAdvanced(!showAdvanced)}
-          className="text-white/70 hover:text-white text-sm flex items-center gap-2 mb-3"
+          onClick={handleMethodSelect}
+          disabled={isProcessing}
+          className={`w-full p-4 rounded-xl border-2 transition-all ${
+            selectedMethod === paymentMethod.id
+              ? 'border-indigo-500 bg-indigo-500/10' 
+              : 'border-white/20 bg-black/50 hover:border-white/40 hover:bg-white/5'
+          } ${isProcessing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
         >
-          {showAdvanced ? 'Hide' : 'Show'} Advanced Payment Options
-          <span className="text-xs">({advancedMethods.length})</span>
-        </button>
+          <div className="flex items-center gap-4">
+            <div className={`p-3 rounded-lg bg-gradient-to-r ${paymentMethod.color}`}>
+              <CreditCard className="w-6 h-6 text-white" />
+            </div>
+            
+            <div className="flex-1 text-left">
+              <div className="flex items-center gap-2">
+                <h4 className="font-semibold text-white">{paymentMethod.name}</h4>
+                <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full">
+                  Available
+                </span>
+              </div>
+              <p className="text-sm text-white/70">{paymentMethod.description}</p>
+            </div>
 
-        {showAdvanced && (
-          <div className="space-y-3">
-            {advancedMethods.map((method) => {
-              const Icon = method.icon;
-              const isSelected = selectedMethod === method.id;
-              const isDisabled = isProcessing || method.comingSoon;
-
-              return (
-                <button
-                  key={method.id}
-                  onClick={() => handleMethodSelect(method)}
-                  disabled={isDisabled}
-                  className={`w-full p-4 rounded-xl border-2 transition-all ${
-                    isSelected 
-                      ? 'border-indigo-500 bg-indigo-500/10' 
-                      : 'border-white/20 bg-black/50 hover:border-white/40 hover:bg-white/5'
-                  } ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className={`p-3 rounded-lg bg-gradient-to-r ${method.color}`}>
-                      <Icon className="w-6 h-6 text-white" />
-                    </div>
-                    
-                    <div className="flex-1 text-left">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-semibold text-white">{method.name}</h4>
-                        {method.comingSoon && (
-                          <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs rounded-full">
-                            Coming Soon
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-white/70">{method.description}</p>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {isSelected && (
-                        <CheckCircle className="w-5 h-5 text-indigo-400" />
-                      )}
-                      <Lock className="w-4 h-4 text-white/50" />
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
+            <div className="flex items-center gap-2">
+              {selectedMethod === paymentMethod.id && (
+                <CheckCircle className="w-5 h-5 text-indigo-400" />
+              )}
+              <Lock className="w-4 h-4 text-white/50" />
+            </div>
           </div>
-        )}
+        </button>
       </div>
 
       {/* Security Notice */}
