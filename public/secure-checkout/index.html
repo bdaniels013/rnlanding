@@ -1,105 +1,143 @@
-<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Secure Checkout — Rich Nick</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Checkout - Rich Nick</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-      :root { --bg:#0b0f1a; --card: rgba(255,255,255,.05); --b:#1f2937; --accent1:#6366f1; --accent2:#db2777; }
-      *{box-sizing:border-box}
-      body{margin:0; font-family:Inter,system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; background:var(--bg); color:#fff}
-      .wrap{max-width:980px;margin:24px auto;padding:20px}
-      .card{background:var(--card);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:24px;backdrop-filter: blur(6px)}
-      .grid{display:grid;grid-template-columns:1fr;gap:16px}
-      @media(min-width:1000px){.grid{grid-template-columns:1.2fr .8fr}}
-      .btn{display:inline-flex;align-items:center;justify-content:center;padding:14px 16px;border-radius:12px;border:0;background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#fff;font-weight:600;cursor:pointer;width:100%}
-      .h{margin:0 0 8px}
-      .muted{color:#b8c}
-      .badge{display:inline-flex;gap:8px;align-items:center;padding:8px 10px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);font-size:12px;color:#cfd3ff}
-      .row{display:grid;grid-template-columns:1fr;gap:12px}
-      @media(min-width:700px){.row{grid-template-columns:1fr 1fr}}
-      .kvs{display:grid;gap:8px;margin-top:10px}
-      .kv{display:flex;justify-content:space-between;color:#ccd}
-      a.link{color:#c1c5ff;text-decoration:none}
-      a.link:hover{text-decoration:underline}
-    </style>
-  </head>
-  <body>
-    <div class="wrap">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px">
-        <div style="display:flex;align-items:center;gap:10px">
-          <img src="/assets/richhnicklogo.jpg" alt="Rich Nick" style="height:36px;border-radius:8px"/>
-          <div class="badge">256‑bit SSL • PCI‑Compliant Gateway</div>
-        </div>
-        <a class="link" href="/">Back to site</a>
-      </div>
-
-      <h1 class="h">Secure Checkout</h1>
-      <p class="muted">Step 2 of 2 — Customers will complete payment on a PCI‑compliant payment gateway. No card data is entered on this site.</p>
-
-      <div class="grid" style="margin-top:18px">
-        <div class="card">
-          <h3 class="h">Choose an option</h3>
-          <div id="offers-container" class="row">
-            <div class="muted">Loading offers...</div>
-          </div>
-          <div style="height:14px"></div>
-          <div class="muted" style="font-size:12px">Once private key is added, these buttons redirect to the gateway's hosted page.</div>
-        </div>
-
-        <div class="card">
-          <h3 class="h">Trust & Security</h3>
-          <div class="kvs">
-            <div class="kv"><span>Encryption</span><strong>TLS 1.2+ / 256‑bit</strong></div>
-            <div class="kv"><span>Card Handling</span><strong>Hosted by Gateway (NMI)</strong></div>
-            <div class="kv"><span>Compliance</span><strong>PCI DSS</strong></div>
-            <div class="kv"><span>Refund Policy</span><strong>See Terms</strong></div>
-          </div>
-          <div style="height:10px"></div>
-          <div class="muted" style="font-size:12px">By continuing you agree to our <a class="link" href="/">Terms</a> and <a class="link" href="/">Privacy Policy</a>.</div>
-        </div>
-      </div>
-    </div>
-    <script>
-      function go(url){ window.location.href = url; }
-
-      // Load offers from API
-      async function loadOffers() {
-        try {
-          const response = await fetch('/api/offers');
-          const offers = await response.json();
-          
-          const container = document.getElementById('offers-container');
-          container.innerHTML = '';
-          
-          offers.forEach(offer => {
-            const button = document.createElement('button');
-            button.className = 'btn';
-            button.textContent = `${offer.name} — $${(offer.priceCents / 100).toLocaleString()}`;
-            button.onclick = () => go(`/api/payment-cloud/hpp/start?amount_cents=${offer.priceCents}&offer_id=${offer.sku}`);
-            container.appendChild(button);
-          });
-        } catch (error) {
-          console.error('Failed to load offers:', error);
-          document.getElementById('offers-container').innerHTML = '<div class="muted">Error loading offers</div>';
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-      }
-
-      // Load offers when page loads
-      loadOffers();
-    </script>
-    <div style="max-width:980px;margin:16px auto 32px;padding:0 20px;color:#9aa; font-size:11px;">
-      <div>Rich Nick Growth LLC • 750 Forest Park Ln., Suwanee, GA 30024 • RichhNick3@gmail.com(813) 476-0044</div>
-      <div style="margin-top: 8px;">
-        <a href="/terms" style="color:#9aa; text-decoration:underline;">Terms and Conditions</a> • 
-        <a href="/refund-policy" style="color:#9aa; text-decoration:underline;">Refund Policy</a> • 
-        <a href="/privacy" style="color:#9aa; text-decoration:underline;">Privacy Policy</a>
-      </div>
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .logo {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #6366f1, #db2777);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            color: #94a3b8;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+        }
+        
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid #6366f1;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .back-link {
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+        
+        .back-link:hover {
+            color: #cbd5e1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="/assets/richhnicklogo.jpg" alt="Rich Nick" class="logo">
+        <h1>Secure Checkout</h1>
+        <p class="subtitle">Redirecting to payment form...</p>
+        
+        <div class="loading">
+            <div class="spinner"></div>
+            <span>Loading secure checkout...</span>
+        </div>
+        
+        <a href="/" class="back-link">← Back to site</a>
     </div>
-  </body>
-  </html>
+
+    <script>
+        // Get URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const amountCents = urlParams.get('amount_cents');
+        const offerId = urlParams.get('offer_id');
+        const name = urlParams.get('name') || '';
+        const email = urlParams.get('email') || '';
+
+        // Redirect to main site with checkout parameters
+        function redirectToCheckout() {
+            const checkoutUrl = new URL('/', window.location.origin);
+            checkoutUrl.searchParams.set('checkout', 'true');
+            if (amountCents) checkoutUrl.searchParams.set('amount_cents', amountCents);
+            if (offerId) checkoutUrl.searchParams.set('offer_id', offerId);
+            if (name) checkoutUrl.searchParams.set('name', name);
+            if (email) checkoutUrl.searchParams.set('email', email);
+            
+            window.location.href = checkoutUrl.toString();
+        }
+
+        // Redirect after a short delay
+        setTimeout(redirectToCheckout, 1500);
+    </script>
+</body>
+</html>
 
 

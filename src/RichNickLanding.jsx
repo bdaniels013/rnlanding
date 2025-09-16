@@ -726,6 +726,31 @@ export default function RichNickLanding() {
       const cleanUrl = window.location.origin + window.location.pathname;
       window.history.replaceState({}, document.title, cleanUrl);
     }
+
+    // Handle checkout URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('checkout') === 'true') {
+      const amountCents = urlParams.get('amount_cents');
+      const offerId = urlParams.get('offer_id');
+      const name = urlParams.get('name') || '';
+      const email = urlParams.get('email') || '';
+
+      // Create a mock offer object for the checkout
+      const offer = {
+        id: offerId || 'monthly-creator-pass',
+        name: offerId === 'content-management' ? 'Ongoing Content Management Services' : 'Sign up for a month',
+        priceCents: amountCents ? parseInt(amountCents) : 100000,
+        description: 'Secure payment processing with Payment Cloud',
+        features: ['Secure payment processing', 'PCI compliant', 'Multiple payment methods']
+      };
+
+      setSelectedOffer(offer);
+      setShowSecureCheckout(true);
+
+      // Clean up URL parameters
+      const cleanUrl = window.location.origin + window.location.pathname;
+      window.history.replaceState({}, document.title, cleanUrl);
+    }
   }, []);
 
   const handleLogin = (success) => {
