@@ -745,7 +745,7 @@ export default function RichNickLanding() {
       };
 
       setSelectedOffer(offer);
-      setShowCheckout(true);
+      setShowSecureCheckout(true);
 
       // Clean up URL parameters
       const cleanUrl = window.location.origin + window.location.pathname;
