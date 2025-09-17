@@ -84,7 +84,7 @@ export class DatabaseService {
       const whereClause = activeOnly ? { isActive: true } : {};
       const offers = await prisma.offer.findMany({
         where: whereClause,
-        orderBy: { createdAt: 'desc' }
+        orderBy: { order: 'asc' }
       });
 
       return offers.map(offer => ({
@@ -191,6 +191,24 @@ export class DatabaseService {
       return { success: true };
     } catch (error) {
       console.error('Error deleting offer:', error);
+      throw error;
+    }
+  }
+
+  async reorderOffers(offers) {
+    try {
+      // Update each offer with its new order
+      const updatePromises = offers.map((offer, index) => 
+        prisma.offer.update({
+          where: { id: offer.id },
+          data: { order: index }
+        })
+      );
+      
+      await Promise.all(updatePromises);
+      return { success: true };
+    } catch (error) {
+      console.error('Error reordering offers:', error);
       throw error;
     }
   }

@@ -52,6 +52,7 @@ model Offer {
   features         String?
   badge            String?
   isActive         Boolean        @default(true)
+  order            Int            @default(0)
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   orderItems       OrderItem[]

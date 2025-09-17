@@ -27,7 +27,7 @@ export default async function handler(req, res) {
         createdAt: true
       },
       orderBy: {
-        priceCents: 'asc'
+        order: 'asc'
       }
     });
 

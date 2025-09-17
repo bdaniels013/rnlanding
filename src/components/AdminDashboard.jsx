@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, Users, CreditCard, Calendar, TrendingUp, Package, AlertCircle, LogOut, User, Plus, Edit, Trash2, Search, Filter, X, Image } from 'lucide-react';
+import { DollarSign, Users, CreditCard, Calendar, TrendingUp, Package, AlertCircle, LogOut, User, Plus, Edit, Trash2, Search, Filter, X, Image, GripVertical, ArrowUp, ArrowDown } from 'lucide-react';
 import CreditsManagement from './CreditsManagement';
 import MediaManagement from './MediaManagement';
 
@@ -17,6 +17,8 @@ const AdminDashboard = ({ onLogout }) => {
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [editingOffer, setEditingOffer] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [draggedOffer, setDraggedOffer] = useState(null);
+  const [isReordering, setIsReordering] = useState(false);
   const [customerForm, setCustomerForm] = useState({ name: '', email: '', phone: '', notes: '' });
   const [offerForm, setOfferForm] = useState({ 
     sku: '', 
@@ -284,6 +286,125 @@ const AdminDashboard = ({ onLogout }) => {
       fetchOffers();
     } catch (err) {
       alert(err.message);
+    }
+  };
+
+  // Drag and drop handlers for offer reordering
+  const handleDragStart = (e, offer) => {
+    setDraggedOffer(offer);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', e.target.outerHTML);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = async (e, targetOffer) => {
+    e.preventDefault();
+    
+    if (!draggedOffer || draggedOffer.id === targetOffer.id) {
+      setDraggedOffer(null);
+      return;
+    }
+
+    try {
+      setIsReordering(true);
+      
+      // Get current offers and reorder them
+      const currentOffers = [...offers];
+      const draggedIndex = currentOffers.findIndex(offer => offer.id === draggedOffer.id);
+      const targetIndex = currentOffers.findIndex(offer => offer.id === targetOffer.id);
+      
+      // Remove dragged offer from its current position
+      const [removed] = currentOffers.splice(draggedIndex, 1);
+      
+      // Insert it at the target position
+      currentOffers.splice(targetIndex, 0, removed);
+      
+      // Update the order in the database
+      const reorderData = currentOffers.map((offer, index) => ({
+        id: offer.id,
+        order: index
+      }));
+      
+      const response = await fetch('/api/admin/offers/reorder', {
+        method: 'PUT',
+        headers: {
+          'x-admin-auth': 'true',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ offers: reorderData })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to reorder offers');
+      }
+      
+      // Update local state
+      setOffers(currentOffers);
+      
+    } catch (err) {
+      alert('Failed to reorder offers: ' + err.message);
+    } finally {
+      setDraggedOffer(null);
+      setIsReordering(false);
+    }
+  };
+
+  const moveOfferUp = async (offerId) => {
+    const currentOffers = [...offers];
+    const index = currentOffers.findIndex(offer => offer.id === offerId);
+    
+    if (index <= 0) return;
+    
+    // Swap with previous offer
+    [currentOffers[index - 1], currentOffers[index]] = [currentOffers[index], currentOffers[index - 1]];
+    
+    await updateOfferOrder(currentOffers);
+  };
+
+  const moveOfferDown = async (offerId) => {
+    const currentOffers = [...offers];
+    const index = currentOffers.findIndex(offer => offer.id === offerId);
+    
+    if (index >= currentOffers.length - 1) return;
+    
+    // Swap with next offer
+    [currentOffers[index], currentOffers[index + 1]] = [currentOffers[index + 1], currentOffers[index]];
+    
+    await updateOfferOrder(currentOffers);
+  };
+
+  const updateOfferOrder = async (reorderedOffers) => {
+    try {
+      setIsReordering(true);
+      
+      const reorderData = reorderedOffers.map((offer, index) => ({
+        id: offer.id,
+        order: index
+      }));
+      
+      const response = await fetch('/api/admin/offers/reorder', {
+        method: 'PUT',
+        headers: {
+          'x-admin-auth': 'true',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ offers: reorderData })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to reorder offers');
+      }
+      
+      setOffers(reorderedOffers);
+      
+    } catch (err) {
+      alert('Failed to reorder offers: ' + err.message);
+    } finally {
+      setIsReordering(false);
     }
   };
 
@@ -808,7 +929,12 @@ const OffersManagement = ({ offers, searchTerm, setSearchTerm, onEdit, onDelete,
           <table className="w-full">
             <thead className="bg-gray-700">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Name</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                  <div className="flex items-center space-x-2">
+                    <GripVertical className="w-4 h-4" />
+                    <span>Order & Name</span>
+                  </div>
+                </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">SKU</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Price</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Type</th>
@@ -819,13 +945,41 @@ const OffersManagement = ({ offers, searchTerm, setSearchTerm, onEdit, onDelete,
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-700">
-              {offers.map((offer) => (
-                <tr key={offer.id} className="hover:bg-gray-700/50">
+              {offers.map((offer, index) => (
+                <tr 
+                  key={offer.id} 
+                  className={`hover:bg-gray-700/50 ${draggedOffer?.id === offer.id ? 'opacity-50' : ''} ${isReordering ? 'cursor-wait' : 'cursor-move'}`}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, offer)}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, offer)}
+                >
                   <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-white">{offer.name}</div>
-                    {offer.description && (
-                      <div className="text-xs text-gray-400 truncate max-w-xs">{offer.description}</div>
-                    )}
+                    <div className="flex items-center space-x-2">
+                      <div className="flex flex-col space-y-1">
+                        <button
+                          onClick={() => moveOfferUp(offer.id)}
+                          disabled={index === 0 || isReordering}
+                          className="text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          <ArrowUp className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={() => moveOfferDown(offer.id)}
+                          disabled={index === offers.length - 1 || isReordering}
+                          className="text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          <ArrowDown className="w-3 h-3" />
+                        </button>
+                      </div>
+                      <GripVertical className="w-4 h-4 text-gray-400" />
+                      <div>
+                        <div className="text-sm font-medium text-white">{offer.name}</div>
+                        {offer.description && (
+                          <div className="text-xs text-gray-400 truncate max-w-xs">{offer.description}</div>
+                        )}
+                      </div>
+                    </div>
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300 font-mono">{offer.sku}</td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">${(offer.priceCents / 100).toFixed(2)}</td>

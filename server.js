@@ -602,6 +602,22 @@ app.delete('/api/admin/offers', authenticateAdmin, async (req, res) => {
   }
 });
 
+// Reorder offers
+app.put('/api/admin/offers/reorder', authenticateAdmin, async (req, res) => {
+  try {
+    const { offers } = req.body;
+    if (!offers || !Array.isArray(offers)) {
+      return res.status(400).json({ error: 'Offers array is required' });
+    }
+    
+    await db.reorderOffers(offers);
+    res.json({ message: 'Offers reordered successfully' });
+  } catch (error) {
+    console.error('Reorder offers error:', error);
+    res.status(500).json({ error: 'Failed to reorder offers' });
+  }
+});
+
 // Add credits to customer
 app.post('/api/admin/credits/add', authenticateAdmin, async (req, res) => {
   try {
