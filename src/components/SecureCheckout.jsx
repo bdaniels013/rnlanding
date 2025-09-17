@@ -57,8 +57,30 @@ const SecureCheckout = ({ selectedOffer, onClose, onSuccess }) => {
       return;
     }
     
-    // Save customer info
+    // Save customer info to localStorage
     localStorage.setItem('richnick_customer_info', JSON.stringify(customerInfo));
+    
+    // Log customer info capture for admin dashboard
+    try {
+      await fetch('/api/admin/customer-info', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: customerInfo.name,
+          email: customerInfo.email,
+          phone: customerInfo.phone || '',
+          timestamp: new Date().toISOString(),
+          action: 'continue_to_payment',
+          selectedOffer: selectedOffer?.name || 'Unknown Offer'
+        })
+      });
+    } catch (error) {
+      console.error('Failed to log customer info capture:', error);
+      // Don't block the user flow if logging fails
+    }
+    
     setStep(2);
   };
 

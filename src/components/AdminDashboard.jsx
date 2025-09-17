@@ -649,13 +649,13 @@ const AdminDashboard = ({ onLogout }) => {
         <div className="bg-gray-800 rounded-lg p-4 sm:p-6 mb-6 sm:mb-8">
           <h2 className="text-lg sm:text-xl font-semibold mb-4">Recent Customer Info Captures</h2>
           <div className="text-xs sm:text-sm text-gray-400 mb-4">
-            Customer information captured when they click "Continue to Review"
+            Customer information captured when they click "Continue to Payment"
           </div>
           
           {customerInfoCaptures.length === 0 ? (
             <div className="bg-gray-700 rounded-lg p-4">
               <div className="text-gray-300 text-xs sm:text-sm">
-                No customer info captures yet. Try clicking "Continue to Review" on the checkout flow.
+                No customer info captures yet. Try clicking "Continue to Payment" on the checkout flow.
               </div>
             </div>
           ) : (
