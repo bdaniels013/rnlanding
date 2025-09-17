@@ -387,7 +387,7 @@ function Hero({ onReserveSeat }) {
             <p className="mt-5 text-lg text-white/80 max-w-xl">{SITE.subhead}</p>
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
               <button onClick={onReserveSeat} className="group inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-fuchsia-600 font-semibold shadow-lg shadow-fuchsia-600/20 hover:scale-[1.01] transition">
-                Reserve Event Seat — {currency(SITE.eventPrice)} <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition"/>
+                View Services <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition"/>
               </button>
               <a href={SITE.calendlyUrl} className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-white/10 border border-white/20 hover:bg-white/15 transition">
                 Book a Discovery Call <Calendar className="w-4 h-4"/>
@@ -650,7 +650,7 @@ function StickyBar({ onReserveSeat }) {
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
             <button onClick={onReserveSeat} className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-fuchsia-600 font-semibold">
-              Reserve seat <ArrowRight className="w-4 h-4"/>
+              View Services <ArrowRight className="w-4 h-4"/>
             </button>
             <a href={SITE.calendlyUrl} className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 border border-white/20">
               Talk first <Calendar className="w-4 h-4"/>
@@ -758,7 +758,13 @@ export default function RichNickLanding() {
   };
 
   const handleReserveSeat = () => {
-    window.location.href = '/checkout';
+    const offersSection = document.getElementById('offers-section');
+    if (offersSection) {
+      offersSection.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
   };
 
   const handleSecureCheckoutSuccess = (result) => {
@@ -798,7 +804,9 @@ export default function RichNickLanding() {
       <Ribbon />
       <Hero onReserveSeat={handleReserveSeat} />
       <CardBrandLogos />
-      <OffersSection />
+      <div id="offers-section">
+        <OffersSection />
+      </div>
 
       {/* Lead capture & value props */}
       <section className="py-10 bg-black">
