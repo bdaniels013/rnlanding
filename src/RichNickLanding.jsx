@@ -616,7 +616,7 @@ function LeadForm() {
 
 function FAQ() {
   const faqs = [
-    ["Who is this for?", "Artists and creators who want to grow fast with short‑form and repurpose into long‑form."],
+    ["Who is this for?", "Artists and creators who want to grow fast by creating long‑form and repurpose into short‑form."],
     ["Do I need fancy gear?", "No. A phone is enough. We’ll show you a simple filming kit if you want to upgrade."],
     ["Where is the event?", "We host one in‑person intensive each month. Details sent after signup."] ,
     ["Refunds?", "Seats are limited. You can transfer to a later month with 7+ days notice."],
