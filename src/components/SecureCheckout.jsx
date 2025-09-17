@@ -61,8 +61,15 @@ const SecureCheckout = ({ selectedOffer, onClose, onSuccess }) => {
     localStorage.setItem('richnick_customer_info', JSON.stringify(customerInfo));
     
     // Log customer info capture for admin dashboard
+    console.log('Attempting to capture customer info:', {
+      name: customerInfo.name,
+      email: customerInfo.email,
+      phone: customerInfo.phone || '',
+      selectedOffer: selectedOffer?.name || 'Unknown Offer'
+    });
+    
     try {
-      await fetch('/api/admin/customer-info', {
+      const response = await fetch('/api/customer-info', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -76,6 +83,16 @@ const SecureCheckout = ({ selectedOffer, onClose, onSuccess }) => {
           selectedOffer: selectedOffer?.name || 'Unknown Offer'
         })
       });
+      
+      console.log('API response status:', response.status);
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Customer info captured successfully:', result);
+      } else {
+        const errorText = await response.text();
+        console.error('Failed to capture customer info:', response.status, errorText);
+      }
     } catch (error) {
       console.error('Failed to log customer info capture:', error);
       // Don't block the user flow if logging fails

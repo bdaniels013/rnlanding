@@ -672,7 +672,36 @@ app.post('/api/admin/credits/deduct', authenticateAdmin, async (req, res) => {
   }
 });
 
-// Capture customer info for admin dashboard
+// Capture customer info for admin dashboard (public endpoint for checkout)
+app.post('/api/customer-info', async (req, res) => {
+  try {
+    const { name, email, phone, timestamp, action, selectedOffer } = req.body;
+    
+    const customerInfo = {
+      name,
+      email,
+      phone,
+      timestamp,
+      action,
+      selectedOffer
+    };
+    
+    await db.captureCustomerInfo(customerInfo);
+    
+    console.log('Customer info captured:', customerInfo);
+    
+    res.json({
+      success: true,
+      message: 'Customer info captured successfully'
+    });
+    
+  } catch (error) {
+    console.error('Customer info capture error:', error);
+    res.status(500).json({ error: 'Failed to capture customer info' });
+  }
+});
+
+// Capture customer info for admin dashboard (admin endpoint)
 app.post('/api/admin/customer-info', authenticateAdmin, async (req, res) => {
   try {
     const { name, email, phone, timestamp, action, selectedOffer } = req.body;
