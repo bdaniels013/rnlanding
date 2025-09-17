@@ -733,6 +733,13 @@ const AdminDashboard = ({ onLogout }) => {
             onEdit={openOfferModal}
             onDelete={handleDeleteOffer}
             onAdd={() => openOfferModal()}
+            draggedOffer={draggedOffer}
+            isReordering={isReordering}
+            handleDragStart={handleDragStart}
+            handleDragOver={handleDragOver}
+            handleDrop={handleDrop}
+            moveOfferUp={moveOfferUp}
+            moveOfferDown={moveOfferDown}
           />
         )}
 
@@ -890,7 +897,7 @@ const CustomerManagement = ({ customers, searchTerm, setSearchTerm, onEdit, onDe
 );
 
 // Offers Management Component
-const OffersManagement = ({ offers, searchTerm, setSearchTerm, onEdit, onDelete, onAdd }) => (
+const OffersManagement = ({ offers, searchTerm, setSearchTerm, onEdit, onDelete, onAdd, draggedOffer, isReordering, handleDragStart, handleDragOver, handleDrop, moveOfferUp, moveOfferDown }) => (
   <div className="space-y-6">
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <h2 className="text-2xl font-bold">Offers & Services Management</h2>
