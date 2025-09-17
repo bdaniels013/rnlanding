@@ -19,7 +19,8 @@ const MediaManagement = () => {
   const platforms = [
     { id: 'facebook', name: 'Facebook', color: 'bg-blue-500', icon: '📘' },
     { id: 'instagram', name: 'Instagram', color: 'bg-pink-500', icon: '📷' },
-    { id: 'youtube', name: 'YouTube', color: 'bg-red-500', icon: '▶️' }
+    { id: 'youtube', name: 'YouTube', color: 'bg-red-500', icon: '▶️' },
+    { id: 'tiktok', name: 'TikTok', color: 'bg-black', icon: '🎵' }
   ];
 
   const fetchPhotos = async (platform = null) => {
@@ -66,6 +67,9 @@ const MediaManagement = () => {
       }
       formData.append('platform', selectedPlatform);
       formData.append('altText', altText);
+
+      console.log('Uploading to platform:', selectedPlatform);
+      console.log('FormData platform value:', formData.get('platform'));
 
       const response = await fetch('/api/admin/social-media/photos/upload', {
         method: 'POST',

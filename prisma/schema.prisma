@@ -227,7 +227,7 @@ model CustomerInfoCapture {
 
 model SocialMediaPhoto {
   id          String   @id @default(cuid())
-  platform    String   // 'facebook', 'instagram', 'youtube'
+  platform    String   // 'facebook', 'instagram', 'youtube', 'tiktok'
   filename    String
   originalName String
   url         String

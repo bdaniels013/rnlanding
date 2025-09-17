@@ -467,8 +467,13 @@ app.post('/api/admin/social-media/photos/upload', authenticateAdmin, upload.arra
 
     const { platform, altText } = req.body;
     
-    if (!platform || !['facebook', 'instagram', 'youtube'].includes(platform)) {
-      return res.status(400).json({ error: 'Invalid platform. Must be facebook, instagram, or youtube' });
+    console.log('Received platform:', platform);
+    console.log('Platform type:', typeof platform);
+    console.log('Platform lowercase:', platform?.toLowerCase());
+    
+    if (!platform || !['facebook', 'instagram', 'youtube', 'tiktok'].includes(platform.toLowerCase())) {
+      console.log('Platform validation failed for:', platform);
+      return res.status(400).json({ error: 'Invalid platform. Must be facebook, instagram, youtube, or tiktok' });
     }
 
     const uploadedPhotos = [];
