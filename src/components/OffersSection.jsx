@@ -183,8 +183,7 @@ const OffersSection = () => {
                       <div className="mt-4 p-4 bg-blue-600/10 border border-blue-500/20 rounded-lg">
                         <div className="text-sm text-blue-400 font-medium mb-1">Credit System:</div>
                         <div className="text-xs text-gray-400">
-                          • 1 credit = 1 RichhNick Event access<br/>
-                          • 2 credits = 1 Platform Feature (Famous Animal, The Debut, We Go Tampa, Ugly Money Podcast)
+                          • 1 credit = 1 add on service (Additional Call, Additional Rollout, Additional Photos, BTS, etc.)<br/>
                         </div>
                       </div>
                     )}
