@@ -33,6 +33,15 @@ const AdminDashboard = ({ onLogout }) => {
     badge: '',
     isActive: true
   });
+  const [showShoutoutModal, setShowShoutoutModal] = useState(false);
+  const [editingShoutout, setEditingShoutout] = useState(null);
+  const [shoutoutForm, setShoutoutForm] = useState({
+    customerId: '',
+    orderId: '',
+    platform: '',
+    username: '',
+    notes: ''
+  });
 
   useEffect(() => {
     // Check if user is authenticated
@@ -459,6 +468,97 @@ const AdminDashboard = ({ onLogout }) => {
     setShowOfferModal(true);
   };
 
+  const openShoutoutModal = (shoutout = null) => {
+    if (shoutout) {
+      setEditingShoutout(shoutout);
+      setShoutoutForm({
+        customerId: shoutout.customerId,
+        orderId: shoutout.orderId || '',
+        platform: shoutout.platform,
+        username: shoutout.username,
+        notes: shoutout.notes || ''
+      });
+    } else {
+      setEditingShoutout(null);
+      setShoutoutForm({
+        customerId: '',
+        orderId: '',
+        platform: '',
+        username: '',
+        notes: ''
+      });
+    }
+    setShowShoutoutModal(true);
+  };
+
+  const handleShoutoutSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const url = '/api/admin/shoutouts';
+      const method = editingShoutout ? 'PUT' : 'POST';
+      
+      const requestBody = editingShoutout 
+        ? { id: editingShoutout.id, ...shoutoutForm }
+        : shoutoutForm;
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'x-admin-auth': 'true',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to save shoutout');
+      }
+      
+      setShowShoutoutModal(false);
+      setEditingShoutout(null);
+      setShoutoutForm({
+        customerId: '',
+        orderId: '',
+        platform: '',
+        username: '',
+        notes: ''
+      });
+      // Refresh shoutouts
+      refreshShoutouts();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleDeleteShoutout = async (shoutoutId) => {
+    if (!confirm('Are you sure you want to delete this shoutout?')) return;
+    
+    try {
+      const response = await fetch(`/api/admin/shoutouts?id=${shoutoutId}`, {
+        method: 'DELETE',
+        headers: {
+          'x-admin-auth': 'true',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete shoutout');
+      }
+      
+      // Refresh shoutouts will be handled by the ShoutoutManagement component
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const refreshShoutouts = () => {
+    // This will trigger a re-render of the ShoutoutManagement component
+    // which will call fetchShoutouts in its useEffect
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
@@ -764,9 +864,10 @@ const AdminDashboard = ({ onLogout }) => {
           <ShoutoutManagement
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
-            onEdit={() => {}} // TODO: Implement edit functionality
-            onDelete={() => {}} // TODO: Implement delete functionality
-            onAdd={() => {}} // TODO: Implement add functionality
+            onEdit={openShoutoutModal}
+            onDelete={handleDeleteShoutout}
+            onAdd={() => openShoutoutModal()}
+            onRefresh={refreshShoutouts}
           />
         )}
       </div>
@@ -806,6 +907,27 @@ const AdminDashboard = ({ onLogout }) => {
               description: '',
               features: [],
               isActive: true
+            });
+          }}
+        />
+      )}
+
+      {/* Shoutout Modal */}
+      {showShoutoutModal && (
+        <ShoutoutModal
+          shoutout={editingShoutout}
+          form={shoutoutForm}
+          setForm={setShoutoutForm}
+          onSubmit={handleShoutoutSubmit}
+          onClose={() => {
+            setShowShoutoutModal(false);
+            setEditingShoutout(null);
+            setShoutoutForm({
+              customerId: '',
+              orderId: '',
+              platform: '',
+              username: '',
+              notes: ''
             });
           }}
         />
@@ -1285,6 +1407,100 @@ const OfferModal = ({ offer, form, setForm, onSubmit, onClose }) => (
             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors"
           >
             {offer ? 'Update' : 'Create'}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+);
+
+// Shoutout Modal Component
+const ShoutoutModal = ({ shoutout, form, setForm, onSubmit, onClose }) => (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-white">
+          {shoutout ? 'Edit Shoutout' : 'Add Shoutout'}
+        </h3>
+        <button onClick={onClose} className="text-gray-400 hover:text-white">
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+      
+      <form onSubmit={onSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Customer ID *</label>
+          <input
+            type="text"
+            value={form.customerId}
+            onChange={(e) => setForm({ ...form, customerId: e.target.value })}
+            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Order ID</label>
+          <input
+            type="text"
+            value={form.orderId}
+            onChange={(e) => setForm({ ...form, orderId: e.target.value })}
+            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Platform *</label>
+          <select
+            value={form.platform}
+            onChange={(e) => setForm({ ...form, platform: e.target.value })}
+            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          >
+            <option value="">Select platform</option>
+            <option value="instagram">Instagram</option>
+            <option value="facebook">Facebook</option>
+          </select>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Username *</label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">@</span>
+            <input
+              type="text"
+              value={form.username}
+              onChange={(e) => setForm({ ...form, username: e.target.value.replace('@', '') })}
+              className="w-full pl-8 pr-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="username"
+              required
+            />
+          </div>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Notes</label>
+          <textarea
+            value={form.notes}
+            onChange={(e) => setForm({ ...form, notes: e.target.value })}
+            rows={3}
+            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        
+        <div className="flex space-x-3 pt-4">
+          <button
+            type="submit"
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors"
+          >
+            {shoutout ? 'Update' : 'Create'}
           </button>
           <button
             type="button"

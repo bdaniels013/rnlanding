@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, Clock, XCircle, Search, Filter, Eye, Edit, Trash2, Plus } from 'lucide-react';
 
-const ShoutoutManagement = ({ searchTerm, setSearchTerm, onEdit, onDelete, onAdd }) => {
+const ShoutoutManagement = ({ searchTerm, setSearchTerm, onEdit, onDelete, onAdd, onRefresh }) => {
   const [shoutouts, setShoutouts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // all, pending, completed, cancelled
@@ -55,6 +55,7 @@ const ShoutoutManagement = ({ searchTerm, setSearchTerm, onEdit, onDelete, onAdd
       
       // Refresh the list
       fetchShoutouts();
+      if (onRefresh) onRefresh();
     } catch (err) {
       alert('Failed to update shoutout status: ' + err.message);
     }
@@ -229,7 +230,11 @@ const ShoutoutManagement = ({ searchTerm, setSearchTerm, onEdit, onDelete, onAdd
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => onDelete(shoutout.id)}
+                          onClick={() => {
+                            onDelete(shoutout.id);
+                            fetchShoutouts();
+                            if (onRefresh) onRefresh();
+                          }}
                           className="text-red-400 hover:text-red-300"
                           title="Delete shoutout"
                         >
