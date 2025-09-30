@@ -554,65 +554,6 @@ function Testimonials() {
   );
 }
 
-function LeadForm() {
-  const [loading, setLoading] = useState(false);
-  const [done, setDone] = useState(false);
-  const formRef = useRef(null);
-
-  async function onSubmit(e) {
-    e.preventDefault();
-    const fd = new FormData(formRef.current);
-    const payload = Object.fromEntries(fd.entries());
-    if (!payload.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) {
-      alert("Please enter a valid email.");
-      return;
-    }
-    setLoading(true);
-    try {
-      await fetch(SITE.leadWebhook, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          source: "richnick-landing",
-          ...payload,
-          timestamp: new Date().toISOString(),
-        }),
-      });
-      setDone(true);
-    } catch (e) {
-      console.error(e);
-      alert("Something went wrong. Try again.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  if (done) {
-    return (
-      <div className="rounded-3xl p-8 bg-white/5 border border-white/10 backdrop-blur text-center">
-        <h3 className="text-2xl font-bold">You’re on the list ✅</h3>
-        <p className="mt-2 text-white/80">Check your email for next steps. We’ll reach out within 24 hours.</p>
-      </div>
-    );
-  }
-
-  return (
-    <form ref={formRef} onSubmit={onSubmit} className="rounded-3xl p-8 bg-white/5 border border-white/10 backdrop-blur">
-      <h3 className="text-2xl font-bold">Get the details + bonus</h3>
-      <p className="mt-2 text-white/80">Enter your info to get the agenda, what to bring, and a limited‑time bonus.</p>
-      <div className="mt-6 grid sm:grid-cols-2 gap-4">
-        <input name="name" placeholder="Your name" className="px-4 py-3 rounded-xl bg-black/50 border border-white/15 outline-none" />
-        <input name="email" type="email" placeholder="Email" className="px-4 py-3 rounded-xl bg-black/50 border border-white/15 outline-none" required />
-        <input name="handle" placeholder="@handle (IG/TikTok/YouTube)" className="px-4 py-3 rounded-xl bg-black/50 border border-white/15 outline-none sm:col-span-2" />
-        <input name="niche" placeholder="Your niche (e.g., fitness, music, comedy)" className="px-4 py-3 rounded-xl bg-black/50 border border-white/15 outline-none sm:col-span-2" />
-        <textarea name="goal" placeholder="What’s your next 90‑day goal?" className="px-4 py-3 rounded-xl bg-black/50 border border-white/15 outline-none sm:col-span-2" rows={3} />
-      </div>
-      <button disabled={loading} className="mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-fuchsia-600 font-semibold disabled:opacity-50">
-        {loading ? "Submitting…" : "Send me the info"} <ArrowRight className="w-4 h-4"/>
-      </button>
-    </form>
-  );
-}
 
 function FAQ() {
   const faqs = [
@@ -808,11 +749,10 @@ export default function RichNickLanding() {
         <OffersSection />
       </div>
 
-      {/* Lead capture & value props */}
+      {/* Value props */}
       <section className="py-10 bg-black">
-        <div className="max-w-6xl mx-auto px-6 grid lg:grid-cols-3 gap-8 items-start">
-          <div className="lg:col-span-2"><ValueBullets /></div>
-          <LeadForm />
+        <div className="max-w-6xl mx-auto px-6">
+          <ValueBullets />
         </div>
       </section>
 

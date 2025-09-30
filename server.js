@@ -680,12 +680,14 @@ app.post('/api/admin/credits/deduct', authenticateAdmin, async (req, res) => {
 // Capture customer info for admin dashboard (public endpoint for checkout)
 app.post('/api/customer-info', async (req, res) => {
   try {
-    const { name, email, phone, timestamp, action, selectedOffer } = req.body;
+    const { name, email, phone, platform, username, timestamp, action, selectedOffer } = req.body;
     
     const customerInfo = {
       name,
       email,
       phone,
+      platform,
+      username,
       timestamp,
       action,
       selectedOffer

@@ -450,6 +450,21 @@ async function createOrder({ customer_info, offer_id, amount, transaction_id, pa
       console.log('✅ Awarded credits:', offer.creditsValue);
     }
 
+    // Create shoutout if this is a shoutout offer
+    if (offer.name.toLowerCase().includes('shoutout') && customer_info.platform && customer_info.username) {
+      const shoutout = await prisma.shoutout.create({
+        data: {
+          customerId: customer.id,
+          orderId: order.id,
+          platform: customer_info.platform,
+          username: customer_info.username,
+          status: 'PENDING',
+          notes: `Shoutout for ${customer_info.name} on ${customer_info.platform}`
+        }
+      });
+      console.log('✅ Created shoutout:', shoutout.id);
+    }
+
     return order;
   } catch (error) {
     console.error('Error creating order:', error);

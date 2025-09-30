@@ -23,7 +23,9 @@ const SecureCheckout = ({ selectedOffer, onClose, onSuccess }) => {
     address: '',
     city: '',
     state: '',
-    zip: ''
+    zip: '',
+    platform: '',
+    username: ''
   });
   const [cardInfo, setCardInfo] = useState({
     number: '',
@@ -57,6 +59,14 @@ const SecureCheckout = ({ selectedOffer, onClose, onSuccess }) => {
       return;
     }
     
+    // For shoutout offers, require platform and username
+    if (selectedOffer?.name?.toLowerCase().includes('shoutout')) {
+      if (!customerInfo.platform || !customerInfo.username) {
+        setError('Platform and username are required for shoutout orders');
+        return;
+      }
+    }
+    
     // Save customer info to localStorage
     localStorage.setItem('richnick_customer_info', JSON.stringify(customerInfo));
     
@@ -78,6 +88,8 @@ const SecureCheckout = ({ selectedOffer, onClose, onSuccess }) => {
           name: customerInfo.name,
           email: customerInfo.email,
           phone: customerInfo.phone || '',
+          platform: customerInfo.platform || '',
+          username: customerInfo.username || '',
           timestamp: new Date().toISOString(),
           action: 'continue_to_payment',
           selectedOffer: selectedOffer?.name || 'Unknown Offer'
@@ -365,6 +377,53 @@ const SecureCheckout = ({ selectedOffer, onClose, onSuccess }) => {
                 />
               </div>
             </div>
+
+            {/* Social Media Platform Selection - Only show for Story Shoutout offer */}
+            {selectedOffer?.name?.toLowerCase().includes('shoutout') && (
+              <div className="space-y-4">
+                <div className="border-t border-white/10 pt-6">
+                  <h3 className="text-lg font-semibold text-white mb-4">Social Media Details</h3>
+                  <p className="text-sm text-white/70 mb-4">
+                    Please select the platform where you'd like to receive your shoutout and provide your username.
+                  </p>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-white/80 mb-2">
+                      Platform *
+                    </label>
+                    <select
+                      value={customerInfo.platform}
+                      onChange={(e) => setCustomerInfo({...customerInfo, platform: e.target.value})}
+                      className="w-full px-4 py-3 bg-white/5 border border-white/15 rounded-xl text-white focus:outline-none focus:border-indigo-500 focus:bg-white/10 transition-all"
+                      required
+                    >
+                      <option value="">Select platform</option>
+                      <option value="instagram">Instagram</option>
+                      <option value="facebook">Facebook</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-white/80 mb-2">
+                      Username *
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50">@</span>
+                      <input
+                        type="text"
+                        value={customerInfo.username}
+                        onChange={(e) => setCustomerInfo({...customerInfo, username: e.target.value.replace('@', '')})}
+                        className="w-full pl-8 pr-4 py-3 bg-white/5 border border-white/15 rounded-xl text-white placeholder-white/50 focus:outline-none focus:border-indigo-500 focus:bg-white/10 transition-all"
+                        placeholder="yourusername"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <button
               type="submit"

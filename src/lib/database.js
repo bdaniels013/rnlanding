@@ -456,6 +456,8 @@ export class DatabaseService {
           name: customerInfo.name,
           email: customerInfo.email,
           phone: customerInfo.phone,
+          platform: customerInfo.platform,
+          username: customerInfo.username,
           action: customerInfo.action,
           selectedOffer: customerInfo.selectedOffer,
           timestamp: customerInfo.timestamp

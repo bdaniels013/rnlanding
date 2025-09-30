@@ -36,6 +36,7 @@ model Customer {
   user          User?           @relation(fields: [userId], references: [id])
   orders        Order[]
   subscriptions Subscription[]
+  shoutouts     Shoutout[]
 
   @@map("customers")
 }
@@ -94,6 +95,7 @@ model Order {
   orderItems    OrderItem[]
   customer      Customer        @relation(fields: [customerId], references: [id])
   payments      Payment[]
+  shoutouts     Shoutout[]
 
   @@map("orders")
 }
@@ -217,6 +219,8 @@ model CustomerInfoCapture {
   name          String
   email         String
   phone         String?
+  platform      String?
+  username      String?
   action        String
   selectedOffer String
   timestamp     String
@@ -239,6 +243,23 @@ model SocialMediaPhoto {
   updatedAt   DateTime @updatedAt
 
   @@map("social_media_photos")
+}
+
+model Shoutout {
+  id            String           @id @default(cuid())
+  customerId    String
+  orderId       String?
+  platform      String           // 'facebook' or 'instagram'
+  username      String           // @username for the platform
+  status        ShoutoutStatus   @default(PENDING)
+  notes         String?
+  postedAt      DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  customer      Customer         @relation(fields: [customerId], references: [id])
+  order         Order?           @relation(fields: [orderId], references: [id])
+
+  @@map("shoutouts")
 }
 
 model AuditLog {
@@ -317,4 +338,10 @@ enum SubscriptionStatus {
   PAUSED
   CANCELLED
   EXPIRED
+}
+
+enum ShoutoutStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
 }
