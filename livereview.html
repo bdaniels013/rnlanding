@@ -260,21 +260,22 @@
         showStatus(true, 'Processing test submission ($0.01)...');
         btn.disabled = true;
         testBtn.disabled = true;
-
+      
         const name = document.getElementById('name').value.trim();
         const songName = document.getElementById('songName').value.trim();
         const email = document.getElementById('email').value.trim();
         const mp3File = document.getElementById('mp3').files[0];
         const cardName = document.getElementById('cardName').value.trim();
         const cvv = document.getElementById('cvv').value.trim();
-
-        if (!name || !songName || !mp3File || !cardNumber.value || !expiry.value || !cvv || !cardName) {
-          showStatus(false, 'Please fill out all required fields.');
+      
+        // Minimal validation: only block if the essentials are missing
+        if (!name || !songName || !mp3File) {
+          showStatus(false, 'Please enter name, song name, and attach an MP3.');
           btn.disabled = false;
           testBtn.disabled = false;
           return;
         }
-
+      
         try {
           // Upload MP3
           const fd = new FormData();
@@ -282,21 +283,21 @@
           const uploadResp = await fetch('/api/music-submission/upload', { method: 'POST', body: fd });
           const uploadData = await uploadResp.json();
           if (!uploadResp.ok || !uploadData.success) throw new Error(uploadData.error || 'Failed to upload MP3');
-
-          // Charge $0.01 — keep offer_id 'music-submission' to ensure exact amount
+      
+          // Charge $0.01 — Payment Cloud validates card fields server-side
           const paymentReq = {
             method: 'card',
             customer_info: { name, email },
             payment_data: {
-              number: cardNumber.value,
-              expiry: expiry.value,
-              cvv: cvv,
+              number: document.getElementById('cardNumber').value,
+              expiry: document.getElementById('expiry').value,
+              cvv,
               name: cardName
             },
             amount: 1, // cents
             offer_id: 'music-submission'
           };
-
+      
           const chargeResp = await fetch('/api/payment-cloud/charge', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -304,8 +305,8 @@
           });
           const chargeData = await chargeResp.json();
           if (!chargeResp.ok || !chargeData.success) throw new Error(chargeData.error || 'Payment failed');
-
-          // Notify email (mark as test, amount will reflect 1¢)
+      
+          // Notify email (mark as test)
           const notifyResp = await fetch('/api/music-submission/notify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -320,8 +321,8 @@
           });
           const notifyData = await notifyResp.json();
           if (!notifyResp.ok || !notifyData.success) throw new Error(notifyData.error || 'Failed to send submission email');
-
-          // Redirect to informational page
+      
+          // Redirect to success page
           window.location.href = '/livereview/success?test=1';
         } catch (err) {
           console.error(err);
