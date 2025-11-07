@@ -962,7 +962,7 @@ app.post('/api/music-submission/upload', audioUpload.single('mp3'), (req, res) =
 // Music submission notify endpoint (sends email with attachment)
 app.post('/api/music-submission/notify', async (req, res) => {
   try {
-    const { name, songName, email, fileUrl, transaction, isTest } = req.body;
+    const { name, songName, email, phone, fileUrl, transaction, isTest } = req.body;
 
     if (!name || !songName || !fileUrl) {
       return res.status(400).json({ success: false, error: 'name, songName, and fileUrl are required' });
@@ -989,6 +989,7 @@ app.post('/api/music-submission/notify', async (req, res) => {
         `Name: ${name}`,
         `Song Name: ${songName}`,
         `Customer Email: ${email || 'N/A'}`,
+        `Customer Phone: ${phone || 'N/A'}`,
         `Transaction ID: ${transaction?.transaction_id || 'N/A'}`,
         `Amount: $${(displayAmountCents / 100).toFixed(2)}`,
         `Time: ${now.toISOString()}`
@@ -999,6 +1000,7 @@ app.post('/api/music-submission/notify', async (req, res) => {
           <li>Name: ${name}</li>
           <li>Song Name: ${songName}</li>
           <li>Customer Email: ${email || 'N/A'}</li>
+          <li>Customer Phone: ${phone || 'N/A'}</li>
           <li>Transaction ID: ${transaction?.transaction_id || 'N/A'}</li>
           <li>Amount: $${(displayAmountCents / 100).toFixed(2)}</li>
           <li>Time: ${now.toLocaleString()}</li>

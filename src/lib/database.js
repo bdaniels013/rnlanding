@@ -450,34 +450,35 @@ export class DatabaseService {
   // Customer info captures (for tracking checkout flow)
   async captureCustomerInfo(customerInfo) {
     try {
-      // Store the customer info capture
       const capture = await prisma.customerInfoCapture.create({
         data: {
           name: customerInfo.name,
-          email: customerInfo.email,
-          phone: customerInfo.phone,
-          platform: customerInfo.platform,
-          username: customerInfo.username,
+          email: customerInfo.email || '',
+          phone: customerInfo.phone || null,
+          platform: customerInfo.platform || null,
+          username: customerInfo.username || null,
           action: customerInfo.action,
           selectedOffer: customerInfo.selectedOffer,
           timestamp: customerInfo.timestamp
         }
       });
 
-      // Also create or update the customer record for the credits system
-      await prisma.customer.upsert({
-        where: { email: customerInfo.email },
-        update: {
-          name: customerInfo.name,
-          phone: customerInfo.phone,
-          updatedAt: new Date()
-        },
-        create: {
-          name: customerInfo.name,
-          email: customerInfo.email,
-          phone: customerInfo.phone
-        }
-      });
+      // Only upsert a Customer record when a valid email is provided
+      if (customerInfo.email && customerInfo.email.includes('@')) {
+        await prisma.customer.upsert({
+          where: { email: customerInfo.email },
+          update: {
+            name: customerInfo.name,
+            phone: customerInfo.phone || null,
+            updatedAt: new Date()
+          },
+          create: {
+            name: customerInfo.name,
+            email: customerInfo.email,
+            phone: customerInfo.phone || null
+          }
+        });
+      }
 
       return capture;
     } catch (error) {

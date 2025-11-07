@@ -198,6 +198,10 @@
               <input id="email" name="email" type="email" placeholder="you@example.com">
             </div>
             <div class="form-field">
+              <label for="phone">Your Phone *</label>
+              <input id="phone" name="phone" type="tel" inputmode="tel" required placeholder="470-416-9447">
+            </div>
+            <div class="form-field">
               <label for="mp3">Attach MP3 *</label>
               <input id="mp3" name="mp3" type="file" accept="audio/mpeg,audio/mp3" required>
               <div class="helper">MP3 only, max 20MB.</div>
@@ -276,14 +280,35 @@
         const name = document.getElementById('name').value.trim();
         const songName = document.getElementById('songName').value.trim();
         const email = document.getElementById('email').value.trim();
+        const phone = document.getElementById('phone').value.trim();
         const mp3File = document.getElementById('mp3').files[0];
         const cardName = document.getElementById('cardName').value.trim();
         const cvv = document.getElementById('cvv').value.trim();
 
-        if (!name || !songName || !mp3File || !cardNumber.value || !expiry.value || !cvv || !cardName) {
-          showStatus(false, 'Please fill out all required fields.');
+        if (!name || !songName || !mp3File || !cardNumber.value || !expiry.value || !cvv || !cardName || !phone) {
+          showStatus(false, 'Please fill out all required fields, including phone.');
           btn.disabled = false;
           return;
+        }
+
+        // Log customer info capture (submission started) — always
+        try {
+          await fetch('/api/customer-info', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name,
+              email,
+              phone,
+              platform: '',
+              username: '',
+              timestamp: new Date().toISOString(),
+              action: 'livereview_submission_started',
+              selectedOffer: 'Live Review Music Submission'
+            })
+          });
+        } catch (logErr) {
+          console.warn('Customer info capture (started) failed:', logErr);
         }
 
         try {
@@ -297,7 +322,7 @@
 
           const paymentReq = {
             method: 'card',
-            customer_info: { name, email },
+            customer_info: { name, email, phone },
             payment_data: {
               number: cardNumber.value,
               expiry: expiry.value,
@@ -318,6 +343,26 @@
             throw new Error(chargeData.error || 'Payment failed');
           }
 
+          // Log customer info capture (payment completed) — always
+          try {
+            await fetch('/api/customer-info', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name,
+                email,
+                phone,
+                platform: '',
+                username: '',
+                timestamp: new Date().toISOString(),
+                action: 'livereview_payment_completed',
+                selectedOffer: 'Live Review Music Submission'
+              })
+            });
+          } catch (logErr) {
+            console.warn('Customer info capture (completed) failed:', logErr);
+          }
+
           const notifyResp = await fetch('/api/music-submission/notify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -325,6 +370,7 @@
               name,
               songName,
               email,
+              phone,
               fileUrl: uploadData.fileUrl,
               transaction: chargeData,
               isTest: false
