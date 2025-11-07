@@ -9,6 +9,8 @@ import { paypalService } from './src/lib/paypal.js';
 import { db } from './src/lib/database.js';
 import paymentCloudRouter from './api/payment-cloud/charge.js';
 import hppRouter from './api/payment-cloud/hpp.js';
+import fs from 'fs';
+import nodemailer from 'nodemailer';
 
 // Load environment variables
 dotenv.config();
@@ -885,4 +887,124 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📁 Serving static files from: ${path.join(__dirname, 'dist')}`);
   console.log(`🌐 Health check: http://localhost:${PORT}/health`);
+});
+
+// Configure Gmail SMTP transporter (free for low-volume usage)
+const mailTransporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: Number(process.env.SMTP_PORT || 465),
+  secure: (process.env.SMTP_SECURE || 'true') === 'true', // 465 TLS by default
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS
+  }
+});
+
+// Utility to escape HTML in email content
+function escapeHtml(str) {
+  const s = String(str || '');
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// Add MP3 upload storage for music submissions
+const audioStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(__dirname, 'public', 'uploads', 'music-submissions');
+    fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const timestamp = Date.now();
+    const ext = path.extname(file.originalname).toLowerCase();
+    const unique = `${timestamp}-${Math.round(Math.random() * 1e9)}`;
+    cb(null, `submission-${unique}${ext}`);
+  }
+});
+
+const audioUpload = multer({
+  storage: audioStorage,
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
+  fileFilter: (req, file, cb) => {
+    const extOk = /\.(mp3|mpeg)$/i.test(file.originalname);
+    const mimeOk = /^audio\/(mpeg|mp3)$/.test(file.mimetype);
+    if (extOk && mimeOk) cb(null, true);
+    else cb(new Error('Only MP3 files up to 20MB are allowed.'));
+  }
+});
+
+// Music submission upload endpoint
+app.post('/api/music-submission/upload', audioUpload.single('mp3'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'MP3 file is required' });
+    }
+    const fileUrl = `/uploads/music-submissions/${req.file.filename}`;
+    return res.json({ success: true, fileUrl });
+  } catch (err) {
+    console.error('MP3 upload error:', err);
+    return res.status(500).json({ success: false, error: 'Failed to upload MP3' });
+  }
+});
+
+// Music submission notify endpoint (sends email with attachment)
+app.post('/api/music-submission/notify', async (req, res) => {
+  try {
+    const { name, songName, email, fileUrl, transaction } = req.body;
+
+    if (!name || !songName || !fileUrl) {
+      return res.status(400).json({ success: false, error: 'name, songName, and fileUrl are required' });
+    }
+
+    const fullPath = path.join(__dirname, 'public', fileUrl.replace(/^\/+/, ''));
+
+    const now = new Date();
+    const subject = `RN Music Submission - ${now.toLocaleString()}`;
+    const to = 'richhtalk3@gmail.com';
+    const from = process.env.FROM_EMAIL || process.env.SMTP_USER;
+
+    await mailTransporter.sendMail({
+      from,
+      to,
+      replyTo: 'richhtalk3@gmail.com',
+      subject,
+      text: [
+        'New music submission:',
+        `Name: ${name}`,
+        `Song Name: ${songName}`,
+        `Customer Email: ${email || 'N/A'}`,
+        `Transaction ID: ${transaction?.transaction_id || 'N/A'}`,
+        `Amount: $${((transaction?.amount || 2500) / 100).toFixed(2)}`,
+        `Time: ${now.toISOString()}`
+      ].join('\n'),
+      html: `
+        <p><strong>New music submission</strong></p>
+        <ul>
+          <li>Name: ${name}</li>
+          <li>Song Name: ${songName}</li>
+          <li>Customer Email: ${email || 'N/A'}</li>
+          <li>Transaction ID: ${transaction?.transaction_id || 'N/A'}</li>
+          <li>Amount: $${((transaction?.amount || 2500) / 100).toFixed(2)}</li>
+          <li>Time: ${now.toLocaleString()}</li>
+        </ul>
+      `,
+      attachments: [
+        { path: fullPath, filename: path.basename(fullPath), contentType: 'audio/mpeg' }
+      ]
+    });
+
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Submission email error:', err);
+    return res.status(500).json({ success: false, error: 'Failed to send submission email' });
+  }
+});
+
+// Serve the Live Review page
+app.get('/livereview', (req, res) => {
+  res.sendFile(path.join(__dirname, 'livereview.html'));
 });

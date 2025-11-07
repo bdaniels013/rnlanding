@@ -36,9 +36,13 @@ router.post('/charge', async (req, res) => {
     
     // Add small random amount variation to make transaction unique
     const baseAmount = (amount / 100).toFixed(2);
-    const randomVariation = (Math.random() * 0.01).toFixed(4); // Add 0-1 cent variation
-    const finalAmount = (parseFloat(baseAmount) + parseFloat(randomVariation)).toFixed(2);
-    
+    // Ensure exact amount for music-submission; keep variation for others
+    let finalAmount = baseAmount;
+    if (offer_id !== 'music-submission') {
+      const randomVariation = (Math.random() * 0.01).toFixed(4);
+      finalAmount = (parseFloat(baseAmount) + parseFloat(randomVariation)).toFixed(2);
+    }
+
     let payload = {
       security_key: apiKey,
       type: 'sale',
