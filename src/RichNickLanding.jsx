@@ -732,17 +732,22 @@ export default function RichNickLanding() {
     return <CheckoutCancel />;
   }
 
+  // Homepage
   return (
     <div className="text-white min-h-screen selection:bg-fuchsia-500 selection:text-white">
-      {/* Optional Google tag — paste your Measurement ID */}
-      {/* <script async src={`https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX`}></script>
-      <script>{`
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);} gtag('js', new Date());
-        gtag('config', 'G-XXXXXXX');
-      `}</script> */}
-
       <Ribbon />
+      {/* LIVE REVIEW button — homepage only */}
+      <a
+        href="/livereview"
+        className="fixed left-4 top-20 md:left-6 md:top-20 px-3 md:px-4 py-2 md:py-2.5
+                   rounded-lg border-2 border-yellow-400 bg-black text-yellow-400
+                   font-extrabold shadow-lg transition transform hover:brightness-110 hover:-translate-y-px
+                   z-50 text-sm md:text-base"
+        aria-label="Go to Live Review"
+      >
+        LIVE REVIEW
+      </a>
+
       <Hero onReserveSeat={handleReserveSeat} />
       <CardBrandLogos />
       <div id="offers-section">
