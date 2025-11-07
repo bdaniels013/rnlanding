@@ -40,8 +40,44 @@
     
     <!-- Google Pay SDK -->
     <script async src="https://pay.google.com/gp/p/js/pay.js"></script>
+    <style>
+      /* LIVE REVIEW CTA */
+      .live-review-cta {
+        position: fixed;
+        top: 68px;           /* sits under the ribbon/header */
+        left: 16px;
+        padding: 10px 16px;
+        border-radius: 10px;
+        background: linear-gradient(180deg, #0b0b0b, #000);
+        border: 2px solid #FFD700;
+        color: #FFD700;
+        font-weight: 800;
+        font-size: clamp(0.9rem, 2.8vw, 1rem);
+        letter-spacing: 0.5px;
+        text-decoration: none;
+        box-shadow: 0 6px 16px rgba(255,215,0,0.22);
+        z-index: 2000;
+      }
+      .live-review-cta:hover, .live-review-cta:focus {
+        filter: brightness(1.08);
+        transform: translateY(-1px);
+        outline: none;
+      }
+    
+      /* Mobile adjustments */
+      @media (max-width: 768px) {
+        .live-review-cta {
+          top: 60px;
+          left: 12px;
+          padding: 9px 14px;
+          border-radius: 8px;
+          box-shadow: 0 5px 14px rgba(255,215,0,0.2);
+        }
+      }
+    </style>
   </head>
   <body>
+    <a class="live-review-cta" href="/livereview" aria-label="Go to Live Review">LIVE REVIEW</a>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

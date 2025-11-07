@@ -107,7 +107,7 @@
       <!-- Centered contact modal -->
       <div id="contactModal" class="modal-overlay" hidden>
         <div class="modal" role="dialog" aria-modal="true" aria-labelledby="contactTitle">
-          <button class="modal-close" id="modalClose" aria-label="Close"><i class="fas fa-times"></i></button>
+          <button type="button" class="modal-close" id="modalClose" aria-label="Close"><i class="fas fa-times"></i></button>
           <h3 id="contactTitle">Contact Ms. Pinky</h3>
           <p class="modal-sub">Choose how you’d like to reach out</p>
           <div class="modal-actions">
@@ -212,7 +212,20 @@
   }
 
   /* Modal styles (moved into head to prevent raw code at bottom) */
-  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(2px); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  /* Ensure the modal is hidden unless opened */
+  .modal-overlay[hidden] {
+    display: none !important;
+  }
   .modal { background: linear-gradient(to bottom, #111, #1e1e1e); border: 1px solid rgba(255,215,0,0.4); border-radius: 12px; box-shadow: 0 12px 24px rgba(0,0,0,0.6); max-width: 480px; width: min(92vw, 480px); padding: 24px 20px; position: relative; text-align: center; }
   .modal h3 { font-family: 'Playfair Display', serif; font-size: 1.5rem; margin-bottom: 6px; letter-spacing: 1px; color: var(--gold); }
   .modal-sub { color: #e6e6e6; font-size: 0.95rem; margin-bottom: 16px; }
@@ -224,33 +237,33 @@
 
 <!-- Replace the old phone menu script with this modal control script -->
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-const trigger = document.getElementById('contactTrigger');
-const modalOverlay = document.getElementById('contactModal');
-const closeBtn = document.getElementById('modalClose');
+  document.addEventListener('DOMContentLoaded', () => {
+    const trigger = document.getElementById('contactTrigger');
+    const modalOverlay = document.getElementById('contactModal');
+    const closeBtn = document.getElementById('modalClose');
 
-const openModal = () => {
-modalOverlay.hidden = false;
-trigger.setAttribute('aria-expanded', 'true');
-};
+    const openModal = () => {
+      modalOverlay.hidden = false;
+      trigger.setAttribute('aria-expanded', 'true');
+    };
 
-const closeModal = () => {
-modalOverlay.hidden = true;
-trigger.setAttribute('aria-expanded', 'false');
-trigger.focus();
-};
+    const closeModal = () => {
+      modalOverlay.hidden = true;
+      trigger.setAttribute('aria-expanded', 'false');
+      trigger.focus();
+    };
 
-trigger.addEventListener('click', () => openModal());
-closeBtn.addEventListener('click', () => closeModal());
+    trigger.addEventListener('click', openModal);
+    closeBtn.addEventListener('click', closeModal);
 
-// Close on backdrop
-modalOverlay.addEventListener('click', (e) => {
-if (e.target === modalOverlay) closeModal();
-});
+    // Close on backdrop click
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) closeModal();
+    });
 
-// Close on Escape
-document.addEventListener('keydown', (e) => {
-if (!modalOverlay.hidden && e.key === 'Escape') closeModal();
-});
-});
+    // Close on Escape
+    document.addEventListener('keydown', (e) => {
+      if (!modalOverlay.hidden && e.key === 'Escape') closeModal();
+    });
+  });
 </script>
