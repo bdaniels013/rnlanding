@@ -186,100 +186,71 @@
     color: var(--gold); text-decoration: none; border-bottom: 2px solid var(--gold); padding-bottom: 4px; transition: var(--transition);
     cursor: pointer;
   }
-  .actions { margin-top: 30px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-  .btn {
-    background: var(--gold); color: var(--black); padding: 10px 22px; border: none; border-radius: 6px;
-    font-weight: 700; cursor: pointer; transition: var(--transition); box-shadow: 0 4px 10px rgba(255,215,0,0.3); text-decoration: none;
-  }
-  .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(255,215,0,0.5); }
-  footer { text-align: center; padding: 15px; background: var(--black); font-size: 0.9rem; border-top: 1px solid var(--gold); }
-  /* Mobile-first sizing fixes (remove horizontal scroll) */
-  .brand { flex-wrap: wrap; max-width: 100%; }
-  .brand-logo { width: clamp(56px, 24vw, 84px); height: auto; object-fit: contain; }
-  header h1 { font-size: clamp(1.8rem, 6.5vw, 2.6rem); letter-spacing: clamp(1px, 0.6vw, 3px); }
-  .card { max-width: min(720px, 95vw); padding: clamp(24px, 5vw, 40px) clamp(16px, 4vw, 30px); }
-  .actions { gap: clamp(8px, 2.5vw, 12px); justify-content: center; flex-wrap: wrap; }
-  .btn { max-width: 90vw; white-space: normal; }
-  img { max-width: 100%; height: auto; }
-  html, body { overflow-x: hidden; }
-
-  @media (max-width: 768px) {
-    header { padding: 60px 10px 30px; }
-    header h1 { font-size: 2.4rem; } .card p { font-size: 1.1rem; } .phone { font-size: 1.7rem; } }
-  </style>
-  /* Contact modal (centered, professional look) */
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(2px);
-    display: flex;
+  .phone {
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
-  }
-  .modal {
-    background: linear-gradient(to bottom, #111, #1e1e1e);
-    border: 1px solid rgba(255, 215, 0, 0.4);
+    margin-top: 24px;
+    font-weight: 900;
+    font-size: clamp(1.8rem, 6vw, 2.4rem);
+    letter-spacing: 0.5px;
+    color: #111;
+    background: linear-gradient(180deg, #FFD700, #FFC107);
+    border: 2px solid rgba(0, 0, 0, 0.6);
     border-radius: 12px;
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.6);
-    max-width: 480px;
-    width: min(92vw, 480px);
-    padding: 24px 20px;
-    position: relative;
-    text-align: center;
-  }
-  .modal h3 {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.5rem;
-    margin-bottom: 6px;
-    letter-spacing: 1px;
-    color: var(--gold);
-  }
-  .modal-sub { color: #e6e6e6; font-size: 0.95rem; margin-bottom: 16px; }
-  .modal-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-  .modal-close {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: transparent;
-    border: none;
-    color: var(--gold);
-    font-size: 1.2rem;
+    padding: 14px 24px;
+    box-shadow: 0 6px 18px rgba(255, 215, 0, 0.35), inset 0 -2px 0 rgba(0,0,0,0.25);
+    transition: transform 0.15s ease, box-shadow var(--transition), filter var(--transition);
+    text-decoration: none;
     cursor: pointer;
   }
+  .phone:hover, .phone:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 22px rgba(255, 215, 0, 0, 0.45);
+    filter: brightness(1.05);
+    outline: none;
+  }
+
+  /* Modal styles (moved into head to prevent raw code at bottom) */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(2px); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+  .modal { background: linear-gradient(to bottom, #111, #1e1e1e); border: 1px solid rgba(255,215,0,0.4); border-radius: 12px; box-shadow: 0 12px 24px rgba(0,0,0,0.6); max-width: 480px; width: min(92vw, 480px); padding: 24px 20px; position: relative; text-align: center; }
+  .modal h3 { font-family: 'Playfair Display', serif; font-size: 1.5rem; margin-bottom: 6px; letter-spacing: 1px; color: var(--gold); }
+  .modal-sub { color: #e6e6e6; font-size: 0.95rem; margin-bottom: 16px; }
+  .modal-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .modal-close { position: absolute; top: 10px; right: 10px; background: transparent; border: none; color: var(--gold); font-size: 1.2rem; cursor: pointer; }
   .btn-call, .btn-text { min-width: 160px; }
   .btn-call i, .btn-text i { margin-right: 8px; }
 </style>
 
+<!-- Replace the old phone menu script with this modal control script -->
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const trigger = document.getElementById('contactTrigger');
-    const modalOverlay = document.getElementById('contactModal');
-    const closeBtn = document.getElementById('modalClose');
+document.addEventListener('DOMContentLoaded', () => {
+const trigger = document.getElementById('contactTrigger');
+const modalOverlay = document.getElementById('contactModal');
+const closeBtn = document.getElementById('modalClose');
 
-    const openModal = () => {
-      modalOverlay.hidden = false;
-      trigger.setAttribute('aria-expanded', 'true');
-    };
+const openModal = () => {
+modalOverlay.hidden = false;
+trigger.setAttribute('aria-expanded', 'true');
+};
 
-    const closeModal = () => {
-      modalOverlay.hidden = true;
-      trigger.setAttribute('aria-expanded', 'false');
-      trigger.focus();
-    };
+const closeModal = () => {
+modalOverlay.hidden = true;
+trigger.setAttribute('aria-expanded', 'false');
+trigger.focus();
+};
 
-    trigger.addEventListener('click', () => openModal());
-    closeBtn.addEventListener('click', () => closeModal());
+trigger.addEventListener('click', () => openModal());
+closeBtn.addEventListener('click', () => closeModal());
 
-    // Close on backdrop click
-    modalOverlay.addEventListener('click', (e) => {
-      if (e.target === modalOverlay) closeModal();
-    });
+// Close on backdrop
+modalOverlay.addEventListener('click', (e) => {
+if (e.target === modalOverlay) closeModal();
+});
 
-    // Close on Escape
-    document.addEventListener('keydown', (e) => {
-      if (!modalOverlay.hidden && e.key === 'Escape') closeModal();
-    });
-  });
+// Close on Escape
+document.addEventListener('keydown', (e) => {
+if (!modalOverlay.hidden && e.key === 'Escape') closeModal();
+});
+});
 </script>
