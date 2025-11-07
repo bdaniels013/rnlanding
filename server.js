@@ -878,9 +878,9 @@ app.post('/api/paypal/subscription-webhook', async (req, res) => {
   }
 });
 
-// Serve the React app for all other routes, but let /livereview and /livereview.html pass through
+// Serve the React app for all other routes, but let /livereview, /livereview.html and /livereview/success pass through
 app.get('*', (req, res, next) => {
-  if (req.path === '/livereview' || req.path === '/livereview.html') return next();
+  if (req.path === '/livereview' || req.path === '/livereview.html' || req.path === '/livereview/success') return next();
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
@@ -955,7 +955,7 @@ app.post('/api/music-submission/upload', audioUpload.single('mp3'), (req, res) =
 // Music submission notify endpoint (sends email with attachment)
 app.post('/api/music-submission/notify', async (req, res) => {
   try {
-    const { name, songName, email, fileUrl, transaction } = req.body;
+    const { name, songName, email, fileUrl, transaction, isTest } = req.body;
 
     if (!name || !songName || !fileUrl) {
       return res.status(400).json({ success: false, error: 'name, songName, and fileUrl are required' });
@@ -964,9 +964,13 @@ app.post('/api/music-submission/notify', async (req, res) => {
     const fullPath = path.join(__dirname, 'public', fileUrl.replace(/^\/+/, ''));
 
     const now = new Date();
-    const subject = `RN Music Submission - ${now.toLocaleString()}`;
+    const subjectPrefix = isTest ? 'TEST - ' : '';
+    const subject = `${subjectPrefix}RN Music Submission - ${now.toLocaleString()}`;
     const to = 'richhtalk3@gmail.com';
     const from = process.env.FROM_EMAIL || process.env.SMTP_USER;
+
+    // Use 0 for test; otherwise use provided amount or fallback
+    const displayAmountCents = isTest ? 0 : (transaction?.amount ?? 2500);
 
     await mailTransporter.sendMail({
       from,
@@ -974,22 +978,22 @@ app.post('/api/music-submission/notify', async (req, res) => {
       replyTo: 'richhtalk3@gmail.com',
       subject,
       text: [
-        'New music submission:',
+        isTest ? 'TEST SUBMISSION - NO CHARGE' : 'New music submission:',
         `Name: ${name}`,
         `Song Name: ${songName}`,
         `Customer Email: ${email || 'N/A'}`,
         `Transaction ID: ${transaction?.transaction_id || 'N/A'}`,
-        `Amount: $${((transaction?.amount || 2500) / 100).toFixed(2)}`,
+        `Amount: $${(displayAmountCents / 100).toFixed(2)}`,
         `Time: ${now.toISOString()}`
       ].join('\n'),
       html: `
-        <p><strong>New music submission</strong></p>
+        <p><strong>${isTest ? 'TEST SUBMISSION - NO CHARGE' : 'New music submission'}</strong></p>
         <ul>
           <li>Name: ${name}</li>
           <li>Song Name: ${songName}</li>
           <li>Customer Email: ${email || 'N/A'}</li>
           <li>Transaction ID: ${transaction?.transaction_id || 'N/A'}</li>
-          <li>Amount: $${((transaction?.amount || 2500) / 100).toFixed(2)}</li>
+          <li>Amount: $${(displayAmountCents / 100).toFixed(2)}</li>
           <li>Time: ${now.toLocaleString()}</li>
         </ul>
       `,
@@ -1011,4 +1015,8 @@ app.get('/livereview.html', (req, res) => res.redirect('/livereview'));
 
 app.get('/livereview', (req, res) => {
   res.sendFile(path.join(__dirname, 'livereview.html'));
+});
+
+app.get('/livereview/success', (req, res) => {
+  res.sendFile(path.join(__dirname, 'livereview-success.html'));
 });
