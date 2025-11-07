@@ -878,8 +878,9 @@ app.post('/api/paypal/subscription-webhook', async (req, res) => {
   }
 });
 
-// Serve the React app for all other routes
-app.get('*', (req, res) => {
+// Serve the React app for all other routes, but let /livereview and /livereview.html pass through
+app.get('*', (req, res, next) => {
+  if (req.path === '/livereview' || req.path === '/livereview.html') return next();
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
@@ -1005,6 +1006,9 @@ app.post('/api/music-submission/notify', async (req, res) => {
 });
 
 // Serve the Live Review page
+// Allow both /livereview and /livereview.html
+app.get('/livereview.html', (req, res) => res.redirect('/livereview'));
+
 app.get('/livereview', (req, res) => {
   res.sendFile(path.join(__dirname, 'livereview.html'));
 });
