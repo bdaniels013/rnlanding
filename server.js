@@ -771,6 +771,141 @@ app.get('/api/admin/credits/history/:customerId', authenticateAdmin, async (req,
   }
 });
 
+// Shoutouts: list, create, update, delete, and status update
+app.get('/api/admin/shoutouts', authenticateAdmin, async (req, res) => {
+  try {
+    const { search, filter } = req.query;
+
+    const where = {};
+    if (filter && filter !== 'all') {
+      where.status = String(filter).toUpperCase();
+    }
+    if (search && search.trim()) {
+      const s = String(search).trim();
+      where.OR = [
+        { username: { contains: s, mode: 'insensitive' } },
+        { platform: { contains: s, mode: 'insensitive' } },
+        { customer: { is: { name:  { contains: s, mode: 'insensitive' } } } },
+        { customer: { is: { email: { contains: s, mode: 'insensitive' } } } },
+      ];
+    }
+
+    const shoutouts = await prisma.shoutout.findMany({
+      where,
+      include: {
+        customer: { select: { id: true, name: true, email: true } },
+        order:    { select: { id: true, totalCents: true, status: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.status(200).json({ shoutouts });
+  } catch (error) {
+    console.error('Error fetching shoutouts:', error);
+    res.status(500).json({ error: 'Failed to fetch shoutouts' });
+  }
+});
+
+app.post('/api/admin/shoutouts', authenticateAdmin, async (req, res) => {
+  try {
+    const { customerId, orderId, platform, username, notes } = req.body;
+    if (!customerId || !platform || !username) {
+      return res.status(400).json({ error: 'Customer ID, platform, and username are required' });
+    }
+
+    const shoutout = await prisma.shoutout.create({
+      data: {
+        customerId,
+        orderId: orderId || null,
+        platform,
+        username,
+        status: 'PENDING',
+        notes: notes || null
+      },
+      include: {
+        customer: { select: { id: true, name: true, email: true } },
+        order:    { select: { id: true, totalCents: true, status: true } }
+      }
+    });
+
+    res.status(201).json({ shoutout });
+  } catch (error) {
+    console.error('Error creating shoutout:', error);
+    res.status(500).json({ error: 'Failed to create shoutout' });
+  }
+});
+
+app.put('/api/admin/shoutouts', authenticateAdmin, async (req, res) => {
+  try {
+    const { id, platform, username, notes } = req.body;
+    if (!id) {
+      return res.status(400).json({ error: 'Shoutout ID is required' });
+    }
+
+    const shoutout = await prisma.shoutout.update({
+      where: { id },
+      data: {
+        platform: platform || undefined,
+        username: username || undefined,
+        notes:    notes || undefined
+      },
+      include: {
+        customer: { select: { id: true, name: true, email: true } },
+        order:    { select: { id: true, totalCents: true, status: true } }
+      }
+    });
+
+    res.status(200).json({ shoutout });
+  } catch (error) {
+    console.error('Error updating shoutout:', error);
+    res.status(500).json({ error: 'Failed to update shoutout' });
+  }
+});
+
+app.delete('/api/admin/shoutouts', authenticateAdmin, async (req, res) => {
+  try {
+    const { id } = req.query;
+    if (!id) {
+      return res.status(400).json({ error: 'Shoutout ID is required' });
+    }
+
+    await prisma.shoutout.delete({ where: { id } });
+    res.status(200).json({ message: 'Shoutout deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting shoutout:', error);
+    res.status(500).json({ error: 'Failed to delete shoutout' });
+  }
+});
+
+app.post('/api/admin/shoutouts/status', authenticateAdmin, async (req, res) => {
+  try {
+    const { id, status } = req.body;
+    if (!id || !status) {
+      return res.status(400).json({ error: 'Shoutout ID and status are required' });
+    }
+
+    const allowed = ['PENDING', 'COMPLETED', 'CANCELLED'];
+    const newStatus = String(status).toUpperCase();
+    if (!allowed.includes(newStatus)) {
+      return res.status(400).json({ error: 'Invalid status value' });
+    }
+
+    const shoutout = await prisma.shoutout.update({
+      where: { id },
+      data: { status: newStatus },
+      include: {
+        customer: { select: { id: true, name: true, email: true } },
+        order:    { select: { id: true, totalCents: true, status: true } }
+      }
+    });
+
+    res.status(200).json({ shoutout });
+  } catch (error) {
+    console.error('Error updating shoutout status:', error);
+    res.status(500).json({ error: 'Failed to update shoutout status' });
+  }
+});
+
 // PayPal success endpoint
 app.get('/api/paypal/success', async (req, res) => {
   try {
@@ -882,6 +1017,73 @@ app.post('/api/paypal/subscription-webhook', async (req, res) => {
   } catch (error) {
     console.error('Subscription webhook error:', error);
     res.status(500).json({ error: 'Webhook processing failed' });
+  }
+});
+
+// Admin Live Reviews - list and status update endpoints
+app.get('/api/admin/live-reviews', authenticateAdmin, async (req, res) => {
+  try {
+    const { search, filter } = req.query;
+
+    const where = {};
+    if (filter && filter !== 'all') {
+      where.status = String(filter).toUpperCase();
+    }
+    if (search && String(search).trim()) {
+      const s = String(search).trim();
+      where.OR = [
+        { songName: { contains: s, mode: 'insensitive' } },
+        { customer: { is: { name:  { contains: s, mode: 'insensitive' } } } },
+        { customer: { is: { email: { contains: s, mode: 'insensitive' } } } },
+        { customer: { is: { phone: { contains: s, mode: 'insensitive' } } } }
+      ];
+    }
+
+    const liveReviews = await prisma.liveReview.findMany({
+      where,
+      include: {
+        customer: { select: { id: true, name: true, email: true, phone: true } },
+        order:    { select: { id: true, totalCents: true, status: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return res.status(200).json({ liveReviews });
+  } catch (error) {
+    console.error('Error fetching live reviews:', error);
+    return res.status(500).json({ error: 'Failed to fetch live reviews' });
+  }
+});
+
+app.put('/api/admin/live-reviews/status', authenticateAdmin, async (req, res) => {
+  try {
+    const { id, status, fulfilledAt } = req.body;
+    if (!id || !status) {
+      return res.status(400).json({ error: 'Live review ID and status are required' });
+    }
+
+    const allowed = ['PENDING', 'COMPLETED', 'CANCELLED'];
+    const newStatus = String(status).toUpperCase();
+    if (!allowed.includes(newStatus)) {
+      return res.status(400).json({ error: 'Invalid status. Must be PENDING, COMPLETED, or CANCELLED' });
+    }
+
+    const updateData = { status: newStatus };
+    updateData.fulfilledAt = newStatus === 'COMPLETED' ? (fulfilledAt ? new Date(fulfilledAt) : new Date()) : null;
+
+    const liveReview = await prisma.liveReview.update({
+      where: { id },
+      data: updateData,
+      include: {
+        customer: { select: { id: true, name: true, email: true, phone: true } },
+        order:    { select: { id: true, totalCents: true, status: true } }
+      }
+    });
+
+    return res.status(200).json({ liveReview });
+  } catch (error) {
+    console.error('Error updating live review status:', error);
+    return res.status(500).json({ error: 'Failed to update live review status' });
   }
 });
 
@@ -1010,6 +1212,50 @@ app.post('/api/music-submission/notify', async (req, res) => {
         { path: fullPath, filename: path.basename(fullPath), contentType: 'audio/mpeg' }
       ]
     });
+
+    // NEW: Persist live review record to the database
+    try {
+      const { name, songName, email, phone, transaction, isTest } = req.body;
+
+      const txnId = transaction?.transaction_id || null;
+      let orderId = null;
+
+      if (txnId) {
+        const payment = await prisma.payment.findFirst({
+          where: { paypalTxnId: txnId },
+          include: { order: true }
+        });
+        orderId = payment?.order?.id || null;
+      }
+
+      const safeEmail = email && email.trim()
+        ? email.trim()
+        : `noemail-${(phone || name || 'unknown').replace(/\s+/g, '').toLowerCase()}@placeholder.local`;
+
+      let customer = await prisma.customer.findUnique({ where: { email: safeEmail } });
+      if (!customer) {
+        customer = await prisma.customer.create({
+          data: { name, email: safeEmail, phone: phone || null, notes: 'Created from Live Review submission' }
+        });
+      } else {
+        await prisma.customer.update({
+          where: { id: customer.id },
+          data: { name: name || customer.name, phone: phone || customer.phone }
+        });
+      }
+
+      await prisma.liveReview.create({
+        data: {
+          customerId: customer.id,
+          orderId,
+          songName,
+          status: 'PENDING',
+          notes: isTest ? 'TEST SUBMISSION' : null
+        }
+      });
+    } catch (persistErr) {
+      console.error('Failed to persist live review:', persistErr);
+    }
 
     return res.json({ success: true });
   } catch (err) {

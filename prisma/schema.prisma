@@ -37,6 +37,7 @@ model Customer {
   orders        Order[]
   subscriptions Subscription[]
   shoutouts     Shoutout[]
+  liveReviews   LiveReview[]   // NEW: link live reviews to customers
 
   @@map("customers")
 }
@@ -96,6 +97,7 @@ model Order {
   customer      Customer        @relation(fields: [customerId], references: [id])
   payments      Payment[]
   shoutouts     Shoutout[]
+  liveReviews   LiveReview[]    // NEW: link live reviews to orders
 
   @@map("orders")
 }
@@ -344,4 +346,29 @@ enum ShoutoutStatus {
   PENDING
   COMPLETED
   CANCELLED
+}
+
+// NEW: Live Review status enum
+enum LiveReviewStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+// NEW: Live Review model
+model LiveReview {
+  id          String            @id @default(cuid())
+  customerId  String
+  orderId     String?
+  songName    String
+  status      LiveReviewStatus  @default(PENDING)
+  notes       String?
+  fulfilledAt DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  customer    Customer          @relation(fields: [customerId], references: [id])
+  order       Order?            @relation(fields: [orderId], references: [id])
+
+  @@map("live_reviews")
 }

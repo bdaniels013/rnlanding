@@ -14,6 +14,10 @@ services:
         value: https://rnlanding.onrender.com
       - key: FRONTEND_URL
         value: https://rnlanding.onrender.com
+      - key: DATABASE_URL
+        fromDatabase:
+          name: richnick-db
+          property: connectionString
     healthCheckPath: /
 
 databases:

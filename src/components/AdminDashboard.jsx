@@ -3,6 +3,7 @@ import { DollarSign, Users, CreditCard, Calendar, TrendingUp, Package, AlertCirc
 import CreditsManagement from './CreditsManagement';
 import MediaManagement from './MediaManagement';
 import ShoutoutManagement from './ShoutoutManagement';
+import LiveReviewManagement from './LiveReviewManagement';
 
 const AdminDashboard = ({ onLogout }) => {
   const [dashboardData, setDashboardData] = useState(null);
@@ -644,6 +645,16 @@ const AdminDashboard = ({ onLogout }) => {
             <span>Media</span>
           </button>
           <button
+            onClick={() => setActiveTab('live_reviews')}
+            className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors flex items-center ${
+              activeTab === 'live_reviews'
+                ? 'bg-gray-600 text-white'
+                : 'text-gray-300 hover:text-white hover:bg-gray-600'
+            }`}
+          >
+            <span>Live Reviews</span>
+          </button>
+          <button
             onClick={() => setActiveTab('shoutouts')}
             className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors flex items-center ${
               activeTab === 'shoutouts'
@@ -857,6 +868,14 @@ const AdminDashboard = ({ onLogout }) => {
         {/* Media Management */}
         {activeTab === 'media' && (
           <MediaManagement />
+        )}
+
+        {/* Live Review Management */}
+        {activeTab === 'live_reviews' && (
+          <LiveReviewManagement
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+          />
         )}
 
         {/* Shoutout Management */}

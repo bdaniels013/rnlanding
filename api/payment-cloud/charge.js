@@ -464,7 +464,12 @@ async function createOrder({ customer_info, offer_id, amount, transaction_id, pa
     }
 
     // Create shoutout if this is a shoutout offer
-    if (offer.name.toLowerCase().includes('shoutout') && customer_info.platform && customer_info.username) {
+    if (
+      ((offer.name && offer.name.toLowerCase().includes('shoutout')) ||
+       (offer.sku  && offer.sku.toLowerCase().includes('shoutout'))) &&
+      customer_info.platform &&
+      customer_info.username
+    ) {
       const shoutout = await prisma.shoutout.create({
         data: {
           customerId: customer.id,
