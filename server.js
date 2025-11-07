@@ -19,6 +19,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+app.enable('trust proxy');
+app.use((req, res, next) => {
+  if (process.env.NODE_ENV === 'production' && req.headers['x-forwarded-proto'] !== 'https') {
+    return res.redirect('https://' + req.headers.host + req.url);
+  }
+  next();
+});
 const PORT = process.env.PORT || 3000;
 const prisma = new PrismaClient();
 
@@ -969,8 +976,8 @@ app.post('/api/music-submission/notify', async (req, res) => {
     const to = 'richhtalk3@gmail.com';
     const from = process.env.FROM_EMAIL || process.env.SMTP_USER;
 
-    // Use 0 for test; otherwise use provided amount or fallback
-    const displayAmountCents = isTest ? 0 : (transaction?.amount ?? 2500);
+    // Reflect actual amount (1¢ for test, $25 for live)
+    const displayAmountCents = transaction?.amount ?? 2500;
 
     await mailTransporter.sendMail({
       from,
@@ -978,7 +985,7 @@ app.post('/api/music-submission/notify', async (req, res) => {
       replyTo: 'richhtalk3@gmail.com',
       subject,
       text: [
-        isTest ? 'TEST SUBMISSION - NO CHARGE' : 'New music submission:',
+        isTest ? 'TEST SUBMISSION' : 'New music submission:',
         `Name: ${name}`,
         `Song Name: ${songName}`,
         `Customer Email: ${email || 'N/A'}`,
@@ -987,7 +994,7 @@ app.post('/api/music-submission/notify', async (req, res) => {
         `Time: ${now.toISOString()}`
       ].join('\n'),
       html: `
-        <p><strong>${isTest ? 'TEST SUBMISSION - NO CHARGE' : 'New music submission'}</strong></p>
+        <p><strong>${isTest ? 'TEST SUBMISSION' : 'New music submission'}</strong></p>
         <ul>
           <li>Name: ${name}</li>
           <li>Song Name: ${songName}</li>

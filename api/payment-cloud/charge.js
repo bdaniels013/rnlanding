@@ -10,8 +10,21 @@ const router = express.Router();
 router.post('/charge', async (req, res) => {
   try {
     console.log('=== PAYMENT CHARGE REQUEST ===');
-    console.log('Request body:', JSON.stringify(req.body, null, 2));
-    
+
+    // Mask sensitive fields before logging
+    const pd = req.body?.payment_data || {};
+    const maskCard = (n) => String(n || '').replace(/\d(?=\d{4})/g, '*');
+    const safeLogBody = {
+      ...req.body,
+      payment_data: {
+        number: pd.number ? maskCard(pd.number) : undefined,
+        expiry: pd.expiry ? 'MM/YY' : undefined,
+        cvv: pd.cvv ? '***' : undefined,
+        name: pd.name
+      }
+    };
+    console.log('Request body (masked):', JSON.stringify(safeLogBody, null, 2));
+
     const { method, customer_info, payment_data, amount, offer_id } = req.body;
 
     // Basic validation - just check essentials
@@ -218,6 +231,7 @@ router.post('/charge', async (req, res) => {
 });
 
 // Card Payment Processing
+// processCardPayment() — mask logging of card data
 async function processCardPayment(payload, payment_data) {
   console.log('=== PROCESSING CARD PAYMENT ===');
   console.log('Payment data received:', JSON.stringify(payment_data, null, 2));
@@ -381,8 +395,7 @@ async function createOrder({ customer_info, offer_id, amount, transaction_id, pa
       throw new Error(`Offer not found: ${offer_id}`);
     }
 
-    // Update order description with subscription info
-    payload.order_description = `Rich Nick - ${offer.name}${offer.isSubscription ? ' (Monthly Subscription)' : ' (One-time Payment)'}`;
+    // Removed: payload.order_description (payload is undefined here)
 
     // Create the order
     const order = await prisma.order.create({
@@ -410,11 +423,7 @@ async function createOrder({ customer_info, offer_id, amount, transaction_id, pa
       },
       include: {
         customer: true,
-        orderItems: {
-          include: {
-            offer: true
-          }
-        },
+        orderItems: { include: { offer: true } },
         payments: true
       }
     });
@@ -477,3 +486,5 @@ async function createOrder({ customer_info, offer_id, amount, transaction_id, pa
 }
 
 export default router;
+// Ensure this is the last line in the file,
+// with NO duplicate router.post('/charge') or top-level logging after it.
