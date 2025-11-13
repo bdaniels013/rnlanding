@@ -1140,25 +1140,28 @@ const audioUpload = multer({
   storage: audioStorage,
   limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
   fileFilter: (req, file, cb) => {
-    const extOk = /\.(mp3|mpeg)$/i.test(file.originalname);
-    const mimeOk = /^audio\/(mpeg|mp3)$/.test(file.mimetype);
+    const ext = path.extname(file.originalname || '').toLowerCase();
+    const mime = String(file.mimetype || '').toLowerCase();
+    const extOk = ext === '.mp3' || ext === '.mpeg';
+    const mimeOk = /^audio\/(mpeg|mp3)$/.test(mime) || mime === 'application/octet-stream';
     if (extOk && mimeOk) cb(null, true);
-    else cb(new Error('Only MP3 files up to 20MB are allowed.'));
+    else cb(new Error('Only MP3 files (.mp3) up to 20MB are allowed.'));
   }
 });
 
-// Music submission upload endpoint
-app.post('/api/music-submission/upload', audioUpload.single('mp3'), (req, res) => {
-  try {
+// Music submission upload endpoint (with error handling)
+app.post('/api/music-submission/upload', (req, res) => {
+  audioUpload.single('mp3')(req, res, (err) => {
+    if (err) {
+      const msg = err.message || 'Failed to upload MP3';
+      return res.status(400).json({ success: false, error: msg });
+    }
     if (!req.file) {
       return res.status(400).json({ success: false, error: 'MP3 file is required' });
     }
     const fileUrl = `/uploads/music-submissions/${req.file.filename}`;
     return res.json({ success: true, fileUrl });
-  } catch (err) {
-    console.error('MP3 upload error:', err);
-    return res.status(500).json({ success: false, error: 'Failed to upload MP3' });
-  }
+  });
 });
 
 // Music submission notify endpoint (sends email with attachment)
