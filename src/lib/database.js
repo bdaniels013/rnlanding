@@ -902,35 +902,98 @@ export class DatabaseService {
       const s = startDate ? new Date(startDate) : defaultStart;
       const e = endDate ? new Date(endDate) : now;
 
-      const fmt = (d) => {
-        // YYYY-MM-DD
+      const fmtISO = (d) => {
+        // YYYY-MM-DD (ISO date only)
         const yyyy = d.getUTCFullYear();
         const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
         const dd = String(d.getUTCDate()).padStart(2, '0');
         return `${yyyy}-${mm}-${dd}`;
       };
+      const fmtUS = (d) => {
+        // MM/DD/YYYY
+        const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+        const dd = String(d.getUTCDate()).padStart(2, '0');
+        const yyyy = d.getUTCFullYear();
+        return `${mm}/${dd}/${yyyy}`;
+      };
 
-      const params = new URLSearchParams({
+      const tryQuery = async (params) => {
+        const resp = await fetch('https://secure.nmi.com/api/query.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: params.toString()
+        });
+        const text = await resp.text();
+        if (!resp.ok) {
+          throw new Error(`NMI query failed: ${resp.status} ${text}`);
+        }
+        return { text, transactions: parseNMIQueryXML(text) };
+      };
+
+      // Attempt 1: ISO date format, default query_by
+      const baseParams1 = new URLSearchParams({
         security_key: apiKey,
         report_type: 'transaction',
-        start_date: fmt(s),
-        end_date: fmt(e),
-        condition: 'complete'
-        // Some merchants require query_by; leaving out to use gateway default
+        start_date: fmtISO(s),
+        end_date: fmtISO(e),
+        condition: 'complete',
+        format: 'xml'
       });
+      let { text, transactions } = await tryQuery(baseParams1);
 
-      const resp = await fetch('https://secure.networkmerchants.com/api/query.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: params.toString()
-      });
-
-      const text = await resp.text();
-      if (!resp.ok) {
-        throw new Error(`NMI query failed: ${resp.status} ${text}`);
+      // If no transactions, Attempt 2: US date format (MM/DD/YYYY)
+      if (!transactions || transactions.length === 0) {
+        const baseParams2 = new URLSearchParams({
+          security_key: apiKey,
+          report_type: 'transaction',
+          start_date: fmtUS(s),
+          end_date: fmtUS(e),
+          condition: 'complete',
+          format: 'xml'
+        });
+        ({ text, transactions } = await tryQuery(baseParams2));
       }
 
-      const transactions = parseNMIQueryXML(text);
+      // If still none, Attempt 3: Explicit query_by transaction_date
+      if (!transactions || transactions.length === 0) {
+        const baseParams3 = new URLSearchParams({
+          security_key: apiKey,
+          report_type: 'transaction',
+          start_date: fmtUS(s),
+          end_date: fmtUS(e),
+          query_by: 'transaction_date',
+          condition: 'complete',
+          format: 'xml'
+        });
+        ({ text, transactions } = await tryQuery(baseParams3));
+      }
+
+      // If still none, Attempt 4: condition closed (some processors)
+      if (!transactions || transactions.length === 0) {
+        const baseParams4 = new URLSearchParams({
+          security_key: apiKey,
+          report_type: 'transaction',
+          start_date: fmtUS(s),
+          end_date: fmtUS(e),
+          query_by: 'transaction_date',
+          condition: 'closed',
+          format: 'xml'
+        });
+        ({ text, transactions } = await tryQuery(baseParams4));
+      }
+
+      // If still none, Attempt 5: omit condition
+      if (!transactions || transactions.length === 0) {
+        const baseParams5 = new URLSearchParams({
+          security_key: apiKey,
+          report_type: 'transaction',
+          start_date: fmtUS(s),
+          end_date: fmtUS(e),
+          query_by: 'transaction_date',
+          format: 'xml'
+        });
+        ({ text, transactions } = await tryQuery(baseParams5));
+      }
 
       let reconciled = 0;
       let updatedCapturedAt = 0;
@@ -1053,7 +1116,7 @@ export class DatabaseService {
       }
 
       return {
-        message: `NMI sync complete: ${reconciled} reconciled, ${updatedCapturedAt} capturedAt updated, ${imported} imported, ${notMatched} unmatched`,
+        message: `NMI sync complete: ${reconciled} reconciled, ${updatedCapturedAt} capturedAt updated, ${imported} imported, ${notMatched} unmatched (total ${transactions.length})`,
         total: transactions.length,
         reconciled,
         updatedCapturedAt,
