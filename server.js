@@ -411,6 +411,33 @@ app.get('/api/admin/dashboard', authenticateAdmin, async (req, res) => {
   }
 });
 
+// Admin payments: backfill capturedAt for historical PAID orders
+app.post('/api/admin/payments/backfill-captured-at', authenticateAdmin, async (req, res) => {
+  try {
+    const result = await db.backfillCapturedAtForPaidOrders();
+    res.json({
+      success: true,
+      message: `Backfill complete. Updated ${result.updated} of ${result.totalPaidMissing} PAID orders missing capturedAt.`,
+      ...result
+    });
+  } catch (error) {
+    console.error('Admin payments backfill error:', error);
+    res.status(500).json({ error: 'Failed to backfill captured timestamps' });
+  }
+});
+
+// Admin payments: sync transactions from NMI gateway
+app.post('/api/admin/payments/sync-nmi', authenticateAdmin, async (req, res) => {
+  try {
+    const { startDate, endDate } = req.body || {};
+    const result = await db.syncNMIGatewayTransactions({ startDate, endDate });
+    res.json(result);
+  } catch (error) {
+    console.error('Admin payments NMI sync error:', error);
+    res.status(500).json({ error: 'NMI sync failed', detail: error.message });
+  }
+});
+
 // Admin endpoints for social media photos
 app.get('/api/admin/social-media/photos', authenticateAdmin, async (req, res) => {
   try {

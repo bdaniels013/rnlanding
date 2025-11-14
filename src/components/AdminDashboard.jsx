@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, Users, CreditCard, Calendar, TrendingUp, Package, AlertCircle, LogOut, User, Plus, Edit, Trash2, Search, Filter, X, Image, GripVertical, ArrowUp, ArrowDown } from 'lucide-react';
+import { DollarSign, Users, CreditCard, Calendar, TrendingUp, Package, AlertCircle, LogOut, User, Plus, Edit, Trash2, Search, Filter, X, Image, GripVertical, ArrowUp, ArrowDown, Cloud } from 'lucide-react';
 import CreditsManagement from './CreditsManagement';
 import MediaManagement from './MediaManagement';
 import ShoutoutManagement from './ShoutoutManagement';
@@ -43,6 +43,10 @@ const AdminDashboard = ({ onLogout }) => {
     username: '',
     notes: ''
   });
+  const [metricPeriod, setMetricPeriod] = useState('day'); // 'day' | 'week' | 'month'
+  const [syncingPayments, setSyncingPayments] = useState(false);
+  const [syncMessage, setSyncMessage] = useState('');
+  const [syncingGateway, setSyncingGateway] = useState(false);
 
   useEffect(() => {
     // Check if user is authenticated
@@ -102,6 +106,61 @@ const AdminDashboard = ({ onLogout }) => {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSyncPayments = async () => {
+    try {
+      setSyncingPayments(true);
+      setSyncMessage('');
+      const response = await fetch('/api/admin/payments/backfill-captured-at', {
+        method: 'POST',
+        headers: {
+          'x-admin-auth': 'true',
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(errText || 'Sync failed');
+      }
+      const data = await response.json();
+      setSyncMessage(data.message || 'Payments synced');
+      await fetchDashboardData();
+    } catch (err) {
+      setSyncMessage(`Sync error: ${err.message}`);
+    } finally {
+      setSyncingPayments(false);
+    }
+  };
+
+  const handleSyncGateway = async () => {
+    try {
+      setSyncingGateway(true);
+      setSyncMessage('');
+      const body = {
+        startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+        endDate: new Date().toISOString()
+      };
+      const response = await fetch('/api/admin/payments/sync-nmi', {
+        method: 'POST',
+        headers: {
+          'x-admin-auth': 'true',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(errText || 'Gateway sync failed');
+      }
+      const data = await response.json();
+      setSyncMessage(data.message || 'NMI gateway sync complete');
+      await fetchDashboardData();
+    } catch (err) {
+      setSyncMessage(`Gateway sync error: ${err.message}`);
+    } finally {
+      setSyncingGateway(false);
     }
   };
 
@@ -588,6 +647,22 @@ const AdminDashboard = ({ onLogout }) => {
               <span>Welcome, {currentUser}</span>
             </div>
             <button
+              onClick={handleSyncPayments}
+              disabled={syncingPayments}
+              className={`flex items-center justify-center gap-2 px-3 py-2 ${syncingPayments ? 'bg-gray-600' : 'bg-blue-600 hover:bg-blue-700'} text-white rounded-lg transition-colors`}
+            >
+              <TrendingUp className="w-4 h-4" />
+              {syncingPayments ? 'Syncing…' : 'Sync Payments'}
+            </button>
+            <button
+              onClick={handleSyncGateway}
+              disabled={syncingGateway}
+              className={`flex items-center justify-center gap-2 px-3 py-2 ${syncingGateway ? 'bg-gray-600' : 'bg-indigo-600 hover:bg-indigo-700'} text-white rounded-lg transition-colors`}
+            >
+              <Cloud className="w-4 h-4" />
+              {syncingGateway ? 'Syncing…' : 'Sync NMI'}
+            </button>
+            <button
               onClick={handleLogout}
               className="flex items-center justify-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
             >
@@ -668,19 +743,43 @@ const AdminDashboard = ({ onLogout }) => {
       </div>
 
       <div className="p-4 sm:p-6">
+        {syncMessage && (
+          <div className="mb-3 sm:mb-4 bg-gray-800 border border-gray-700 text-gray-200 text-xs sm:text-sm px-3 py-2 rounded">
+            {syncMessage}
+          </div>
+        )}
         {activeTab === 'dashboard' && (
           <>
             {/* Key Metrics */}
+            {/* Period selector */}
+            <div className="flex items-center justify-end mb-3 sm:mb-4">
+              <div className="bg-gray-800 rounded-lg p-1 inline-flex">
+                {['day','week','month'].map(p => (
+                  <button
+                    key={p}
+                    onClick={() => setMetricPeriod(p)}
+                    className={`px-3 py-1 rounded-md text-xs sm:text-sm font-medium transition-colors ${
+                      metricPeriod === p ? 'bg-gray-700 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                    }`}
+                    aria-pressed={metricPeriod === p}
+                  >
+                    {p === 'day' ? 'Today' : p === 'week' ? 'This Week' : 'This Month'}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
           <MetricCard
-            title="Revenue Today"
-            value={`$${dashboardData.revenue_today?.toLocaleString() || '0'}`}
+            title={`Revenue ${metricPeriod === 'day' ? 'Today' : metricPeriod === 'week' ? 'This Week' : 'This Month'}`}
+            value={`$${(
+              dashboardData.revenue_period?.[metricPeriod] ?? dashboardData.revenue_today ?? 0
+            ).toLocaleString()}`}
             icon={<DollarSign className="w-6 h-6" />}
             color="text-green-400"
           />
           <MetricCard
-            title="Orders Today"
-            value={dashboardData.orders_today || 0}
+            title={`Orders ${metricPeriod === 'day' ? 'Today' : metricPeriod === 'week' ? 'This Week' : 'This Month'}`}
+            value={dashboardData.orders_period?.[metricPeriod] ?? dashboardData.orders_today ?? 0}
             icon={<Package className="w-6 h-6" />}
             color="text-blue-400"
           />
@@ -695,6 +794,28 @@ const AdminDashboard = ({ onLogout }) => {
             value={dashboardData.credits_outstanding || 0}
             icon={<CreditCard className="w-6 h-6" />}
             color="text-yellow-400"
+          />
+        </div>
+
+        {/* Category Metrics */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
+          <MetricCard
+            title={`Live Reviews (${metricPeriod === 'day' ? 'Today' : metricPeriod === 'week' ? 'Week' : 'Month'})`}
+            value={dashboardData.live_reviews?.[metricPeriod]?.orders ?? 0}
+            icon={<TrendingUp className="w-6 h-6" />}
+            color="text-yellow-400"
+            subtitle={`Revenue: $${(
+              dashboardData.live_reviews?.[metricPeriod]?.revenue ?? 0
+            ).toLocaleString()}`}
+          />
+          <MetricCard
+            title={`Shoutouts (${metricPeriod === 'day' ? 'Today' : metricPeriod === 'week' ? 'Week' : 'Month'})`}
+            value={dashboardData.shoutouts?.[metricPeriod]?.orders ?? 0}
+            icon={<TrendingUp className="w-6 h-6" />}
+            color="text-yellow-300"
+            subtitle={`Revenue: $${(
+              dashboardData.shoutouts?.[metricPeriod]?.revenue ?? 0
+            ).toLocaleString()}`}
           />
         </div>
 

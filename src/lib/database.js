@@ -1,8 +1,47 @@
 import { PrismaClient } from '@prisma/client';
+import fetch from 'node-fetch';
 
 const prisma = new PrismaClient();
 
 export class DatabaseService {
+  // Backfill operations
+  async backfillCapturedAtForPaidOrders() {
+    try {
+      // Find PAID orders missing capturedAt
+      const missing = await prisma.order.findMany({
+        where: { status: 'PAID', capturedAt: null },
+        include: { payments: true }
+      });
+
+      let updated = 0;
+      const updates = [];
+
+      for (const order of missing) {
+        // Prefer the timestamp of a COMPLETED payment if available
+        const completedPayment = order.payments.find(p => p.status === 'COMPLETED');
+        const ts = completedPayment?.createdAt || order.updatedAt || order.createdAt || new Date();
+        updates.push(
+          prisma.order.update({
+            where: { id: order.id },
+            data: { capturedAt: ts }
+          })
+        );
+      }
+
+      if (updates.length > 0) {
+        await Promise.all(updates);
+        updated = updates.length;
+      }
+
+      return {
+        totalPaidMissing: missing.length,
+        updated
+      };
+    } catch (error) {
+      console.error('Error backfilling capturedAt for paid orders:', error);
+      throw error;
+    }
+  }
   // Customer operations
   async getCustomers() {
     try {
@@ -512,23 +551,46 @@ export class DatabaseService {
   // Dashboard data
   async getDashboardData() {
     try {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
+      // Define period boundaries
+      const now = new Date();
+      const startOfToday = new Date(now);
+      startOfToday.setHours(0, 0, 0, 0);
+      const startOfTomorrow = new Date(startOfToday);
+      startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
 
-      // Get today's revenue
-      const todayOrders = await prisma.order.findMany({
-        where: {
-          createdAt: {
-            gte: today,
-            lt: tomorrow
-          },
-          status: 'PAID'
-        }
-      });
+      // Monday as start of week
+      const startOfWeek = new Date(startOfToday);
+      const day = startOfToday.getDay(); // 0=Sun,1=Mon,...
+      const daysSinceMonday = (day + 6) % 7; // Sun->6, Mon->0
+      startOfWeek.setDate(startOfWeek.getDate() - daysSinceMonday);
 
-      const revenueToday = todayOrders.reduce((sum, order) => sum + order.totalCents, 0);
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      // Helper to fetch orders and revenue for a period using capturedAt (actual payment time)
+      const getOrdersAndRevenue = async (gteDate, ltOrLteDate, useLt = true) => {
+        const where = {
+          status: 'PAID',
+          capturedAt: {
+            gte: gteDate,
+            ...(useLt ? { lt: ltOrLteDate } : { lte: ltOrLteDate })
+          }
+        };
+        const [ordersCount, revenueAgg] = await Promise.all([
+          prisma.order.count({ where }),
+          prisma.order.aggregate({ where, _sum: { totalCents: true } })
+        ]);
+        return {
+          orders: ordersCount,
+          revenueCents: revenueAgg._sum.totalCents || 0
+        };
+      };
+
+      // Period metrics
+      const [dayMetrics, weekMetrics, monthMetrics] = await Promise.all([
+        getOrdersAndRevenue(startOfToday, startOfTomorrow, true),
+        getOrdersAndRevenue(startOfWeek, now, false),
+        getOrdersAndRevenue(startOfMonth, now, false)
+      ]);
 
       // Get total customers
       const totalCustomers = await prisma.customer.count();
@@ -583,9 +645,76 @@ export class DatabaseService {
 
       const arr = mrr * 12;
 
+      // Category metrics for Live Reviews and Shoutouts
+      const offerMatches = (keyword) => ({
+        OR: [
+          { name: { contains: keyword, mode: 'insensitive' } },
+          { sku: { contains: keyword, mode: 'insensitive' } }
+        ]
+      });
+
+      const sumItemsCents = (items) => items.reduce((sum, it) => sum + (it.unitPriceCents * it.qty), 0);
+
+      const getCategoryMetrics = async (keyword, gteDate, ltOrLteDate, useLt = true) => {
+        const where = {
+          order: {
+            status: 'PAID',
+            capturedAt: {
+              gte: gteDate,
+              ...(useLt ? { lt: ltOrLteDate } : { lte: ltOrLteDate })
+            }
+          },
+          offer: offerMatches(keyword)
+        };
+        const items = await prisma.orderItem.findMany({
+          where,
+          select: { orderId: true, qty: true, unitPriceCents: true }
+        });
+        const uniqueOrders = new Set(items.map(i => i.orderId));
+        return {
+          orders: uniqueOrders.size,
+          revenueCents: sumItemsCents(items)
+        };
+      };
+
+      const [
+        liveDay, liveWeek, liveMonth,
+        shoutDay, shoutWeek, shoutMonth
+      ] = await Promise.all([
+        getCategoryMetrics('live review', startOfToday, startOfTomorrow, true),
+        getCategoryMetrics('live review', startOfWeek, now, false),
+        getCategoryMetrics('live review', startOfMonth, now, false),
+        getCategoryMetrics('shoutout', startOfToday, startOfTomorrow, true),
+        getCategoryMetrics('shoutout', startOfWeek, now, false),
+        getCategoryMetrics('shoutout', startOfMonth, now, false)
+      ]);
+
       return {
-        revenue_today: revenueToday / 100,
-        orders_today: todayOrders.length,
+        // Back-compat fields (based on capturedAt)
+        revenue_today: dayMetrics.revenueCents / 100,
+        orders_today: dayMetrics.orders,
+        // New period-based aggregates
+        revenue_period: {
+          day: dayMetrics.revenueCents / 100,
+          week: weekMetrics.revenueCents / 100,
+          month: monthMetrics.revenueCents / 100
+        },
+        orders_period: {
+          day: dayMetrics.orders,
+          week: weekMetrics.orders,
+          month: monthMetrics.orders
+        },
+        // Category breakdowns
+        live_reviews: {
+          day: { orders: liveDay.orders, revenue: liveDay.revenueCents / 100 },
+          week: { orders: liveWeek.orders, revenue: liveWeek.revenueCents / 100 },
+          month: { orders: liveMonth.orders, revenue: liveMonth.revenueCents / 100 }
+        },
+        shoutouts: {
+          day: { orders: shoutDay.orders, revenue: shoutDay.revenueCents / 100 },
+          week: { orders: shoutWeek.orders, revenue: shoutWeek.revenueCents / 100 },
+          month: { orders: shoutMonth.orders, revenue: shoutMonth.revenueCents / 100 }
+        },
         total_customers: totalCustomers,
         credits_outstanding: 0, // TODO: Calculate from credits ledger
         active_subscriptions: activeSubscriptions,
@@ -757,6 +886,122 @@ export class DatabaseService {
       console.error('Error processing subscription payment:', error);
       throw error;
     }
+  }
+
+  // NMI Gateway Sync
+  async syncNMIGatewayTransactions({ startDate, endDate } = {}) {
+    try {
+      const apiKey = process.env.PAYMENT_CLOUD_SECRET_KEY;
+      if (!apiKey) {
+        throw new Error('Missing PAYMENT_CLOUD_SECRET_KEY');
+      }
+
+      // Default range: last 30 days
+      const now = new Date();
+      const defaultStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const s = startDate ? new Date(startDate) : defaultStart;
+      const e = endDate ? new Date(endDate) : now;
+
+      const fmt = (d) => {
+        // YYYY-MM-DD
+        const yyyy = d.getUTCFullYear();
+        const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+        const dd = String(d.getUTCDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+      };
+
+      const params = new URLSearchParams({
+        security_key: apiKey,
+        report_type: 'transaction',
+        start_date: fmt(s),
+        end_date: fmt(e),
+        condition: 'complete'
+        // Some merchants require query_by; leaving out to use gateway default
+      });
+
+      const resp = await fetch('https://secure.networkmerchants.com/api/query.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params.toString()
+      });
+
+      const text = await resp.text();
+      if (!resp.ok) {
+        throw new Error(`NMI query failed: ${resp.status} ${text}`);
+      }
+
+      const transactions = parseNMIQueryXML(text);
+
+      let reconciled = 0;
+      let updatedCapturedAt = 0;
+      let notMatched = 0;
+
+      for (const tx of transactions) {
+        const txnId = tx.transaction_id;
+        if (!txnId) {
+          continue;
+        }
+        const payment = await prisma.payment.findFirst({ where: { paypalTxnId: txnId } });
+        if (payment) {
+          // Ensure payment is completed
+          if (payment.status !== 'COMPLETED') {
+            await prisma.payment.update({
+              where: { id: payment.id },
+              data: { status: 'COMPLETED' }
+            });
+          }
+
+          // Update order capturedAt from gateway timestamp if available
+          const tsStr = tx.timestamp || tx.date;
+          if (tsStr) {
+            const ts = new Date(tsStr);
+            const order = await prisma.order.findUnique({ where: { id: payment.orderId } });
+            if (order && !order.capturedAt) {
+              await prisma.order.update({ where: { id: order.id }, data: { capturedAt: ts } });
+              updatedCapturedAt++;
+            }
+          }
+
+          reconciled++;
+        } else {
+          notMatched++;
+        }
+      }
+
+      return {
+        message: `NMI sync complete: ${reconciled} reconciled, ${updatedCapturedAt} capturedAt updated, ${notMatched} unmatched`,
+        total: transactions.length,
+        reconciled,
+        updatedCapturedAt,
+        unmatched: notMatched
+      };
+    } catch (error) {
+      console.error('Error syncing NMI gateway transactions:', error);
+      throw error;
+    }
+  }
+}
+
+// Minimal XML parser for NMI Query API response
+function parseNMIQueryXML(xmlText) {
+  try {
+    const txBlocks = [...xmlText.matchAll(/<transaction>([\s\S]*?)<\/transaction>/g)].map(m => m[1]);
+    const get = (block, tag) => {
+      const m = block.match(new RegExp(`<${tag}>([\s\S]*?)<\/${tag}>`));
+      return m ? m[1].trim() : null;
+    };
+    return txBlocks.map(block => ({
+      transaction_id: get(block, 'transaction_id'),
+      order_id: get(block, 'order_id'),
+      amount: get(block, 'amount'),
+      condition: get(block, 'condition'),
+      transaction_type: get(block, 'transaction_type'),
+      timestamp: get(block, 'timestamp') || get(block, 'date') || null,
+      email: get(block, 'email')
+    }));
+  } catch (e) {
+    console.error('Failed to parse NMI XML:', e);
+    return [];
   }
 }
 
