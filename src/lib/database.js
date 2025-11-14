@@ -935,6 +935,7 @@ export class DatabaseService {
       let reconciled = 0;
       let updatedCapturedAt = 0;
       let notMatched = 0;
+      let imported = 0;
 
       for (const tx of transactions) {
         const txnId = tx.transaction_id;
@@ -964,15 +965,99 @@ export class DatabaseService {
 
           reconciled++;
         } else {
-          notMatched++;
+          // Import unmatched transaction as a paid order with payment
+          try {
+            const amountCents = tx.amount ? Math.round(parseFloat(tx.amount) * 100) : 0;
+            const tsStr = tx.timestamp || tx.date;
+            const capturedTs = tsStr ? new Date(tsStr) : new Date();
+
+            const rawEmail = (tx.email || '').trim();
+            const safeEmail = rawEmail.length ? rawEmail : `noemail-${txnId}@placeholder.local`;
+
+            // Find or create customer
+            let customer = await prisma.customer.findUnique({ where: { email: safeEmail } });
+            if (!customer) {
+              customer = await prisma.customer.create({
+                data: {
+                  name: rawEmail ? rawEmail.split('@')[0] : 'Unknown',
+                  email: safeEmail,
+                  phone: null,
+                  notes: 'Created via NMI gateway import'
+                }
+              });
+            }
+
+            // Choose offer: prefer price match; otherwise prefer Live Review; otherwise first active offer
+            const offers = await prisma.offer.findMany();
+            const priceMatches = amountCents ? offers.filter(o => o.priceCents === amountCents) : [];
+            const liveReviewMatch = (list) => list.find(o =>
+              (o.name && /live\s*review/i.test(o.name)) || (o.sku && /live/i.test(o.sku))
+            );
+            let offer = null;
+            if (priceMatches.length > 0) {
+              offer = liveReviewMatch(priceMatches) || priceMatches[0];
+            } else {
+              offer = liveReviewMatch(offers) || offers[0] || null;
+            }
+
+            // If no offers exist, we cannot import the transaction meaningfully
+            if (!offer) {
+              notMatched++;
+              continue;
+            }
+
+            // Create order with one item and completed payment
+            const order = await prisma.order.create({
+              data: {
+                customerId: customer.id,
+                totalCents: amountCents || offer.priceCents,
+                currency: 'USD',
+                status: 'PAID',
+                capturedAt: capturedTs,
+                orderItems: {
+                  create: {
+                    offerId: offer.id,
+                    qty: 1,
+                    unitPriceCents: amountCents || offer.priceCents,
+                    creditsAwarded: offer.creditsValue || 0
+                  }
+                },
+                payments: {
+                  create: {
+                    amountCents: amountCents || offer.priceCents,
+                    status: 'COMPLETED',
+                    paypalTxnId: txnId
+                  }
+                }
+              }
+            });
+
+            // Link to existing live review for this customer if present
+            const pendingLiveReview = await prisma.liveReview.findFirst({
+              where: { customerId: customer.id, orderId: null },
+              orderBy: { createdAt: 'desc' }
+            });
+            if (pendingLiveReview) {
+              await prisma.liveReview.update({
+                where: { id: pendingLiveReview.id },
+                data: { orderId: order.id }
+              });
+            }
+
+            imported++;
+          } catch (importErr) {
+            console.error('Failed to import NMI transaction', txnId, importErr);
+            notMatched++;
+          }
         }
       }
 
       return {
-        message: `NMI sync complete: ${reconciled} reconciled, ${updatedCapturedAt} capturedAt updated, ${notMatched} unmatched`,
+        message: `NMI sync complete: ${reconciled} reconciled, ${updatedCapturedAt} capturedAt updated, ${imported} imported, ${notMatched} unmatched`,
         total: transactions.length,
         reconciled,
         updatedCapturedAt,
+        imported,
         unmatched: notMatched
       };
     } catch (error) {
@@ -993,6 +1078,7 @@ function parseNMIQueryXML(xmlText) {
     return txBlocks.map(block => ({
       transaction_id: get(block, 'transaction_id'),
       order_id: get(block, 'order_id'),
+      order_description: get(block, 'order_description'),
       amount: get(block, 'amount'),
       condition: get(block, 'condition'),
       transaction_type: get(block, 'transaction_type'),
