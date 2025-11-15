@@ -181,6 +181,17 @@ app.get('/api/social-media/photos', async (req, res) => {
   }
 });
 
+// Event Flyers API endpoints
+app.get('/api/event-flyers', async (req, res) => {
+  try {
+    const flyers = await db.getEventFlyers(true);
+    res.json({ flyers });
+  } catch (error) {
+    console.error('Error fetching event flyers:', error);
+    res.status(500).json({ error: 'Failed to fetch flyers' });
+  }
+});
+
 
 // Checkout endpoint with real PayPal integration
 app.post('/api/checkout/create', async (req, res) => {
@@ -540,6 +551,93 @@ app.post('/api/admin/social-media/photos/upload', authenticateAdmin, upload.arra
   } catch (error) {
     console.error('Error uploading photos:', error);
     res.status(500).json({ error: 'Failed to upload photos' });
+  }
+});
+
+// Admin endpoints for event flyers
+app.get('/api/admin/event-flyers', authenticateAdmin, async (req, res) => {
+  try {
+    const flyers = await db.getEventFlyers(false);
+    res.json({ flyers });
+  } catch (error) {
+    console.error('Error fetching event flyers:', error);
+    res.status(500).json({ error: 'Failed to fetch flyers' });
+  }
+});
+
+app.post('/api/admin/event-flyers', authenticateAdmin, async (req, res) => {
+  try {
+    const flyer = await db.createEventFlyer(req.body);
+    res.json(flyer);
+  } catch (error) {
+    console.error('Error creating event flyer:', error);
+    res.status(500).json({ error: 'Failed to create flyer' });
+  }
+});
+
+app.put('/api/admin/event-flyers', authenticateAdmin, async (req, res) => {
+  try {
+    const { id, ...updateData } = req.body;
+    const flyer = await db.updateEventFlyer(id, updateData);
+    res.json(flyer);
+  } catch (error) {
+    console.error('Error updating event flyer:', error);
+    res.status(500).json({ error: 'Failed to update flyer' });
+  }
+});
+
+app.delete('/api/admin/event-flyers', authenticateAdmin, async (req, res) => {
+  try {
+    const { id } = req.query;
+    await db.deleteEventFlyer(id);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting event flyer:', error);
+    res.status(500).json({ error: 'Failed to delete flyer' });
+  }
+});
+
+app.post('/api/admin/event-flyers/reorder', authenticateAdmin, async (req, res) => {
+  try {
+    const { flyerIds } = req.body;
+    await db.reorderEventFlyers(flyerIds);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error reordering event flyers:', error);
+    res.status(500).json({ error: 'Failed to reorder flyers' });
+  }
+});
+
+app.post('/api/admin/event-flyers/upload', authenticateAdmin, upload.array('photos', 10), async (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'No files uploaded' });
+    }
+
+    const { platform, altText } = req.body;
+    const uploadedFlyers = [];
+
+    for (const file of req.files) {
+      const imageData = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      const filename = file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname);
+      const flyerData = {
+        platform,
+        filename,
+        originalName: file.originalname,
+        url: `/uploads/event-flyers/${filename}`,
+        imageData,
+        altText: altText || null,
+        order: 0
+      };
+      const flyer = await db.createEventFlyer(flyerData);
+      uploadedFlyers.push(flyer);
+    }
+
+    res.json({ flyers: uploadedFlyers });
+  } catch (error) {
+    console.error('Error uploading event flyers:', error);
+    res.status(500).json({ error: 'Failed to upload flyers' });
   }
 });
 

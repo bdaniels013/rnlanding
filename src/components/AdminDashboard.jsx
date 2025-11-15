@@ -4,6 +4,7 @@ import CreditsManagement from './CreditsManagement';
 import MediaManagement from './MediaManagement';
 import ShoutoutManagement from './ShoutoutManagement';
 import LiveReviewManagement from './LiveReviewManagement';
+import EventFlyersManagement from './EventFlyersManagement';
 
 const AdminDashboard = ({ onLogout }) => {
   const [dashboardData, setDashboardData] = useState(null);
@@ -734,6 +735,16 @@ const AdminDashboard = ({ onLogout }) => {
             <span>Media</span>
           </button>
           <button
+            onClick={() => setActiveTab('event_flyers')}
+            className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors flex items-center ${
+              activeTab === 'event_flyers'
+                ? 'bg-gray-600 text-white'
+                : 'text-gray-300 hover:text-white hover:bg-gray-600'
+            }`}
+          >
+            <span>Event Flyers</span>
+          </button>
+          <button
             onClick={() => setActiveTab('live_reviews')}
             className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors flex items-center ${
               activeTab === 'live_reviews'
@@ -1002,7 +1013,16 @@ const AdminDashboard = ({ onLogout }) => {
 
         {/* Media Management */}
         {activeTab === 'media' && (
-          <MediaManagement />
+          <>
+            <MediaManagement />
+            <div className="mt-8">
+              <EventFlyersManagement />
+            </div>
+          </>
+        )}
+
+        {activeTab === 'event_flyers' && (
+          <EventFlyersManagement />
         )}
 
         {/* Live Review Management */}

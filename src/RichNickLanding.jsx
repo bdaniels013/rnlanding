@@ -8,6 +8,7 @@ import CheckoutCancel from './components/CheckoutCancel';
 import CheckoutFlow from './components/CheckoutFlow';
 import SecureCheckout from './components/SecureCheckout';
 import SocialMediaGallery from './components/SocialMediaGallery';
+import EventFlyers from './components/EventFlyers';
 
 /**
  * RICHNICK VIRAL GROWTH — LANDING PAGE
@@ -749,6 +750,7 @@ export default function RichNickLanding() {
       </a>
 
       <Hero onReserveSeat={handleReserveSeat} />
+      <EventFlyers />
       <CardBrandLogos />
       <div id="offers-section">
         <OffersSection />

@@ -385,6 +385,97 @@ export class DatabaseService {
     }
   }
 
+  async getEventFlyers(activeOnly = true) {
+    try {
+      const where = {};
+      if (activeOnly) {
+        where.isActive = true;
+      }
+      const flyers = await prisma.eventFlyer.findMany({
+        where,
+        orderBy: [
+          { order: 'asc' },
+          { createdAt: 'desc' }
+        ]
+      });
+      return flyers;
+    } catch (error) {
+      console.error('Error fetching event flyers:', error);
+      throw error;
+    }
+  }
+
+  async createEventFlyer(data) {
+    try {
+      const flyer = await prisma.eventFlyer.create({
+        data: {
+          platform: data.platform || null,
+          filename: data.filename,
+          originalName: data.originalName,
+          url: data.url,
+          imageData: data.imageData || null,
+          altText: data.altText || null,
+          order: data.order || 0,
+          isActive: data.isActive !== undefined ? data.isActive : true
+        }
+      });
+      return flyer;
+    } catch (error) {
+      console.error('Error creating event flyer:', error);
+      throw error;
+    }
+  }
+
+  async updateEventFlyer(id, updateData) {
+    try {
+      const flyer = await prisma.eventFlyer.update({
+        where: { id },
+        data: {
+          platform: updateData.platform || null,
+          filename: updateData.filename,
+          originalName: updateData.originalName,
+          url: updateData.url,
+          imageData: updateData.imageData,
+          altText: updateData.altText,
+          order: updateData.order,
+          isActive: updateData.isActive
+        }
+      });
+      return flyer;
+    } catch (error) {
+      console.error('Error updating event flyer:', error);
+      throw error;
+    }
+  }
+
+  async deleteEventFlyer(id) {
+    try {
+      await prisma.eventFlyer.delete({
+        where: { id }
+      });
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting event flyer:', error);
+      throw error;
+    }
+  }
+
+  async reorderEventFlyers(flyerIds) {
+    try {
+      const updates = flyerIds.map((id, index) => 
+        prisma.eventFlyer.update({
+          where: { id },
+          data: { order: index }
+        })
+      );
+      await Promise.all(updates);
+      return { success: true };
+    } catch (error) {
+      console.error('Error reordering event flyers:', error);
+      throw error;
+    }
+  }
+
   // Credits operations
   async addCredits(customerId, amount, reason, type = 'MANUAL_ADD', refOrderId = null) {
     try {

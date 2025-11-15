@@ -247,6 +247,22 @@ model SocialMediaPhoto {
   @@map("social_media_photos")
 }
 
+model EventFlyer {
+  id           String   @id @default(cuid())
+  platform     String?
+  filename     String
+  originalName String
+  url          String
+  imageData    String?
+  altText      String?
+  order        Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("event_flyers")
+}
+
 model Shoutout {
   id            String           @id @default(cuid())
   customerId    String
