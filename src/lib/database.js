@@ -1046,6 +1046,20 @@ export class DatabaseService {
         }
       }
 
+      // If still none, Attempt 7: explicit version flag (ver=3)
+      if (!transactions || transactions.length === 0) {
+        for (const domain of domains) {
+          const p = buildParams({
+            start_date: fmtUS(s),
+            end_date: fmtUS(e),
+            query_by: 'transaction_date',
+            ver: '3'
+          });
+          ({ text, transactions } = await tryQuery(domain, p));
+          if (transactions && transactions.length) break;
+        }
+      }
+
       // If the response had no transactions, log a concise diagnostic
       if (!transactions || transactions.length === 0) {
         const preview = (text || '').slice(0, 200).replace(/\s+/g, ' ').trim();
@@ -1194,32 +1208,58 @@ export class DatabaseService {
 // Minimal XML parser for NMI Query API response
 function parseNMIQueryXML(xmlText) {
   try {
-    const txBlocks = [...xmlText.matchAll(/<transaction>([\s\S]*?)<\/transaction>/g)].map(m => m[1]);
+    // Match <transaction ...>...</transaction> and self-closing <transaction .../>
+    const txMatches = [];
+    const re = /<transaction\b([^>]*?)(?:\/>|>([\s\S]*?)<\/transaction>)/g;
+    let m;
+    while ((m = re.exec(xmlText)) !== null) {
+      txMatches.push({ attrs: m[1] || '', inner: m[2] || '' });
+    }
 
-    const get = (block, tag) => {
-      const m = block.match(new RegExp(`<${tag}>([\s\S]*?)<\/${tag}>`));
-      return m ? m[1].trim() : null;
+    // Fallback: older XML may not have attributes; try simple blocks
+    if (txMatches.length === 0) {
+      const txBlocks = [...xmlText.matchAll(/<transaction>([\s\S]*?)<\/transaction>/g)].map(mm => ({ attrs: '', inner: mm[1] }));
+      txMatches.push(...txBlocks);
+    }
+
+    const parseAttrs = (attrStr) => {
+      const out = {};
+      attrStr.replace(/([\w:-]+)\s*=\s*"([^"]*)"/g, (_, k, v) => { out[k] = v; return ''; });
+      return out;
     };
 
-    const getAny = (block, tags) => {
+    const get = (block, tag) => {
+      const m2 = block.match(new RegExp(`<${tag}>([\s\S]*?)<\/${tag}>`));
+      return m2 ? m2[1].trim() : null;
+    };
+
+    const getAny = (attrs, inner, tags) => {
       for (const t of tags) {
-        const val = get(block, t);
-        if (val !== null && val !== undefined) return val;
+        // Prefer inner tag value
+        const vInner = get(inner, t);
+        if (vInner !== null && vInner !== undefined && vInner !== '') return vInner;
+        // Then attribute value
+        const vAttr = attrs[t];
+        if (vAttr !== undefined && vAttr !== null && String(vAttr).length) return String(vAttr).trim();
       }
       return null;
     };
 
-    return txBlocks.map(block => ({
-      // Support multiple NMI field variants
-      transaction_id: getAny(block, ['transaction_id', 'transactionid', 'txn_id', 'id']),
-      order_id: getAny(block, ['order_id', 'orderid']),
-      order_description: getAny(block, ['order_description', 'orderdescription', 'description']),
-      amount: getAny(block, ['amount', 'amount_authorized']),
-      condition: getAny(block, ['condition', 'status']),
-      transaction_type: getAny(block, ['transaction_type', 'type']),
-      timestamp: getAny(block, ['timestamp', 'date', 'date_time', 'datetime']),
-      email: getAny(block, ['email', 'customer_email', 'billing_email'])
-    }));
+    const results = txMatches.map(({ attrs, inner }) => {
+      const a = parseAttrs(attrs);
+      return {
+        transaction_id: getAny(a, inner, ['transaction_id', 'transactionid', 'txn_id', 'id']),
+        order_id: getAny(a, inner, ['order_id', 'orderid']),
+        order_description: getAny(a, inner, ['order_description', 'orderdescription', 'description']),
+        amount: getAny(a, inner, ['amount', 'amount_authorized']),
+        condition: getAny(a, inner, ['condition', 'status']),
+        transaction_type: getAny(a, inner, ['transaction_type', 'type']),
+        timestamp: getAny(a, inner, ['timestamp', 'date', 'date_time', 'datetime', 'created_on']),
+        email: getAny(a, inner, ['email', 'customer_email', 'billing_email']) || get(inner, 'customer_email') || get(inner, 'email')
+      };
+    });
+
+    return results;
   } catch (e) {
     console.error('Failed to parse NMI XML:', e);
     return [];
