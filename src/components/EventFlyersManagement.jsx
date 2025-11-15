@@ -15,7 +15,6 @@ const EventFlyersManagement = () => {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadFiles, setUploadFiles] = useState(null);
   const [altText, setAltText] = useState('');
-  const [platform, setPlatform] = useState('instagram');
   const [uploading, setUploading] = useState(false);
   const [draggingId, setDraggingId] = useState(null);
   const [reordering, setReordering] = useState(false);
@@ -57,7 +56,6 @@ const EventFlyersManagement = () => {
       setUploading(true);
       const form = new FormData();
       for (let i = 0; i < uploadFiles.length; i++) form.append('photos', uploadFiles[i]);
-      form.append('platform', platform);
       form.append('altText', altText);
       const res = await fetch('/api/admin/event-flyers/upload', {
         method: 'POST',
@@ -178,18 +176,6 @@ const EventFlyersManagement = () => {
           <div className="bg-gray-800 rounded-lg p-4 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="text-lg sm:text-xl font-bold text-white mb-4">Upload Event Flyers</div>
             <form onSubmit={handleUpload}>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-300 mb-2">Platform</label>
-                <select
-                  value={platform}
-                  onChange={(e) => setPlatform(e.target.value)}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
-                >
-                  {platformOptions.filter(p => p.id !== 'all').map(p => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
-              </div>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-300 mb-2">Images</label>
                 <input
