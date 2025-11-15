@@ -1139,19 +1139,30 @@ export class DatabaseService {
 function parseNMIQueryXML(xmlText) {
   try {
     const txBlocks = [...xmlText.matchAll(/<transaction>([\s\S]*?)<\/transaction>/g)].map(m => m[1]);
+
     const get = (block, tag) => {
       const m = block.match(new RegExp(`<${tag}>([\s\S]*?)<\/${tag}>`));
       return m ? m[1].trim() : null;
     };
+
+    const getAny = (block, tags) => {
+      for (const t of tags) {
+        const val = get(block, t);
+        if (val !== null && val !== undefined) return val;
+      }
+      return null;
+    };
+
     return txBlocks.map(block => ({
-      transaction_id: get(block, 'transaction_id'),
-      order_id: get(block, 'order_id'),
-      order_description: get(block, 'order_description'),
-      amount: get(block, 'amount'),
-      condition: get(block, 'condition'),
-      transaction_type: get(block, 'transaction_type'),
-      timestamp: get(block, 'timestamp') || get(block, 'date') || null,
-      email: get(block, 'email')
+      // Support multiple NMI field variants
+      transaction_id: getAny(block, ['transaction_id', 'transactionid', 'txn_id', 'id']),
+      order_id: getAny(block, ['order_id', 'orderid']),
+      order_description: getAny(block, ['order_description', 'orderdescription', 'description']),
+      amount: getAny(block, ['amount', 'amount_authorized']),
+      condition: getAny(block, ['condition', 'status']),
+      transaction_type: getAny(block, ['transaction_type', 'type']),
+      timestamp: getAny(block, ['timestamp', 'date', 'date_time', 'datetime']),
+      email: getAny(block, ['email', 'customer_email', 'billing_email'])
     }));
   } catch (e) {
     console.error('Failed to parse NMI XML:', e);
