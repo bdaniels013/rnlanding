@@ -47,6 +47,7 @@ const AdminDashboard = ({ onLogout }) => {
   const [syncingPayments, setSyncingPayments] = useState(false);
   const [syncMessage, setSyncMessage] = useState('');
   const [syncingGateway, setSyncingGateway] = useState(false);
+  const [syncDays, setSyncDays] = useState(30);
 
   useEffect(() => {
     // Check if user is authenticated
@@ -139,7 +140,7 @@ const AdminDashboard = ({ onLogout }) => {
       setSyncingGateway(true);
       setSyncMessage('');
       const body = {
-        startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+        startDate: new Date(Date.now() - (Number(syncDays) || 30) * 24 * 60 * 60 * 1000).toISOString(),
         endDate: new Date().toISOString()
       };
       const response = await fetch('/api/admin/payments/sync-nmi', {
@@ -646,22 +647,35 @@ const AdminDashboard = ({ onLogout }) => {
               <User className="w-4 h-4" />
               <span>Welcome, {currentUser}</span>
             </div>
-            <button
-              onClick={handleSyncPayments}
-              disabled={syncingPayments}
-              className={`flex items-center justify-center gap-2 px-3 py-2 ${syncingPayments ? 'bg-gray-600' : 'bg-blue-600 hover:bg-blue-700'} text-white rounded-lg transition-colors`}
-            >
-              <TrendingUp className="w-4 h-4" />
-              {syncingPayments ? 'Syncing…' : 'Sync Payments'}
-            </button>
-            <button
-              onClick={handleSyncGateway}
-              disabled={syncingGateway}
-              className={`flex items-center justify-center gap-2 px-3 py-2 ${syncingGateway ? 'bg-gray-600' : 'bg-indigo-600 hover:bg-indigo-700'} text-white rounded-lg transition-colors`}
-            >
-              <Cloud className="w-4 h-4" />
-              {syncingGateway ? 'Syncing…' : 'Sync NMI'}
-            </button>
+          <button
+            onClick={handleSyncPayments}
+            disabled={syncingPayments}
+            className={`flex items-center justify-center gap-2 px-3 py-2 ${syncingPayments ? 'bg-gray-600' : 'bg-blue-600 hover:bg-blue-700'} text-white rounded-lg transition-colors`}
+          >
+            <TrendingUp className="w-4 h-4" />
+            {syncingPayments ? 'Syncing…' : 'Sync Payments'}
+          </button>
+          <div className="flex items-center gap-2">
+            <label htmlFor="sync-days" className="text-xs text-gray-400">Days</label>
+            <input
+              id="sync-days"
+              type="number"
+              min="1"
+              max="365"
+              value={syncDays}
+              onChange={(e) => setSyncDays(Number(e.target.value) || 30)}
+              className="w-16 px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              title="Number of days to look back when syncing NMI transactions"
+            />
+          </div>
+          <button
+            onClick={handleSyncGateway}
+            disabled={syncingGateway}
+            className={`flex items-center justify-center gap-2 px-3 py-2 ${syncingGateway ? 'bg-gray-600' : 'bg-indigo-600 hover:bg-indigo-700'} text-white rounded-lg transition-colors`}
+          >
+            <Cloud className="w-4 h-4" />
+            {syncingGateway ? 'Syncing…' : 'Sync NMI'}
+          </button>
             <button
               onClick={handleLogout}
               className="flex items-center justify-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
