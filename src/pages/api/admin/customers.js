@@ -67,6 +67,14 @@ async function getCustomers(req, res) {
           },
           orderBy: { createdAt: 'desc' },
           take: 10
+        },
+        liveReviews: {
+          select: {
+            id: true,
+            status: true,
+            createdAt: true
+          },
+          orderBy: { createdAt: 'desc' }
         }
       }
     }),
@@ -76,9 +84,11 @@ async function getCustomers(req, res) {
   // Calculate total credits for each customer
   const customersWithCredits = customers.map(customer => {
     const totalCredits = customer.creditsLedger.reduce((sum, entry) => sum + entry.delta, 0);
+    const liveReviewsCount = Array.isArray(customer.liveReviews) ? customer.liveReviews.length : 0;
     return {
       ...customer,
       totalCredits,
+      liveReviewsCount,
       creditsLedger: undefined // Remove detailed ledger from response
     };
   });

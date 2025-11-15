@@ -169,7 +169,7 @@
       <h1>Live Review Music Submission</h1>
     </div>
     <p style="max-width:800px;margin:12px auto 24px;color:#c9c9c9;">
-      Pay $25 and submit your track for Richh Nick’s live review. Upload your MP3 and enter your card to lock in.
+      Pay $25 and submit your track for Richh Nick’s live review. Upload your MP3 or paste a streaming link, then enter your card to lock in.
     </p>
     <button class="cta-button" onclick="document.getElementById('musicForm').scrollIntoView({behavior:'smooth'})">Submit Now</button>
   </header>
@@ -204,10 +204,14 @@
               <input id="phone" name="phone" type="tel" inputmode="tel" required placeholder="470-416-9447">
             </div>
             <div class="form-field">
-              <!-- Inside the form: Attach MP3 -->
-              <label for="mp3">Attach MP3 *</label>
-              <input id="mp3" name="mp3" type="file" accept=".mp3,audio/mpeg,audio/mp3" required>
-              <div class="helper">MP3 only, max 20MB.</div>
+              <label for="mp3">Attach MP3</label>
+              <input id="mp3" name="mp3" type="file" accept=".mp3,audio/mpeg,audio/mp3">
+              <div class="helper">MP3 only, max 20MB. Alternatively, paste a streaming link below.</div>
+            </div>
+            <div class="form-field">
+              <label for="songLink">Streaming Link (YouTube, Apple Music, Spotify, SoundCloud)</label>
+              <input id="songLink" name="songLink" type="url" placeholder="https://...">
+              <div class="helper">Provide a link if you cannot upload the MP3.</div>
             </div>
           </div>
 
@@ -285,36 +289,37 @@
         const email = document.getElementById('email').value.trim();
         const phone = document.getElementById('phone').value.trim();
         const mp3File = document.getElementById('mp3').files[0];
-        // Basic client-side checks
-        if (!mp3File) {
-          showStatus(false, 'Please attach your MP3 file.');
+        const linkUrl = document.getElementById('songLink').value.trim();
+        if (!mp3File && !linkUrl) {
+          showStatus(false, 'Attach an MP3 or provide a streaming link.');
           btn.disabled = false;
           return;
         }
-        if (!/\.mp3$/i.test(mp3File.name)) {
-          showStatus(false, 'Only .mp3 files are accepted.');
-          btn.disabled = false;
-          return;
+        if (mp3File) {
+          if (!/\.mp3$/i.test(mp3File.name)) {
+            showStatus(false, 'Only .mp3 files are accepted.');
+            btn.disabled = false;
+            return;
+          }
+          if (mp3File.size > 20 * 1024 * 1024) {
+            showStatus(false, 'Your MP3 exceeds the 20MB limit.');
+            btn.disabled = false;
+            return;
+          }
         }
-        if (mp3File.size > 20 * 1024 * 1024) {
-          showStatus(false, 'Your MP3 exceeds the 20MB limit.');
-          btn.disabled = false;
-          return;
-        }
-        // Upload
-        const fd = new FormData();
-        fd.append('mp3', mp3File);
-        const uploadResp = await fetch('/api/music-submission/upload', { method: 'POST', body: fd });
-        const uploadData = await uploadResp.json();
-        if (!uploadResp.ok || !uploadData.success) {
-          showStatus(false, uploadData.error || 'Failed to upload MP3');
-          btn.disabled = false;
-          return;
+        if (!mp3File && linkUrl) {
+          try {
+            new URL(linkUrl);
+          } catch (_) {
+            showStatus(false, 'Please enter a valid link URL.');
+            btn.disabled = false;
+            return;
+          }
         }
         const cardName = document.getElementById('cardName').value.trim();
         const cvv = document.getElementById('cvv').value.trim();
 
-        if (!name || !songName || !mp3File || !cardNumber.value || !expiry.value || !cvv || !cardName || !phone) {
+        if (!name || !songName || (!mp3File && !linkUrl) || !cardNumber.value || !expiry.value || !cvv || !cardName || !phone) {
           showStatus(false, 'Please fill out all required fields, including phone.');
           btn.disabled = false;
           return;
@@ -341,12 +346,16 @@
         }
 
         try {
-          const fd = new FormData();
-          fd.append('mp3', mp3File);
-          const uploadResp = await fetch('/api/music-submission/upload', { method: 'POST', body: fd });
-          const uploadData = await uploadResp.json();
-          if (!uploadResp.ok || !uploadData.success) {
-            throw new Error(uploadData.error || 'Failed to upload MP3');
+          let uploadedFileUrl = null;
+          if (mp3File) {
+            const fd = new FormData();
+            fd.append('mp3', mp3File);
+            const uploadResp = await fetch('/api/music-submission/upload', { method: 'POST', body: fd });
+            const uploadData = await uploadResp.json();
+            if (!uploadResp.ok || !uploadData.success) {
+              throw new Error(uploadData.error || 'Failed to upload MP3');
+            }
+            uploadedFileUrl = uploadData.fileUrl;
           }
 
           const paymentReq = {
@@ -392,18 +401,23 @@
             console.warn('Customer info capture (completed) failed:', logErr);
           }
 
+          const notifyBody = {
+            name,
+            songName,
+            email,
+            phone,
+            transaction: chargeData,
+            isTest: false
+          };
+          if (uploadedFileUrl) {
+            notifyBody.fileUrl = uploadedFileUrl;
+          } else {
+            notifyBody.linkUrl = linkUrl;
+          }
           const notifyResp = await fetch('/api/music-submission/notify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              name,
-              songName,
-              email,
-              phone,
-              fileUrl: uploadData.fileUrl,
-              transaction: chargeData,
-              isTest: false
-            })
+            body: JSON.stringify(notifyBody)
           });
           const notifyData = await notifyResp.json();
           if (!notifyResp.ok || !notifyData.success) {

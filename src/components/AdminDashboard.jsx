@@ -927,32 +927,43 @@ const AdminDashboard = ({ onLogout }) => {
               </div>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs sm:text-sm">
-                <thead>
-                  <tr className="border-b border-gray-700">
-                    <th className="text-left py-2 px-1 sm:px-2">Name</th>
-                    <th className="text-left py-2 px-1 sm:px-2 hidden sm:table-cell">Email</th>
-                    <th className="text-left py-2 px-1 sm:px-2 hidden md:table-cell">Phone</th>
-                    <th className="text-left py-2 px-1 sm:px-2">Offer</th>
-                    <th className="text-left py-2 px-1 sm:px-2 hidden lg:table-cell">Time</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {customerInfoCaptures.map(capture => (
-                    <tr key={capture.id} className="border-b border-gray-700/50 hover:bg-gray-700/50">
-                      <td className="py-2 px-1 sm:px-2 font-medium text-white text-xs sm:text-sm">{capture.name}</td>
-                      <td className="py-2 px-1 sm:px-2 text-gray-300 text-xs sm:text-sm hidden sm:table-cell">{capture.email}</td>
-                      <td className="py-2 px-1 sm:px-2 text-gray-300 text-xs sm:text-sm hidden md:table-cell">{capture.phone || 'N/A'}</td>
-                      <td className="py-2 px-1 sm:px-2 text-gray-300 text-xs sm:text-sm">{capture.selectedOffer}</td>
-                      <td className="py-2 px-1 sm:px-2 text-gray-400 text-xs hidden lg:table-cell">
-                        {new Date(capture.createdAt).toLocaleString()}
-                      </td>
+            <>
+              <div className="sm:hidden space-y-3">
+                {customerInfoCaptures.map(capture => (
+                  <div key={capture.id} className="bg-gray-700 rounded-lg p-3">
+                    <div className="text-white font-semibold text-sm break-words">{capture.name}</div>
+                    <div className="text-gray-300 text-xs break-words">{capture.email}</div>
+                    <div className="text-gray-300 text-xs break-words">{capture.phone || 'N/A'}</div>
+                    <div className="text-gray-300 text-xs break-words">{capture.selectedOffer}</div>
+                    <div className="text-gray-400 text-xs break-words">{new Date(capture.createdAt).toLocaleString()}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="hidden sm:block overflow-x-auto">
+                <table className="w-full text-xs sm:text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-700">
+                      <th className="text-left py-2 px-1 sm:px-2">Name</th>
+                      <th className="text-left py-2 px-1 sm:px-2">Email</th>
+                      <th className="text-left py-2 px-1 sm:px-2">Phone</th>
+                      <th className="text-left py-2 px-1 sm:px-2">Offer</th>
+                      <th className="text-left py-2 px-1 sm:px-2">Time</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {customerInfoCaptures.map(capture => (
+                      <tr key={capture.id} className="border-b border-gray-700/50 hover:bg-gray-700/50">
+                        <td className="py-2 px-1 sm:px-2 font-medium text-white text-xs sm:text-sm break-words">{capture.name}</td>
+                        <td className="py-2 px-1 sm:px-2 text-gray-300 text-xs sm:text-sm break-words">{capture.email}</td>
+                        <td className="py-2 px-1 sm:px-2 text-gray-300 text-xs sm:text-sm break-words">{capture.phone || 'N/A'}</td>
+                        <td className="py-2 px-1 sm:px-2 text-gray-300 text-xs sm:text-sm break-words">{capture.selectedOffer}</td>
+                        <td className="py-2 px-1 sm:px-2 text-gray-400 text-xs break-words">{new Date(capture.createdAt).toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
 
@@ -1171,6 +1182,7 @@ const CustomerManagement = ({ customers, searchTerm, setSearchTerm, onEdit, onDe
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Email</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Phone</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Credits</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Live Reviews</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Orders</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
               </tr>
@@ -1187,6 +1199,11 @@ const CustomerManagement = ({ customers, searchTerm, setSearchTerm, onEdit, onDe
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">{customer.email}</td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">{customer.phone || 'N/A'}</td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">{customer.totalCredits || 0}</td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm">
+                    <span className="inline-flex items-center px-2 py-1 rounded-md bg-yellow-700/40 text-yellow-300 border border-yellow-600/30">
+                      {customer.liveReviewsCount || 0}
+                    </span>
+                  </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-300">{customer.orders?.length || 0}</td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">

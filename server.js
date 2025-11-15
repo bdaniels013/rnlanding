@@ -1292,13 +1292,11 @@ app.post('/api/music-submission/upload', (req, res) => {
 // Music submission notify endpoint (sends email with attachment)
 app.post('/api/music-submission/notify', async (req, res) => {
   try {
-    const { name, songName, email, phone, fileUrl, transaction, isTest } = req.body;
+    const { name, songName, email, phone, fileUrl, linkUrl, transaction, isTest } = req.body;
 
-    if (!name || !songName || !fileUrl) {
-      return res.status(400).json({ success: false, error: 'name, songName, and fileUrl are required' });
+    if (!name || !songName || (!fileUrl && !linkUrl)) {
+      return res.status(400).json({ success: false, error: 'name and songName are required; provide fileUrl or linkUrl' });
     }
-
-    const fullPath = path.join(__dirname, 'public', fileUrl.replace(/^\/+/, ''));
 
     const now = new Date();
     const subjectPrefix = isTest ? 'TEST - ' : '';
@@ -1306,48 +1304,55 @@ app.post('/api/music-submission/notify', async (req, res) => {
     const to = 'richhtalk3@gmail.com';
     const from = process.env.FROM_EMAIL || process.env.SMTP_USER;
 
-    // Reflect actual amount (1¢ for test, $25 for live)
     const displayAmountCents = transaction?.amount ?? 2500;
 
-    await mailTransporter.sendMail({
+    const textLines = [
+      isTest ? 'TEST SUBMISSION' : 'New music submission:',
+      `Name: ${name}`,
+      `Song Name: ${songName}`,
+      `Customer Email: ${email || 'N/A'}`,
+      `Customer Phone: ${phone || 'N/A'}`,
+      `Transaction ID: ${transaction?.transaction_id || 'N/A'}`,
+      `Amount: $${(displayAmountCents / 100).toFixed(2)}`,
+      `Time: ${now.toISOString()}`
+    ];
+    if (linkUrl) {
+      textLines.push(`Link: ${linkUrl}`);
+    }
+
+    const htmlBody = `
+      <p><strong>${isTest ? 'TEST SUBMISSION' : 'New music submission'}</strong></p>
+      <ul>
+        <li>Name: ${name}</li>
+        <li>Song Name: ${songName}</li>
+        <li>Customer Email: ${email || 'N/A'}</li>
+        <li>Customer Phone: ${phone || 'N/A'}</li>
+        <li>Transaction ID: ${transaction?.transaction_id || 'N/A'}</li>
+        <li>Amount: $${(displayAmountCents / 100).toFixed(2)}</li>
+        <li>Time: ${now.toLocaleString()}</li>
+        ${linkUrl ? `<li>Link: <a href="${escapeHtml(linkUrl)}" target="_blank">${escapeHtml(linkUrl)}</a></li>` : ''}
+      </ul>
+    `;
+
+    const mail = {
       from,
       to,
       replyTo: 'richhtalk3@gmail.com',
       subject,
-      text: [
-        isTest ? 'TEST SUBMISSION' : 'New music submission:',
-        `Name: ${name}`,
-        `Song Name: ${songName}`,
-        `Customer Email: ${email || 'N/A'}`,
-        `Customer Phone: ${phone || 'N/A'}`,
-        `Transaction ID: ${transaction?.transaction_id || 'N/A'}`,
-        `Amount: $${(displayAmountCents / 100).toFixed(2)}`,
-        `Time: ${now.toISOString()}`
-      ].join('\n'),
-      html: `
-        <p><strong>${isTest ? 'TEST SUBMISSION' : 'New music submission'}</strong></p>
-        <ul>
-          <li>Name: ${name}</li>
-          <li>Song Name: ${songName}</li>
-          <li>Customer Email: ${email || 'N/A'}</li>
-          <li>Customer Phone: ${phone || 'N/A'}</li>
-          <li>Transaction ID: ${transaction?.transaction_id || 'N/A'}</li>
-          <li>Amount: $${(displayAmountCents / 100).toFixed(2)}</li>
-          <li>Time: ${now.toLocaleString()}</li>
-        </ul>
-      `,
-      attachments: [
-        { path: fullPath, filename: path.basename(fullPath), contentType: 'audio/mpeg' }
-      ]
-    });
+      text: textLines.join('\n'),
+      html: htmlBody
+    };
 
-    // NEW: Persist live review record to the database
+    if (fileUrl) {
+      const fullPath = path.join(__dirname, 'public', fileUrl.replace(/^\/+/, ''));
+      mail.attachments = [{ path: fullPath, filename: path.basename(fullPath), contentType: 'audio/mpeg' }];
+    }
+
+    await mailTransporter.sendMail(mail);
+
     try {
-      const { name, songName, email, phone, transaction, isTest } = req.body;
-
       const txnId = transaction?.transaction_id || null;
       let orderId = null;
-
       if (txnId) {
         const payment = await prisma.payment.findFirst({
           where: { paypalTxnId: txnId },
@@ -1378,7 +1383,7 @@ app.post('/api/music-submission/notify', async (req, res) => {
           orderId,
           songName,
           status: 'PENDING',
-          notes: isTest ? 'TEST SUBMISSION' : null
+          notes: linkUrl ? `Link: ${linkUrl}` : isTest ? 'TEST SUBMISSION' : null
         }
       });
     } catch (persistErr) {
