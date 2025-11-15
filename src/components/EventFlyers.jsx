@@ -1,12 +1,5 @@
 import React, { useEffect, useState } from 'react';
 
-const allowedPlatforms = [
-  { id: 'instagram', name: 'Instagram' },
-  { id: 'facebook', name: 'Facebook' },
-  { id: 'youtube', name: 'YouTube' },
-  { id: 'tiktok', name: 'TikTok' }
-];
-
 const EventFlyers = () => {
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -36,7 +29,6 @@ const EventFlyers = () => {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div>
             <h2 className="text-3xl md:text-4xl font-extrabold">Upcoming Event Flyers</h2>
-            <p className="text-white/80 mt-2">Upload and showcase graphics for upcoming events.</p>
           </div>
         </div>
 
@@ -54,21 +46,19 @@ const EventFlyers = () => {
             <div className="text-white/70">No flyers yet</div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="flex flex-wrap justify-center gap-6">
             {photos.map((p) => (
-              <div key={p.id} className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
-                <div className="relative">
-                  <img src={p.imageData || p.url} alt={p.altText || p.originalName} className="w-full h-64 object-cover" />
-                  {p.platform && (
-                    <div className="absolute top-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
-                      {p.platform.charAt(0).toUpperCase() + p.platform.slice(1)}
-                    </div>
-                  )}
-                </div>
-                <div className="p-4">
-                  <div className="font-semibold truncate">{p.originalName}</div>
-                  {p.altText && <div className="text-white/70 text-sm mt-1 line-clamp-2">{p.altText}</div>}
-                </div>
+              <div key={p.id} className="relative max-w-2xl w-full">
+                <img
+                  src={p.imageData || p.url}
+                  alt={p.altText || ''}
+                  className="w-full h-auto object-contain rounded-xl mx-auto"
+                />
+                {p.platform && (
+                  <div className="absolute top-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
+                    {p.platform.charAt(0).toUpperCase() + p.platform.slice(1)}
+                  </div>
+                )}
               </div>
             ))}
           </div>
