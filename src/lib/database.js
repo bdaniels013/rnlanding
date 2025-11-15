@@ -897,6 +897,8 @@ export class DatabaseService {
   async syncNMIGatewayTransactions({ startDate, endDate } = {}) {
     try {
       const apiKey = process.env.PAYMENT_CLOUD_SECRET_KEY;
+      const nmiUser = process.env.NMI_USERNAME;
+      const nmiPass = process.env.NMI_PASSWORD;
       if (!apiKey) {
         throw new Error('Missing PAYMENT_CLOUD_SECRET_KEY');
       }
@@ -922,8 +924,25 @@ export class DatabaseService {
         return `${mm}/${dd}/${yyyy}`;
       };
 
-      const tryQuery = async (params) => {
-        const resp = await fetch('https://secure.nmi.com/api/query.php', {
+      const buildParams = (opts) => {
+        const p = new URLSearchParams({
+          report_type: 'transaction',
+          format: 'xml',
+          ...opts
+        });
+        // Prefer security_key, but allow username/password if provided
+        if (apiKey) {
+          p.set('security_key', apiKey);
+        }
+        if (nmiUser && nmiPass) {
+          p.set('username', nmiUser);
+          p.set('password', nmiPass);
+        }
+        return p;
+      };
+
+      const tryQuery = async (url, params) => {
+        const resp = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           body: params.toString()
@@ -932,72 +951,109 @@ export class DatabaseService {
         if (!resp.ok) {
           throw new Error(`NMI query failed: ${resp.status} ${text}`);
         }
-        return { text, transactions: parseNMIQueryXML(text) };
+        const transactions = parseNMIQueryXML(text);
+        return { text, transactions };
       };
 
       // Attempt 1: ISO date format, default query_by
-      const baseParams1 = new URLSearchParams({
-        security_key: apiKey,
-        report_type: 'transaction',
-        start_date: fmtISO(s),
-        end_date: fmtISO(e),
-        condition: 'complete',
-        format: 'xml'
-      });
-      let { text, transactions } = await tryQuery(baseParams1);
+      const domains = [
+        'https://secure.nmi.com/api/query.php',
+        'https://secure.networkmerchants.com/api/query.php'
+      ];
+
+      let text = '';
+      let transactions = [];
+
+      // Attempt 1: ISO date format, default query_by
+      for (const domain of domains) {
+        const baseParams1 = buildParams({
+          start_date: fmtISO(s),
+          end_date: fmtISO(e),
+          condition: 'complete'
+        });
+        ({ text, transactions } = await tryQuery(domain, baseParams1));
+        if (transactions && transactions.length) break;
+      }
 
       // If no transactions, Attempt 2: US date format (MM/DD/YYYY)
       if (!transactions || transactions.length === 0) {
-        const baseParams2 = new URLSearchParams({
-          security_key: apiKey,
-          report_type: 'transaction',
-          start_date: fmtUS(s),
-          end_date: fmtUS(e),
-          condition: 'complete',
-          format: 'xml'
-        });
-        ({ text, transactions } = await tryQuery(baseParams2));
+        for (const domain of domains) {
+          const baseParams2 = buildParams({
+            start_date: fmtUS(s),
+            end_date: fmtUS(e),
+            condition: 'complete'
+          });
+          ({ text, transactions } = await tryQuery(domain, baseParams2));
+          if (transactions && transactions.length) break;
+        }
       }
 
       // If still none, Attempt 3: Explicit query_by transaction_date
       if (!transactions || transactions.length === 0) {
-        const baseParams3 = new URLSearchParams({
-          security_key: apiKey,
-          report_type: 'transaction',
-          start_date: fmtUS(s),
-          end_date: fmtUS(e),
-          query_by: 'transaction_date',
-          condition: 'complete',
-          format: 'xml'
-        });
-        ({ text, transactions } = await tryQuery(baseParams3));
+        for (const domain of domains) {
+          const baseParams3 = buildParams({
+            start_date: fmtUS(s),
+            end_date: fmtUS(e),
+            query_by: 'transaction_date',
+            condition: 'complete'
+          });
+          ({ text, transactions } = await tryQuery(domain, baseParams3));
+          if (transactions && transactions.length) break;
+        }
       }
 
       // If still none, Attempt 4: condition closed (some processors)
       if (!transactions || transactions.length === 0) {
-        const baseParams4 = new URLSearchParams({
-          security_key: apiKey,
-          report_type: 'transaction',
-          start_date: fmtUS(s),
-          end_date: fmtUS(e),
-          query_by: 'transaction_date',
-          condition: 'closed',
-          format: 'xml'
-        });
-        ({ text, transactions } = await tryQuery(baseParams4));
+        for (const domain of domains) {
+          const baseParams4 = buildParams({
+            start_date: fmtUS(s),
+            end_date: fmtUS(e),
+            query_by: 'transaction_date',
+            condition: 'closed'
+          });
+          ({ text, transactions } = await tryQuery(domain, baseParams4));
+          if (transactions && transactions.length) break;
+        }
       }
 
       // If still none, Attempt 5: omit condition
       if (!transactions || transactions.length === 0) {
-        const baseParams5 = new URLSearchParams({
-          security_key: apiKey,
-          report_type: 'transaction',
-          start_date: fmtUS(s),
-          end_date: fmtUS(e),
-          query_by: 'transaction_date',
-          format: 'xml'
+        for (const domain of domains) {
+          const baseParams5 = buildParams({
+            start_date: fmtUS(s),
+            end_date: fmtUS(e),
+            query_by: 'transaction_date'
+          });
+          ({ text, transactions } = await tryQuery(domain, baseParams5));
+          if (transactions && transactions.length) break;
+        }
+      }
+
+      // If still none, Attempt 6: alternate query_by values common in NMI
+      if (!transactions || transactions.length === 0) {
+        const altQueryBy = ['transaction_create_date', 'settlement_date', 'last_modified'];
+        for (const domain of domains) {
+          for (const qb of altQueryBy) {
+            const p = buildParams({
+              start_date: fmtUS(s),
+              end_date: fmtUS(e),
+              query_by: qb
+            });
+            ({ text, transactions } = await tryQuery(domain, p));
+            if (transactions && transactions.length) break;
+          }
+          if (transactions && transactions.length) break;
+        }
+      }
+
+      // If the response had no transactions, log a concise diagnostic
+      if (!transactions || transactions.length === 0) {
+        const preview = (text || '').slice(0, 200).replace(/\s+/g, ' ').trim();
+        console.warn('NMI query returned zero transactions for range', {
+          start: fmtUS(s),
+          end: fmtUS(e),
+          preview
         });
-        ({ text, transactions } = await tryQuery(baseParams5));
       }
 
       let reconciled = 0;
