@@ -646,12 +646,17 @@ export class DatabaseService {
       const arr = mrr * 12;
 
       // Category metrics for Live Reviews and Shoutouts
-      const offerMatches = (keyword) => ({
-        OR: [
+      const offerMatches = (keyword) => {
+        const base = [
           { name: { contains: keyword, mode: 'insensitive' } },
           { sku: { contains: keyword, mode: 'insensitive' } }
-        ]
-      });
+        ];
+        // Ensure Live Review metrics include the dedicated music-submission SKU
+        if (/live\s*review/i.test(keyword)) {
+          base.push({ sku: { equals: 'music-submission' } });
+        }
+        return { OR: base };
+      };
 
       const sumItemsCents = (items) => items.reduce((sum, it) => sum + (it.unitPriceCents * it.qty), 0);
 

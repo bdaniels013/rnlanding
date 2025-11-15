@@ -38,6 +38,15 @@ async function main() {
       creditsValue: 0,
       isCreditEligible: false,
     },
+    {
+      sku: 'music-submission',
+      name: 'Live Review: Music Submission',
+      priceCents: 2500, // $25
+      isSubscription: false,
+      creditsValue: 0,
+      isCreditEligible: false,
+      badge: 'LIVE'
+    },
   ];
 
   for (const offer of offers) {

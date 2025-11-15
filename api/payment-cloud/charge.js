@@ -381,8 +381,8 @@ async function createOrder({ customer_info, offer_id, amount, transaction_id, pa
       console.log('✅ Found existing customer:', customer.id);
     }
 
-    // Find the offer
-    const offer = await prisma.offer.findFirst({
+    // Find the offer (by id or sku). If not found, try name-based match or create it.
+    let offer = await prisma.offer.findFirst({
       where: {
         OR: [
           { id: offer_id },
@@ -392,7 +392,33 @@ async function createOrder({ customer_info, offer_id, amount, transaction_id, pa
     });
 
     if (!offer) {
-      throw new Error(`Offer not found: ${offer_id}`);
+      // Try to find an existing Live Review offer by name/sku keywords
+      offer = await prisma.offer.findFirst({
+        where: {
+          OR: [
+            { name: { contains: 'live review', mode: 'insensitive' } },
+            { sku: { contains: 'live', mode: 'insensitive' } },
+            { sku: { contains: 'music-submission', mode: 'insensitive' } }
+          ]
+        }
+      });
+    }
+
+    if (!offer) {
+      // As a safety net, create the offer so orders can be recorded
+      offer = await prisma.offer.create({
+        data: {
+          sku: 'music-submission',
+          name: 'Live Review: Music Submission',
+          priceCents: amount, // cents
+          isSubscription: false,
+          creditsValue: 0,
+          isCreditEligible: false,
+          description: 'Rich Nick Live Review music submission',
+          badge: 'LIVE'
+        }
+      });
+      console.log('🆕 Created fallback Live Review offer:', offer.id);
     }
 
     // Removed: payload.order_description (payload is undefined here)
