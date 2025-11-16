@@ -107,66 +107,114 @@ const LiveReviewManagement = ({ searchTerm, setSearchTerm }) => {
             </div>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-700">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Customer</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Email</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Phone</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Song Name</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-700">
-                {liveReviews.map(lr => (
-                  <tr key={lr.id} className="hover:bg-gray-700/50">
-                    <td className="px-4 py-3">
-                      <div className="text-white text-sm">{lr.customer?.name || 'N/A'}</div>
-                    </td>
-                    <td className="px-4 py-3 text-gray-300 text-sm">{lr.customer?.email || 'N/A'}</td>
-                    <td className="px-4 py-3 text-gray-300 text-sm">{lr.customer?.phone || 'N/A'}</td>
-                    <td className="px-4 py-3 text-white text-sm">{lr.songName}</td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-1 rounded text-xs ${
-                        lr.status === 'PENDING' ? 'bg-yellow-600' :
-                        lr.status === 'COMPLETED' ? 'bg-green-600' :
-                        'bg-red-600'
-                      }`}>
-                        {lr.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleStatusUpdate(lr.id, 'PENDING')}
-                          className="px-3 py-1 bg-yellow-600 hover:bg-yellow-700 text-white rounded text-xs"
-                          title="Mark pending"
-                        >
-                          Queue
-                        </button>
-                        <button
-                          onClick={() => handleStatusUpdate(lr.id, 'COMPLETED')}
-                          className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs"
-                          title="Mark completed"
-                        >
-                          Fulfill
-                        </button>
-                        <button
-                          onClick={() => handleStatusUpdate(lr.id, 'CANCELLED')}
-                          className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs"
-                          title="Cancel"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </td>
+          <>
+            <div className="sm:hidden space-y-3 p-3">
+              {liveReviews.map(lr => (
+                <div key={lr.id} className="bg-gray-700 rounded-lg p-3">
+                  <div className="text-white font-semibold text-sm">{lr.customer?.name || 'N/A'}</div>
+                  <div className="text-gray-300 text-xs">{lr.customer?.email || 'N/A'}</div>
+                  <div className="text-gray-300 text-xs">{lr.customer?.phone || 'N/A'}</div>
+                  <div className="text-gray-300 text-xs">{lr.songName}</div>
+                  <div className="text-gray-400 text-xs">{new Date(lr.createdAt).toLocaleString()}</div>
+                  <div className="flex gap-2 mt-2">
+                    <span className={`px-2 py-1 rounded text-xs ${
+                      lr.status === 'PENDING' ? 'bg-yellow-600' :
+                      lr.status === 'COMPLETED' ? 'bg-green-600' :
+                      'bg-red-600'
+                    }`}>
+                      {lr.status}
+                    </span>
+                    <div className="ml-auto flex gap-2">
+                      <button
+                        onClick={() => handleStatusUpdate(lr.id, 'PENDING')}
+                        className="px-3 py-1 bg-yellow-600 hover:bg-yellow-700 text-white rounded text-xs"
+                        title="Mark pending"
+                      >
+                        Queue
+                      </button>
+                      <button
+                        onClick={() => handleStatusUpdate(lr.id, 'COMPLETED')}
+                        className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs"
+                        title="Mark completed"
+                      >
+                        Fulfill
+                      </button>
+                      <button
+                        onClick={() => handleStatusUpdate(lr.id, 'CANCELLED')}
+                        className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs"
+                        title="Cancel"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-700">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Customer</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Email</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Phone</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Song Name</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Submitted</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-gray-700">
+                  {liveReviews.map(lr => (
+                    <tr key={lr.id} className="hover:bg-gray-700/50">
+                      <td className="px-4 py-3">
+                        <div className="text-white text-sm">{lr.customer?.name || 'N/A'}</div>
+                      </td>
+                      <td className="px-4 py-3 text-gray-300 text-sm">{lr.customer?.email || 'N/A'}</td>
+                      <td className="px-4 py-3 text-gray-300 text-sm">{lr.customer?.phone || 'N/A'}</td>
+                      <td className="px-4 py-3 text-white text-sm">{lr.songName}</td>
+                      <td className="px-4 py-3 text-gray-400 text-sm">{new Date(lr.createdAt).toLocaleString()}</td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          lr.status === 'PENDING' ? 'bg-yellow-600' :
+                          lr.status === 'COMPLETED' ? 'bg-green-600' :
+                          'bg-red-600'
+                        }`}>
+                          {lr.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleStatusUpdate(lr.id, 'PENDING')}
+                            className="px-3 py-1 bg-yellow-600 hover:bg-yellow-700 text-white rounded text-xs"
+                            title="Mark pending"
+                          >
+                            Queue
+                          </button>
+                          <button
+                            onClick={() => handleStatusUpdate(lr.id, 'COMPLETED')}
+                            className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs"
+                            title="Mark completed"
+                          >
+                            Fulfill
+                          </button>
+                          <button
+                            onClick={() => handleStatusUpdate(lr.id, 'CANCELLED')}
+                            className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs"
+                            title="Cancel"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 
