@@ -57,6 +57,12 @@ export default async function handler(req, res) {
     const { start: monthStartET, end: monthEndET } = getEtMonthRange(now);
     const { start: weekStartET } = getEtLastNDaysRange(7);
 
+    const ranges = {
+      day: { start: todayStartET, end: todayEndET },
+      week: { start: weekStartET, end: todayEndET },
+      month: { start: monthStartET, end: monthEndET }
+    };
+
     // Get today's metrics
     const [
       ordersToday,
@@ -174,14 +180,28 @@ export default async function handler(req, res) {
       }
     });
 
-    // Rolling last 7 days by ET (inclusive of today)
-    const weeklyRevenue = await prisma.order.aggregate({
-      where: { createdAt: { gte: weekStartET, lt: todayEndET }, status: 'PAID' },
-      _sum: { totalCents: true }
-    });
-    const weeklyOrders = await prisma.order.count({
-      where: { createdAt: { gte: weekStartET, lt: todayEndET }, status: 'PAID' }
-    });
+    // Period metrics (day/week/month)
+    const periodOrders = {};
+    const periodRevenue = {};
+    const liveReviews = {};
+    const shoutouts = {};
+
+    for (const key of ['day','week','month']) {
+      const { start, end } = ranges[key];
+      const [ordersCount, revenueAgg, liveOrdersCount, liveRevenueAgg, shoutOrdersCount, shoutRevenueAgg] = await Promise.all([
+        prisma.order.count({ where: { createdAt: { gte: start, lt: end }, status: 'PAID' } }),
+        prisma.order.aggregate({ where: { createdAt: { gte: start, lt: end }, status: 'PAID' }, _sum: { totalCents: true } }),
+        prisma.order.count({ where: { createdAt: { gte: start, lt: end }, status: 'PAID', orderItems: { some: { offer: { name: { contains: 'Live Review' } } } } } }),
+        prisma.order.aggregate({ where: { createdAt: { gte: start, lt: end }, status: 'PAID', orderItems: { some: { offer: { name: { contains: 'Live Review' } } } } }, _sum: { totalCents: true } }),
+        prisma.order.count({ where: { createdAt: { gte: start, lt: end }, status: 'PAID', orderItems: { some: { offer: { name: { contains: 'Shoutout' } } } } } }),
+        prisma.order.aggregate({ where: { createdAt: { gte: start, lt: end }, status: 'PAID', orderItems: { some: { offer: { name: { contains: 'Shoutout' } } } } }, _sum: { totalCents: true } })
+      ]);
+
+      periodOrders[key] = ordersCount;
+      periodRevenue[key] = (revenueAgg._sum.totalCents || 0) / 100;
+      liveReviews[key] = { orders: liveOrdersCount, revenue: (liveRevenueAgg._sum.totalCents || 0) / 100 };
+      shoutouts[key] = { orders: shoutOrdersCount, revenue: (shoutRevenueAgg._sum.totalCents || 0) / 100 };
+    }
 
     // Calculate total outstanding credits
     const totalOutstandingCredits = creditsOutstanding.reduce((sum, entry) => {
@@ -193,9 +213,13 @@ export default async function handler(req, res) {
       active_checkouts: 0, // TODO: Implement active checkout tracking
       orders_today: ordersToday,
       revenue_today: (revenueToday._sum.totalCents || 0) / 100,
+      orders_period: periodOrders,
+      revenue_period: periodRevenue,
+      live_reviews: liveReviews,
+      shoutouts: shoutouts,
       mrr: (monthlyRevenue._sum.totalCents || 0) / 100,
-      week_orders: weeklyOrders,
-      week_revenue: (weeklyRevenue._sum.totalCents || 0) / 100,
+      week_orders: periodOrders.week,
+      week_revenue: periodRevenue.week,
       arr: (yearlyRevenue._sum.totalCents || 0) / 100,
       total_customers: totalCustomers,
       active_subscriptions: activeSubscriptions,
