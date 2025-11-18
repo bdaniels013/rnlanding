@@ -642,45 +642,61 @@ export class DatabaseService {
   // Dashboard data
   async getDashboardData() {
     try {
-      // Define period boundaries
       const now = new Date();
-      const startOfToday = new Date(now);
-      startOfToday.setHours(0, 0, 0, 0);
-      const startOfTomorrow = new Date(startOfToday);
-      startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
+      const fmtParts = (date, opts) => new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour12: false, ...opts }).formatToParts(date);
+      const getEtOffsetMs = (date) => {
+        const parts = fmtParts(date, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const get = (t) => parseInt(parts.find(p => p.type === t).value, 10);
+        const etGuessUtc = Date.UTC(get('year'), get('month') - 1, get('day'), get('hour'), get('minute'), get('second'));
+        const utcNow = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), date.getUTCHours(), date.getUTCMinutes(), date.getUTCSeconds());
+        return etGuessUtc - utcNow;
+      };
+      const etOffsetMs = getEtOffsetMs(now);
+      const getEtDayRange = (date) => {
+        const parts = fmtParts(date, { year: 'numeric', month: '2-digit', day: '2-digit' });
+        const year = parseInt(parts.find(p => p.type === 'year').value, 10);
+        const month = parseInt(parts.find(p => p.type === 'month').value, 10);
+        const day = parseInt(parts.find(p => p.type === 'day').value, 10);
+        const startMs = Date.UTC(year, month - 1, day, 0, 0, 0) - etOffsetMs;
+        const endMs = Date.UTC(year, month - 1, day + 1, 0, 0, 0) - etOffsetMs;
+        return { start: new Date(startMs), end: new Date(endMs) };
+      };
+      const getEtMonthRange = (date) => {
+        const parts = fmtParts(date, { year: 'numeric', month: '2-digit', day: '2-digit' });
+        const year = parseInt(parts.find(p => p.type === 'year').value, 10);
+        const month = parseInt(parts.find(p => p.type === 'month').value, 10);
+        const startMs = Date.UTC(year, month - 1, 1, 0, 0, 0) - etOffsetMs;
+        const endMs = Date.UTC(year, month, 1, 0, 0, 0) - etOffsetMs;
+        return { start: new Date(startMs), end: new Date(endMs) };
+      };
+      const getEtLastNDaysRange = (n) => {
+        const { start } = getEtDayRange(now);
+        const startMs = start.getTime() - n * 24 * 60 * 60 * 1000;
+        return { start: new Date(startMs), end: new Date(start.getTime() + 24 * 60 * 60 * 1000 - 1) };
+      };
+      const { start: todayStartET, end: todayEndET } = getEtDayRange(now);
+      const { start: weekStartET } = getEtLastNDaysRange(7);
+      const { start: monthStartET, end: monthEndET } = getEtMonthRange(now);
 
-      // Monday as start of week
-      const startOfWeek = new Date(startOfToday);
-      const day = startOfToday.getDay(); // 0=Sun,1=Mon,...
-      const daysSinceMonday = (day + 6) % 7; // Sun->6, Mon->0
-      startOfWeek.setDate(startOfWeek.getDate() - daysSinceMonday);
-
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-      // Helper to fetch orders and revenue for a period using capturedAt (actual payment time)
-      const getOrdersAndRevenue = async (gteDate, ltOrLteDate, useLt = true) => {
+      const getOrdersAndRevenue = async (startDate, endDate) => {
         const where = {
           status: 'PAID',
-          capturedAt: {
-            gte: gteDate,
-            ...(useLt ? { lt: ltOrLteDate } : { lte: ltOrLteDate })
-          }
+          OR: [
+            { capturedAt: { gte: startDate, lt: endDate } },
+            { AND: [ { capturedAt: null }, { createdAt: { gte: startDate, lt: endDate } } ] }
+          ]
         };
         const [ordersCount, revenueAgg] = await Promise.all([
           prisma.order.count({ where }),
           prisma.order.aggregate({ where, _sum: { totalCents: true } })
         ]);
-        return {
-          orders: ordersCount,
-          revenueCents: revenueAgg._sum.totalCents || 0
-        };
+        return { orders: ordersCount, revenueCents: revenueAgg._sum.totalCents || 0 };
       };
 
-      // Period metrics
       const [dayMetrics, weekMetrics, monthMetrics] = await Promise.all([
-        getOrdersAndRevenue(startOfToday, startOfTomorrow, true),
-        getOrdersAndRevenue(startOfWeek, now, false),
-        getOrdersAndRevenue(startOfMonth, now, false)
+        getOrdersAndRevenue(todayStartET, todayEndET),
+        getOrdersAndRevenue(weekStartET, todayEndET),
+        getOrdersAndRevenue(monthStartET, monthEndET)
       ]);
 
       // Get total customers
@@ -751,14 +767,14 @@ export class DatabaseService {
 
       const sumItemsCents = (items) => items.reduce((sum, it) => sum + (it.unitPriceCents * it.qty), 0);
 
-      const getCategoryMetrics = async (keyword, gteDate, ltOrLteDate, useLt = true) => {
+      const getCategoryMetrics = async (keyword, startDate, endDate) => {
         const where = {
           order: {
             status: 'PAID',
-            capturedAt: {
-              gte: gteDate,
-              ...(useLt ? { lt: ltOrLteDate } : { lte: ltOrLteDate })
-            }
+            OR: [
+              { capturedAt: { gte: startDate, lt: endDate } },
+              { AND: [ { capturedAt: null }, { createdAt: { gte: startDate, lt: endDate } } ] }
+            ]
           },
           offer: offerMatches(keyword)
         };
@@ -777,12 +793,12 @@ export class DatabaseService {
         liveDay, liveWeek, liveMonth,
         shoutDay, shoutWeek, shoutMonth
       ] = await Promise.all([
-        getCategoryMetrics('live review', startOfToday, startOfTomorrow, true),
-        getCategoryMetrics('live review', startOfWeek, now, false),
-        getCategoryMetrics('live review', startOfMonth, now, false),
-        getCategoryMetrics('shoutout', startOfToday, startOfTomorrow, true),
-        getCategoryMetrics('shoutout', startOfWeek, now, false),
-        getCategoryMetrics('shoutout', startOfMonth, now, false)
+        getCategoryMetrics('live review', todayStartET, todayEndET),
+        getCategoryMetrics('live review', weekStartET, todayEndET),
+        getCategoryMetrics('live review', monthStartET, monthEndET),
+        getCategoryMetrics('shoutout', todayStartET, todayEndET),
+        getCategoryMetrics('shoutout', weekStartET, todayEndET),
+        getCategoryMetrics('shoutout', monthStartET, monthEndET)
       ]);
 
       return {
