@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Clock, Zap, ArrowRight, Shield, Calendar, CreditCard, Users, Sparkles, ChevronRight, Star, Youtube, Instagram, Facebook, DollarSign, Play } from "lucide-react";
+import { Check, Clock, Zap, ArrowRight, Shield, Calendar, CreditCard, Users, Sparkles, ChevronRight, Star, Youtube, Instagram, Facebook, DollarSign, Play, X } from "lucide-react";
 import OffersSection from './components/OffersSection';
 import AdminDashboard from './components/AdminDashboard';
 import AdminLogin from './components/AdminLogin';
@@ -581,10 +581,25 @@ function FAQ() {
 }
 
 function StickyBar({ onReserveSeat }) {
-  const { label, remaining } = usePersistentCountdown();
+  const { label } = usePersistentCountdown();
+  const [closed, setClosed] = useState(false);
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem('rn_sticky_closed');
+      if (v === '1') setClosed(true);
+    } catch {}
+  }, []);
+  if (closed) return null;
   return (
     <div className="fixed bottom-4 inset-x-0 z-40 px-4">
-      <div className="max-w-5xl mx-auto rounded-2xl border border-white/10 bg-black/70 backdrop-blur p-3 shadow-2xl">
+      <div className="relative max-w-5xl mx-auto rounded-2xl border border-white/10 bg-black/70 backdrop-blur p-3 shadow-2xl">
+        <button
+          onClick={() => { setClosed(true); try { localStorage.setItem('rn_sticky_closed','1'); } catch {} }}
+          aria-label="Close"
+          className="absolute -top-2 -right-2 p-1.5 rounded-full bg-white/10 border border-white/20 hover:bg-white/20"
+        >
+          <X className="w-4 h-4" />
+        </button>
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-3 text-sm">
             <Clock className="w-4 h-4"/>
