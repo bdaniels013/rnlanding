@@ -76,7 +76,10 @@ export default async function handler(req, res) {
       // Orders today
       prisma.order.count({
         where: {
-          createdAt: { gte: todayStartET, lt: todayEndET },
+          OR: [
+            { capturedAt: { gte: todayStartET, lt: todayEndET } },
+            { AND: [ { capturedAt: null }, { createdAt: { gte: todayStartET, lt: todayEndET } } ] }
+          ],
           status: 'PAID'
         }
       }),
@@ -84,7 +87,10 @@ export default async function handler(req, res) {
       // Revenue today
       prisma.order.aggregate({
         where: {
-          createdAt: { gte: todayStartET, lt: todayEndET },
+          OR: [
+            { capturedAt: { gte: todayStartET, lt: todayEndET } },
+            { AND: [ { capturedAt: null }, { createdAt: { gte: todayStartET, lt: todayEndET } } ] }
+          ],
           status: 'PAID'
         },
         _sum: {
@@ -188,13 +194,27 @@ export default async function handler(req, res) {
 
     for (const key of ['day','week','month']) {
       const { start, end } = ranges[key];
+      const dateWhere = { OR: [
+        { capturedAt: { gte: start, lt: end } },
+        { AND: [ { capturedAt: null }, { createdAt: { gte: start, lt: end } } ] }
+      ] };
+      const offerLiveWhere = { OR: [
+        { name: { contains: 'Live Review', mode: 'insensitive' } },
+        { sku: { contains: 'music-submission', mode: 'insensitive' } },
+        { sku: { contains: 'live', mode: 'insensitive' } }
+      ] };
+      const offerShoutWhere = { OR: [
+        { name: { contains: 'Shoutout', mode: 'insensitive' } },
+        { sku: { contains: 'shout', mode: 'insensitive' } }
+      ] };
+
       const [ordersCount, revenueAgg, liveOrdersCount, liveRevenueAgg, shoutOrdersCount, shoutRevenueAgg] = await Promise.all([
-        prisma.order.count({ where: { createdAt: { gte: start, lt: end }, status: 'PAID' } }),
-        prisma.order.aggregate({ where: { createdAt: { gte: start, lt: end }, status: 'PAID' }, _sum: { totalCents: true } }),
-        prisma.order.count({ where: { createdAt: { gte: start, lt: end }, status: 'PAID', orderItems: { some: { offer: { name: { contains: 'Live Review' } } } } } }),
-        prisma.order.aggregate({ where: { createdAt: { gte: start, lt: end }, status: 'PAID', orderItems: { some: { offer: { name: { contains: 'Live Review' } } } } }, _sum: { totalCents: true } }),
-        prisma.order.count({ where: { createdAt: { gte: start, lt: end }, status: 'PAID', orderItems: { some: { offer: { name: { contains: 'Shoutout' } } } } } }),
-        prisma.order.aggregate({ where: { createdAt: { gte: start, lt: end }, status: 'PAID', orderItems: { some: { offer: { name: { contains: 'Shoutout' } } } } }, _sum: { totalCents: true } })
+        prisma.order.count({ where: { ...dateWhere, status: 'PAID' } }),
+        prisma.order.aggregate({ where: { ...dateWhere, status: 'PAID' }, _sum: { totalCents: true } }),
+        prisma.order.count({ where: { ...dateWhere, status: 'PAID', orderItems: { some: { offer: offerLiveWhere } } } }),
+        prisma.order.aggregate({ where: { ...dateWhere, status: 'PAID', orderItems: { some: { offer: offerLiveWhere } } }, _sum: { totalCents: true } }),
+        prisma.order.count({ where: { ...dateWhere, status: 'PAID', orderItems: { some: { offer: offerShoutWhere } } } }),
+        prisma.order.aggregate({ where: { ...dateWhere, status: 'PAID', orderItems: { some: { offer: offerShoutWhere } } }, _sum: { totalCents: true } })
       ]);
 
       periodOrders[key] = ordersCount;
