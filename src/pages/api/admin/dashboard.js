@@ -10,11 +10,52 @@ export default async function handler(req, res) {
   try {
     // TODO: Add authentication middleware to verify admin role
     
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    const now = new Date();
+
+    const fmtParts = (date, opts) => new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/New_York',
+      hour12: false,
+      ...opts
+    }).formatToParts(date);
+
+    const getEtOffsetMs = (date) => {
+      const parts = fmtParts(date, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const get = (t) => parseInt(parts.find(p => p.type === t).value, 10);
+      const etGuessUtc = Date.UTC(get('year'), get('month') - 1, get('day'), get('hour'), get('minute'), get('second'));
+      const utcNow = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), date.getUTCHours(), date.getUTCMinutes(), date.getUTCSeconds());
+      return etGuessUtc - utcNow; // negative for ET (UTC-4/5)
+    };
+
+    const etOffsetMs = getEtOffsetMs(now);
+
+    const getEtDayRange = (date) => {
+      const parts = fmtParts(date, { year: 'numeric', month: '2-digit', day: '2-digit' });
+      const year = parseInt(parts.find(p => p.type === 'year').value, 10);
+      const month = parseInt(parts.find(p => p.type === 'month').value, 10);
+      const day = parseInt(parts.find(p => p.type === 'day').value, 10);
+      const startMs = Date.UTC(year, month - 1, day, 0, 0, 0) - etOffsetMs;
+      const endMs = Date.UTC(year, month - 1, day + 1, 0, 0, 0) - etOffsetMs;
+      return { start: new Date(startMs), end: new Date(endMs) };
+    };
+
+    const getEtMonthRange = (date) => {
+      const parts = fmtParts(date, { year: 'numeric', month: '2-digit', day: '2-digit' });
+      const year = parseInt(parts.find(p => p.type === 'year').value, 10);
+      const month = parseInt(parts.find(p => p.type === 'month').value, 10);
+      const startMs = Date.UTC(year, month - 1, 1, 0, 0, 0) - etOffsetMs;
+      const endMs = Date.UTC(year, month, 1, 0, 0, 0) - etOffsetMs;
+      return { start: new Date(startMs), end: new Date(endMs) };
+    };
+
+    const getEtLastNDaysRange = (n) => {
+      const { start } = getEtDayRange(now);
+      const startMs = start.getTime() - n * 24 * 60 * 60 * 1000;
+      return { start: new Date(startMs), end: new Date(start.getTime() + 24 * 60 * 60 * 1000 - 1) };
+    };
+
+    const { start: todayStartET, end: todayEndET } = getEtDayRange(now);
+    const { start: monthStartET, end: monthEndET } = getEtMonthRange(now);
+    const { start: weekStartET } = getEtLastNDaysRange(7);
 
     // Get today's metrics
     const [
@@ -29,10 +70,7 @@ export default async function handler(req, res) {
       // Orders today
       prisma.order.count({
         where: {
-          createdAt: {
-            gte: today,
-            lt: tomorrow
-          },
+          createdAt: { gte: todayStartET, lt: todayEndET },
           status: 'PAID'
         }
       }),
@@ -40,10 +78,7 @@ export default async function handler(req, res) {
       // Revenue today
       prisma.order.aggregate({
         where: {
-          createdAt: {
-            gte: today,
-            lt: tomorrow
-          },
+          createdAt: { gte: todayStartET, lt: todayEndET },
           status: 'PAID'
         },
         _sum: {
@@ -119,9 +154,7 @@ export default async function handler(req, res) {
     // Calculate MRR and ARR
     const monthlyRevenue = await prisma.order.aggregate({
       where: {
-        createdAt: {
-          gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-        },
+        createdAt: { gte: monthStartET, lt: monthEndET },
         status: 'PAID'
       },
       _sum: {
@@ -141,6 +174,15 @@ export default async function handler(req, res) {
       }
     });
 
+    // Rolling last 7 days by ET (inclusive of today)
+    const weeklyRevenue = await prisma.order.aggregate({
+      where: { createdAt: { gte: weekStartET, lt: todayEndET }, status: 'PAID' },
+      _sum: { totalCents: true }
+    });
+    const weeklyOrders = await prisma.order.count({
+      where: { createdAt: { gte: weekStartET, lt: todayEndET }, status: 'PAID' }
+    });
+
     // Calculate total outstanding credits
     const totalOutstandingCredits = creditsOutstanding.reduce((sum, entry) => {
       return sum + (entry._sum.delta || 0);
@@ -152,6 +194,8 @@ export default async function handler(req, res) {
       orders_today: ordersToday,
       revenue_today: (revenueToday._sum.totalCents || 0) / 100,
       mrr: (monthlyRevenue._sum.totalCents || 0) / 100,
+      week_orders: weeklyOrders,
+      week_revenue: (weeklyRevenue._sum.totalCents || 0) / 100,
       arr: (yearlyRevenue._sum.totalCents || 0) / 100,
       total_customers: totalCustomers,
       active_subscriptions: activeSubscriptions,
