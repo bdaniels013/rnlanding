@@ -454,6 +454,30 @@ async function createOrder({ customer_info, offer_id, amount, transaction_id, pa
       }
     });
 
+    // Auto-create Live Review record when the purchased offer is a Live Review
+    const isLiveReview = (
+      (offer.name && /live\s*review/i.test(offer.name)) ||
+      (offer.sku && /(live|music-submission)/i.test(offer.sku))
+    );
+    if (isLiveReview) {
+      try {
+        const existing = await prisma.liveReview.findFirst({ where: { orderId: order.id } });
+        if (!existing) {
+          await prisma.liveReview.create({
+            data: {
+              customerId: customer.id,
+              orderId: order.id,
+              songName: 'Pending Submission',
+              status: 'PENDING',
+              notes: 'Auto-created from payment'
+            }
+          });
+        }
+      } catch (lrErr) {
+        console.warn('Live Review auto-create failed:', lrErr.message);
+      }
+    }
+
     // Create subscription if offer is a subscription
     if (offer.isSubscription) {
       const startDate = new Date();

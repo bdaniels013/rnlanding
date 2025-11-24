@@ -1377,15 +1377,37 @@ app.post('/api/music-submission/notify', async (req, res) => {
         });
       }
 
-      await prisma.liveReview.create({
-        data: {
-          customerId: customer.id,
-          orderId,
-          songName,
-          status: 'PENDING',
-          notes: linkUrl ? `Link: ${linkUrl}` : isTest ? 'TEST SUBMISSION' : null
+      if (orderId) {
+        const existing = await prisma.liveReview.findFirst({ where: { orderId } });
+        if (existing) {
+          await prisma.liveReview.update({
+            where: { id: existing.id },
+            data: {
+              songName: songName || existing.songName,
+              notes: linkUrl ? `Link: ${linkUrl}` : existing.notes
+            }
+          });
+        } else {
+          await prisma.liveReview.create({
+            data: {
+              customerId: customer.id,
+              orderId,
+              songName,
+              status: 'PENDING',
+              notes: linkUrl ? `Link: ${linkUrl}` : isTest ? 'TEST SUBMISSION' : null
+            }
+          });
         }
-      });
+      } else {
+        await prisma.liveReview.create({
+          data: {
+            customerId: customer.id,
+            songName,
+            status: 'PENDING',
+            notes: linkUrl ? `Link: ${linkUrl}` : isTest ? 'TEST SUBMISSION' : null
+          }
+        });
+      }
     } catch (persistErr) {
       console.error('Failed to persist live review:', persistErr);
     }
