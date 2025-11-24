@@ -22,6 +22,51 @@ export default async function handler(req, res) {
         whereClause.status = filter.toUpperCase();
       }
 
+      // Reconcile: create LiveReview rows for PAID Live Review orders missing a record
+      try {
+        const recentPaidLiveOrders = await prisma.order.findMany({
+          where: {
+            status: 'PAID',
+            orderItems: {
+              some: {
+                offer: {
+                  OR: [
+                    { name: { contains: 'Live Review', mode: 'insensitive' } },
+                    { sku: { contains: 'music-submission', mode: 'insensitive' } },
+                    { sku: { contains: 'live', mode: 'insensitive' } }
+                  ]
+                }
+              }
+            }
+          },
+          select: {
+            id: true,
+            customerId: true,
+            createdAt: true,
+            liveReviews: { select: { id: true } }
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 100
+        });
+
+        const missing = recentPaidLiveOrders.filter(o => !o.liveReviews || o.liveReviews.length === 0);
+        if (missing.length) {
+          await prisma.$transaction(
+            missing.map(o => prisma.liveReview.create({
+              data: {
+                customerId: o.customerId,
+                orderId: o.id,
+                songName: 'Pending Submission',
+                status: 'PENDING',
+                notes: 'Auto-created from reconciliation'
+              }
+            }))
+          );
+        }
+      } catch (reconErr) {
+        console.warn('Live Reviews reconciliation failed:', reconErr?.message || reconErr);
+      }
+
       const liveReviews = await prisma.liveReview.findMany({
         where: whereClause,
         include: {

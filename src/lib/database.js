@@ -1289,6 +1289,26 @@ export class DatabaseService {
               });
             }
 
+            // Auto-create a Live Review record when the imported offer is a Live Review
+            const isLiveReview = (
+              (offer.name && /live\s*review/i.test(offer.name)) ||
+              (offer.sku && /(live|music-submission)/i.test(offer.sku))
+            );
+            if (isLiveReview) {
+              const existingByOrder = await prisma.liveReview.findFirst({ where: { orderId: order.id } });
+              if (!existingByOrder) {
+                await prisma.liveReview.create({
+                  data: {
+                    customerId: customer.id,
+                    orderId: order.id,
+                    songName: 'Pending Submission',
+                    status: 'PENDING',
+                    notes: 'Auto-created via NMI sync'
+                  }
+                });
+              }
+            }
+
             imported++;
           } catch (importErr) {
             console.error('Failed to import NMI transaction', txnId, importErr);
