@@ -69,7 +69,8 @@ async function getCustomers(req, res) {
           take: 10
         },
         liveReviews: {
-          select: { id: true, status: true, createdAt: true },
+          where: { order: { status: 'PAID' } },
+          select: { id: true },
           orderBy: { createdAt: 'desc' }
         }
       }

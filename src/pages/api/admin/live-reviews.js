@@ -7,7 +7,9 @@ export default async function handler(req, res) {
     try {
       const { search, filter } = req.query;
 
-      const whereClause = {};
+      const whereClause = {
+        order: { is: { status: 'PAID' } }
+      };
 
       if (search) {
         whereClause.OR = [
